@@ -24,14 +24,29 @@
         }
 
         main {
-            min-height: 40vh;
+            min-height: 60vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 40px;
+            padding: clamp(32px, 8vh, 90px) 40px 40px 40px;
             position: relative;
             z-index: 5;
+            gap: clamp(16px, 2vh, 32px);
+            transform: translateY(-8vh);
+        }
+
+        @media (max-height: 900px) {
+            main {
+                transform: translateY(-5vh);
+            }
+        }
+
+        @media (max-height: 720px) {
+            main {
+                transform: none;
+                padding-top: 40px;
+            }
         }
 
         main h1 {
