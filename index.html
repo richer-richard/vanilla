@@ -24,16 +24,16 @@
         }
 
         main {
-            min-height: 60vh;
+            min-height: 40vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: clamp(32px, 8vh, 90px) 40px 40px 40px;
+            padding: clamp(32px, 8vh, 50px) 40px 40px 40px;
             position: relative;
             z-index: 5;
             gap: clamp(16px, 2vh, 32px);
-            transform: translateY(-8vh);
+            transform: translateY(-3vh);
         }
 
         @media (max-height: 900px) {
@@ -52,16 +52,23 @@
         main h1 {
             font-size: 64px;
             letter-spacing: 3px;
+            animation: fadeInDown 0.8s ease-out;
         }
 
         main h2 {
             font-weight: 300;
             letter-spacing: 2px;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
         }
 
         main p {
             color: #d0d0d0;
             font-weight: 300;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+        
+        main .cta-button {
+            animation: fadeInUp 0.8s ease-out 0.6s both;
         }
 
         .cta-button {
@@ -79,7 +86,7 @@
         }
     </style>
 </head>
-<body>
+<body class="footer-enabled">
     <div id="color-transition"></div>
 
     <header>

@@ -1,3 +1,26 @@
+/* ===== Animations ===== */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* ===== Global Styles ===== */
 * {
     margin: 0;
@@ -125,7 +148,7 @@ main p {
 }
 
 /* ===== Footer Styles ===== */
-footer {
+.footer-enabled footer {
     background: linear-gradient(180deg, rgba(102, 126, 234, 0.08) 0%, rgba(102, 126, 234, 0.15) 50%, rgba(102, 126, 234, 0.2) 100%);
     border-top: 2px solid rgba(102, 126, 234, 0.35);
     padding: 100px 40px;
@@ -139,6 +162,10 @@ footer {
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+footer {
+    display: none;
 }
 
 footer .brand {

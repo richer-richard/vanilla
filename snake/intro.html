@@ -3,86 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake - VANILLA</title>
+    <title>Snake — VANILLA</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
     <style>
+        body {
+            min-height: 100vh;
+        }
+
         header {
+            padding: 18px 32px;
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            padding: 20px 40px;
-            background: rgba(102, 126, 234, 0.05);
-            border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.25);
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.06));
         }
 
-        header .nav-left {
+        .brand-link {
             display: flex;
-            gap: 20px;
             align-items: center;
+            gap: 10px;
+            text-decoration: none;
         }
 
-        header a {
+        .brand-link h1 {
+            margin: 0;
             font-family: 'Press Start 2P', monospace;
-            font-size: 12px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            font-size: 18px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            letter-spacing: 1px;
+        }
+
+        .brand-link span {
+            font-size: 11px;
+            color: #b0b0b0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .pill-link {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            padding: 10px 14px;
+            border-radius: 10px;
             text-decoration: none;
+            border: 1px solid rgba(102, 126, 234, 0.35);
+            color: #dfe4ff;
+            background: rgba(102, 126, 234, 0.08);
+            transition: all 0.25s ease;
+        }
+
+        .pill-link:hover {
+            border-color: rgba(118, 75, 162, 0.75);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.25);
+            transform: translateY(-2px);
+        }
+
+        main {
+            flex: 1;
+            width: min(1120px, 100%);
+            margin: 0 auto;
+            padding: 40px 30px 80px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            align-items: stretch;
+            text-align: left;
+        }
+
+        .glass-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.02), rgba(102, 126, 234, 0.07));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35), 0 8px 20px rgba(102, 126, 234, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(118, 75, 162, 0.18), transparent 40%),
+                        radial-gradient(circle at 80% 10%, rgba(102, 126, 234, 0.18), transparent 35%);
+            pointer-events: none;
+        }
+
+        .glass-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .eyebrow {
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            color: #9fb0ff;
+            font-size: 11px;
+            margin-bottom: 12px;
+        }
+
+        .hero h1 {
+            font-size: clamp(28px, 4vw, 36px);
+            line-height: 1.2;
+            margin-bottom: 12px;
+        }
+
+        .hero h1 span {
+            color: #9de8c7;
+        }
+
+        .hero p {
+            color: #c9cee8;
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 14px 0 8px;
+        }
+
+        .tag {
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+            font-size: 12px;
+            color: #dfe4ff;
+            letter-spacing: 0.3px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .control-chip {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.35);
+            background: rgba(102, 126, 234, 0.08);
+            color: #dfe4ff;
+            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 0.3px;
+        }
+
+        .start-card h2 {
+            font-size: 20px;
+            margin-bottom: 6px;
+            color: #f2f3ff;
+        }
+
+        .start-card p {
+            color: #c4c9e4;
+            margin-bottom: 18px;
+        }
+
+        .difficulty-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+        }
+
+        .difficulty-card {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.1));
+            padding: 18px;
+            border-radius: 14px;
+            text-align: left;
+            color: #f4f6ff;
             cursor: pointer;
-            transition: all 0.3s ease;
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: 1px solid transparent;
+            transition: all 0.25s ease;
+            width: 100%;
         }
 
-        header a:hover {
-            border-color: rgba(102, 126, 234, 0.5);
-            filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.4));
+        .difficulty-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(118, 75, 162, 0.6);
+            box-shadow: 0 14px 38px rgba(0, 0, 0, 0.25);
         }
 
-        header .home-link {
-            font-weight: 700;
+        .difficulty-card strong {
+            display: block;
+            font-size: 16px;
+            margin-bottom: 6px;
         }
 
-        main h1 {
-            font-size: 48px;
+        .difficulty-card span {
+            display: block;
+            font-size: 12px;
+            color: #dfe4ff;
+            margin-bottom: 4px;
+        }
+
+        .meta {
+            font-size: 11px;
+            color: #9fb0ff;
+            letter-spacing: 0.4px;
         }
     </style>
 </head>
 <body>
     <header>
-        <a href="../index.html" style="display: flex; gap: 10px; align-items: center; text-decoration: none;">
-            <h1 style="font-family: 'Press Start 2P', monospace; font-size: 20px; background: linear-gradient(90deg, #667eea, #764ba2, #f093fb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 2px; margin: 0;">VANILLA</h1>
-            <p style="font-size: 12px; color: #b0b0b0; letter-spacing: 1px; text-transform: uppercase; margin: 0;">Arcade Hub</p>
+        <a class="brand-link" href="../index.html">
+            <h1>VANILLA</h1>
+            <span>Arcade Hub</span>
         </a>
-        <div class="nav-left">
-            <a href="../games.html">← Back</a>
-            <a href="../index.html" class="home-link">Home</a>
+        <div class="nav-actions">
+            <a class="pill-link" href="../games.html">← Back to games</a>
+            <a class="pill-link" href="../index.html">Home</a>
         </div>
     </header>
 
     <main>
-        <h1>🐍 Snake</h1>
-        <p>Guide your snake through the arena. Eat food to grow longer, but avoid hitting yourself or the walls!</p>
-        
-        <h2>Select Difficulty</h2>
-        <div class="difficulty-buttons">
-            <button class="difficulty-btn" onclick="startGame(1)">Easy</button>
-            <button class="difficulty-btn" onclick="startGame(2)">Medium</button>
-            <button class="difficulty-btn" onclick="startGame(3)">Hard</button>
-        </div>
-    </main>
+        <section class="glass-card hero">
+            <div class="eyebrow">Snake, rebuilt</div>
+            <h1>Thread the neon maze <span>without losing your cool.</span></h1>
+            <p>Every movement matters. A crisp grid, responsive controls, and a subtle speed ramp keep the classic Snake loop tight and modern.</p>
+            <div class="tag-row">
+                <div class="tag">No wrap-around walls</div>
+                <div class="tag">Momentum-friendly pacing</div>
+                <div class="tag">Instant restart</div>
+            </div>
+            <div class="controls">
+                <div class="control-chip">WASD / Arrow Keys — Move</div>
+                <div class="control-chip">Space — Pause/Resume</div>
+                <div class="control-chip">R — Restart run</div>
+            </div>
+        </section>
 
-    <footer>
-        <p>Classic snake game with smooth controls and progressive difficulty</p>
-    </footer>
+        <section class="glass-card start-card">
+            <div class="eyebrow">Choose a pace</div>
+            <h2>Pick your starting speed</h2>
+            <p>Each difficulty tweaks grid density and tick rate. You can always restart mid-run if you want to bump it up.</p>
+            <div class="difficulty-grid">
+                <button class="difficulty-card" data-difficulty="easy">
+                    <strong>Easy</strong>
+                    <span>Open lanes and a calmer tempo.</span>
+                    <span class="meta">16 × 16 grid • 150ms tick</span>
+                </button>
+                <button class="difficulty-card" data-difficulty="medium">
+                    <strong>Medium</strong>
+                    <span>Balanced space with a steady climb.</span>
+                    <span class="meta">18 × 18 grid • 115ms tick</span>
+                </button>
+                <button class="difficulty-card" data-difficulty="hard">
+                    <strong>Hard</strong>
+                    <span>Dense arena, snappier decisions.</span>
+                    <span class="meta">22 × 22 grid • 90ms tick</span>
+                </button>
+            </div>
+        </section>
+    </main>
 
     <script>
         function startGame(difficulty) {
             window.location.href = `game.html?difficulty=${difficulty}`;
         }
+
+        document.querySelectorAll('[data-difficulty]').forEach(button => {
+            button.addEventListener('click', () => startGame(button.dataset.difficulty));
+        });
     </script>
 </body>
 </html>
