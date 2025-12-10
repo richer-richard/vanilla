@@ -106,7 +106,10 @@
                 for (let col = 0; col < current.piece[row].length; col++) {
                     if (!current.piece[row][col]) continue;
                     const newY = current.y + row;
-                    if (newY >= 0) grid[newY][current.x + col] = current.color;
+                    const newX = current.x + col;
+                    if (newY >= 0 && newY < ROWS && newX >= 0 && newX < COLS) {
+                        grid[newY][newX] = current.color;
+                    }
                 }
             }
         }

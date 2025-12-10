@@ -7,6 +7,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <style>
+        body {
+            min-height: 200vh;
+        }
+
+        #color-transition {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, transparent 0%, rgba(20, 30, 60, 0.5) 100%);
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0;
+        }
+
+        main {
+            min-height: 40vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            position: relative;
+            z-index: 5;
+        }
+
         main h1 {
             font-size: 64px;
             letter-spacing: 3px;
@@ -26,9 +53,20 @@
             padding: 15px 50px;
             border-radius: 50px;
         }
+
+        main h1 {
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+            filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.3));
+        }
     </style>
 </head>
 <body>
+    <div id="color-transition"></div>
+
     <header>
         <div>
             <h1>VANILLA</h1>
@@ -49,13 +87,19 @@
     <footer>
         <div class="brand">VANILLA</div>
         <p>Classic Arcade Games Reimagined</p>
-        <p>© 2025 Vanilla Arcade Hub. Built with HTML5, CSS3, and JavaScript</p>
+        <p>Built with HTML5, CSS3, JavaScript, and Python</p>
     </footer>
 
     <script>
-        // Detect scroll and show footer gradient
+        // Seamless color transition as user scrolls
         window.addEventListener('scroll', () => {
             const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercentage = Math.min(scrollPosition / (maxScroll * 0.5), 1);
+            
+            const colorTransition = document.getElementById('color-transition');
+            colorTransition.style.opacity = scrollPercentage;
+            
             if (scrollPosition > 100) {
                 document.body.classList.add('show-footer-gradient');
             } else {

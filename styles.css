@@ -11,7 +11,7 @@ html, body {
 }
 
 body {
-    background: linear-gradient(135deg, #0a0e27 0%, #16213e 50%, #0f3460 100%);
+    background: linear-gradient(180deg, #0a0e27 0%, #1a2451 50%, #243d66 100%);
     color: #e0e0e0;
     min-height: 100vh;
     display: flex;
@@ -126,30 +126,49 @@ main p {
 
 /* ===== Footer Styles ===== */
 footer {
-    background: rgba(102, 126, 234, 0.08);
-    border-top: none;
-    padding: 40px 30px;
-    text-align: center;
+    background: linear-gradient(180deg, rgba(102, 126, 234, 0.08) 0%, rgba(102, 126, 234, 0.15) 50%, rgba(102, 126, 234, 0.2) 100%);
+    border-top: 2px solid rgba(102, 126, 234, 0.35);
+    padding: 100px 40px;
+    text-align: left;
     font-size: 11px;
     color: #b0b0b0;
     margin-top: auto;
     position: relative;
     z-index: 5;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 footer .brand {
     font-family: 'Press Start 2P', monospace;
-    font-size: 12px;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    font-size: 28px;
+    background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 10px;
+    margin-bottom: 30px;
+    letter-spacing: 2px;
+    filter: drop-shadow(0 0 15px rgba(102, 126, 234, 0.3));
 }
 
 footer p {
-    margin: 5px 0;
-    line-height: 1.6;
+    margin: 12px 0;
+    line-height: 1.8;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+footer p:first-of-type {
+    color: #a8a8a8;
+    font-weight: 500;
+}
+
+footer p:last-of-type {
+    color: #808080;
+    font-size: 11px;
 }
 
 /* ===== Buttons ===== */
@@ -213,6 +232,13 @@ footer p {
     margin-bottom: 15px;
     color: white;
     letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.game-card:hover h2 {
+    text-shadow: 0 0 20px rgba(102, 126, 234, 0.8), 0 0 40px rgba(118, 75, 162, 0.6);
+    filter: drop-shadow(0 0 15px rgba(102, 126, 234, 0.6));
+    color: #f0f0f0;
 }
 
 .game-card p {

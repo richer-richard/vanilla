@@ -9,11 +9,41 @@
     <style>
         header {
             display: flex;
-            gap: 40px;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: rgba(102, 126, 234, 0.05);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        header .nav-left {
+            display: flex;
+            gap: 20px;
+            align-items: center;
         }
 
         header a {
-            font-size: 14px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+        }
+
+        header a:hover {
+            border-color: rgba(102, 126, 234, 0.5);
+            filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.4));
+        }
+
+        header .home-link {
+            font-weight: 700;
         }
 
         main h1 {
@@ -23,8 +53,10 @@
 </head>
 <body>
     <header>
-        <a href="../games.html">← Back</a>
-        <a href="../index.html">Home</a>
+        <div class="nav-left">
+            <a href="../games.html">← Back</a>
+            <a href="../index.html" class="home-link">VANILLA</a>
+        </div>
     </header>
 
     <main>
