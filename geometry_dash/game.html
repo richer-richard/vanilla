@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry Dash - VANILLA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        header {
+            padding: 15px 40px;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        footer {
+            padding: 15px;
+        }
+
+        canvas {
+            max-width: 1000px;
+            max-height: 600px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="intro.html">← Back</a>
+        <div class="header-stats">
+            <div class="stat">
+                <div class="stat-label">Distance</div>
+                <div class="stat-value" id="distance">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Level</div>
+                <div class="stat-value" id="level">1</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+    </main>
+
+    <footer>
+        <p>SPACE or Click to jump | Double-jump in mid-air to avoid obstacles</p>
+    </footer>
+
+    <div class="game-over-overlay" id="gameOverOverlay">
+        <div class="game-over-content">
+            <h1>Crashed!</h1>
+            <p id="gameOverMessage">Distance: 0m</p>
+            <div class="game-over-buttons">
+                <button class="game-over-btn" onclick="location.href='intro.html'">Try Again</button>
+                <button class="game-over-btn" onclick="location.href='../games.html'">Back to Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const difficulty = parseInt(new URLSearchParams(window.location.search).get('difficulty')) || 1;
+
+        const PLAYER_SIZE = 30;
+        const GROUND_HEIGHT = 100;
+        const GRAVITY = 0.6;
+        const JUMP_POWER = -15;
+
+        let player = {
+            x: 100,
+            y: canvas.height - GROUND_HEIGHT - PLAYER_SIZE,
+            width: PLAYER_SIZE,
+            height: PLAYER_SIZE,
+            velocityY: 0,
+            jumping: false,
+            doubleJumpReady: false,
+            color: '#4ECDC4'
+        };
+
+        let obstacles = [];
+        let distance = 0;
+        let gameRunning = true;
+        let level = difficulty;
+        let speed = 6 + difficulty;
+        let scrollX = 0;
+
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            if (e.key === ' ') {
+                e.preventDefault();
+                jump();
+            }
+            keys[e.key.toLowerCase()] = true;
+        });
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+        document.addEventListener('click', jump);
+
+        function jump() {
+            if (!gameRunning) return;
+            
+            if (!player.jumping) {
+                player.velocityY = JUMP_POWER;
+                player.jumping = true;
+                player.doubleJumpReady = true;
+            } else if (player.doubleJumpReady) {
+                player.velocityY = JUMP_POWER;
+                player.doubleJumpReady = false;
+            }
+        }
+
+        function spawnObstacle() {
+            obstacles.push({
+                x: canvas.width,
+                y: canvas.height - GROUND_HEIGHT - 40,
+                width: 30,
+                height: 40,
+                color: '#FF6B6B'
+            });
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            // Player physics
+            player.velocityY += GRAVITY;
+            player.y += player.velocityY;
+
+            // Ground collision
+            const groundY = canvas.height - GROUND_HEIGHT - PLAYER_SIZE;
+            if (player.y >= groundY) {
+                player.y = groundY;
+                player.velocityY = 0;
+                player.jumping = false;
+                player.doubleJumpReady = false;
+            }
+
+            // Move obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= speed;
+                
+                // Collision detection
+                if (
+                    player.x < obstacles[i].x + obstacles[i].width &&
+                    player.x + player.width > obstacles[i].x &&
+                    player.y < obstacles[i].y + obstacles[i].height &&
+                    player.y + player.height > obstacles[i].y
+                ) {
+                    gameRunning = false;
+                    endGame();
+                }
+
+                // Remove off-screen obstacles
+                if (obstacles[i].x + obstacles[i].width < 0) {
+                    obstacles.splice(i, 1);
+                    distance += 10;
+                    document.getElementById('distance').textContent = Math.floor(distance / 10);
+                }
+            }
+
+            // Spawn obstacles
+            if (Math.random() < 0.02 * (1 + difficulty * 0.3)) {
+                spawnObstacle();
+            }
+
+            // Increase difficulty
+            if (distance % 500 === 0 && distance > 0 && speed < 12) {
+                speed += 0.5;
+            }
+        }
+
+        function draw() {
+            // Background
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Ground
+            ctx.fillStyle = '#4A90E2';
+            ctx.fillRect(0, canvas.height - GROUND_HEIGHT, canvas.width, GROUND_HEIGHT);
+
+            // Player
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(player.x + 8, player.y + 8, 6, 6);
+            ctx.fillRect(player.x + 16, player.y + 8, 6, 6);
+
+            // Obstacles
+            obstacles.forEach(obs => {
+                ctx.fillStyle = obs.color;
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+            });
+
+            // Distance indicator
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.font = '14px Poppins';
+            ctx.fillText(`Distance: ${Math.floor(distance / 10)}m`, 20, 30);
+        }
+
+        function endGame() {
+            const overlay = document.getElementById('gameOverOverlay');
+            const message = document.getElementById('gameOverMessage');
+            message.textContent = `Distance: ${Math.floor(distance / 10)}m`;
+            overlay.classList.add('active');
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.getElementById('level').textContent = level;
+        gameLoop();
+    </script>
+</body>
+</html>

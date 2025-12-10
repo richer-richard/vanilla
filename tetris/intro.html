@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris - VANILLA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        header {
+            display: flex;
+            gap: 40px;
+        }
+
+        header a {
+            font-size: 14px;
+        }
+
+        main h1 {
+            font-size: 48px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="../games.html">← Back</a>
+        <a href="../index.html">Home</a>
+    </header>
+
+    <main>
+        <h1>🧩 Tetris</h1>
+        <p>Stack falling pieces and complete rows to clear them. The faster you play, the faster pieces fall!</p>
+        
+        <h2>Select Difficulty</h2>
+        <div class="difficulty-buttons">
+            <button class="difficulty-btn" onclick="startGame(1)">Easy</button>
+            <button class="difficulty-btn" onclick="startGame(2)">Medium</button>
+            <button class="difficulty-btn" onclick="startGame(3)">Hard</button>
+        </div>
+    </main>
+
+    <footer>
+        <p>Classic Tetris with modern design</p>
+    </footer>
+
+    <script>
+        function startGame(difficulty) {
+            window.location.href = `game.html?difficulty=${difficulty}`;
+        }
+    </script>
+</body>
+</html>

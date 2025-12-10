@@ -3,499 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vanilla</title>
+    <title>VANILLA - Arcade Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
     <style>
-        /* ==============================
-           GLOBAL STYLES & RESET
-           ============================== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        main h1 {
+            font-size: 64px;
+            letter-spacing: 3px;
         }
 
-        html, body {
-            width: 100%;
-            height: 100%;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #16213e 50%, #0f3460 100%);
-            color: #e0e0e0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        /* ==============================
-           HEADER
-           ============================== */
-        header {
-            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
-            color: white;
-            padding: 15px 30px;
-            border-bottom: 1px solid rgba(102, 126, 234, 0.2);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 70px;
-        }
-
-        header h1 {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 18px;
-            letter-spacing: 2px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 800;
-        }
-
-        header p {
-            font-size: 11px;
-            color: #b0b0b0;
-            font-weight: 300;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .header-left {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .header-hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .header-logo {
-            cursor: pointer;
-            padding: 8px 12px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .header-logo:hover {
-            box-shadow: 0 0 30px rgba(102, 126, 234, 0.6);
-        }
-
-        .header-logo.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        /* ==============================
-           MAIN CONTENT
-           ============================== */
-        #app-container {
-            flex: 1;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 100%);
-            overflow: auto;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #game-container {
-            flex: 1;
-            overflow: auto;
-        }
-
-        /* ==============================
-           HOMEPAGE STYLES
-           ============================== */
-        .homepage {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 60px 40px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .homepage::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 150%;
-            height: 150%;
-            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
-            animation: float 20s ease-in-out infinite;
-        }
-
-        .homepage::after {
-            content: '';
-            position: absolute;
-            bottom: -50%;
-            left: -50%;
-            width: 150%;
-            height: 150%;
-            background: radial-gradient(circle, rgba(240, 147, 251, 0.08) 0%, transparent 70%);
-            animation: float 25s ease-in-out infinite reverse;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(30px, 30px); }
-        }
-
-        .homepage-content {
-            position: relative;
-            z-index: 2;
-            animation: slideUp 0.8s ease-out;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .homepage h1 {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 48px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 20px;
-            font-weight: 800;
-            letter-spacing: 2px;
-            line-height: 1.3;
-        }
-
-        .homepage h2 {
-            font-size: 18px;
-            color: #b0b0b0;
+        main h2 {
             font-weight: 300;
             letter-spacing: 2px;
-            margin-bottom: 30px;
-            text-transform: uppercase;
         }
 
-        .homepage-intro {
-            max-width: 600px;
-            margin-bottom: 50px;
-            opacity: 0.9;
-        }
-
-        .homepage-intro p {
-            font-size: 14px;
-            line-height: 1.8;
+        main p {
             color: #d0d0d0;
-            margin-bottom: 15px;
             font-weight: 300;
         }
 
         .cta-button {
-            display: inline-block;
-            padding: 12px 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-decoration: none;
+            padding: 15px 50px;
             border-radius: 50px;
-            font-weight: 600;
-            font-size: 12px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            cursor: pointer;
-            border: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-            margin-top: 20px;
-        }
-
-        .cta-button:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
-        }
-
-        .cta-button:active {
-            transform: translateY(-2px);
-        }
-
-        /* ==============================
-           GAME SELECTION PAGE
-           ============================== */
-        .games-menu {
-            width: 100%;
-            padding: 40px 20px;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 100%);
-        }
-
-        .games-menu-title {
-            font-size: 28px;
-            font-weight: 700;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 50px;
-            letter-spacing: 2px;
-            text-align: center;
-        }
-
-        .games-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 35px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .game-card {
-            position: relative;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            border-radius: 15px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
-            border: 2px solid rgba(102, 126, 234, 0.3);
-            overflow: hidden;
-        }
-
-        .game-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .game-card:hover::before {
-            opacity: 1;
-        }
-
-        .game-card:hover {
-            transform: translateY(-12px) scale(1.05);
-            box-shadow: 0 20px 50px rgba(102, 126, 234, 0.4);
-            border-color: rgba(102, 126, 234, 0.7);
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.1) 100%);
-        }
-
-        .game-card-content {
-            position: relative;
-            z-index: 2;
-        }
-
-        .game-card h3 {
-            font-size: 22px;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 15px;
-            letter-spacing: 1px;
-        }
-
-        .game-card p {
-            font-size: 12px;
-            color: #b0b0b0;
-            font-weight: 300;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
-
-        .difficulty-badges {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .difficulty-badge {
-            padding: 6px 12px;
-            background: rgba(102, 126, 234, 0.2);
-            border: 1px solid rgba(102, 126, 234, 0.5);
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: 600;
-            color: #667eea;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* ==============================
-           FOOTER
-           ============================== */
-        footer {
-            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
-            border-top: 1px solid rgba(102, 126, 234, 0.2);
-            padding: 30px;
-            text-align: center;
-            color: #b0b0b0;
-            font-size: 12px;
-            margin-top: auto;
-        }
-
-        footer p {
-            margin: 5px 0;
-            font-weight: 300;
-            letter-spacing: 0.5px;
-        }
-
-        footer .footer-brand {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 12px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-
-        /* ==============================
-           LEVEL SELECTION PAGE
-           ============================== */
-        .level-selection {
-            width: 100%;
-            padding: 40px 20px;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 100%);
-        }
-
-        .level-header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        .level-header h2 {
-            font-size: 28px;
-            font-weight: 700;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-            letter-spacing: 2px;
-        }
-
-        .level-header p {
-            font-size: 14px;
-            color: #b0b0b0;
-            font-weight: 300;
-        }
-
-        .levels-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 25px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .level-button {
-            padding: 30px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.08) 100%);
-            border: 2px solid rgba(102, 126, 234, 0.3);
-            border-radius: 12px;
-            color: white;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .level-button:hover {
-            transform: translateY(-8px) scale(1.05);
-            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
-            border-color: rgba(102, 126, 234, 0.6);
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.1) 100%);
-        }
-
-        .level-button:active {
-            transform: translateY(-4px) scale(1.02);
-        }
-
-        /* ==============================
-           GAME PAGE
-           ============================== */
-        .game-page {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        canvas {
-            display: block;
-            background: #000;
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            max-height: 600px;
-            max-width: 800px;
-        }
-
-        /* ==============================
-           UTILITIES
-           ============================== */
-        .hidden {
-            display: none !important;
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(102, 126, 234, 0.1);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(102, 126, 234, 0.3);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(102, 126, 234, 0.5);
         }
     </style>
 </head>
 <body>
     <header>
-        <div class="header-left header-logo" id="logoButton">
-            <h1 id="header-title">VANILLA</h1>
-            <p id="header-subtitle">Arcade Hub</p>
+        <div>
+            <h1>VANILLA</h1>
+            <p>Arcade Hub</p>
         </div>
     </header>
 
-    <div id="app-container">
-        <div id="game-container"></div>
-        <footer id="footer">
-            <div class="footer-brand">VANILLA</div>
-            <p>Classic Arcade Games Reimagined</p>
-            <p>© 2024 Vanilla.js Arcade Hub. All rights reserved.</p>
-            <p style="margin-top: 10px; opacity: 0.7;">Built with pure JavaScript, HTML5, and CSS3</p>
-        </footer>
-    </div>
+    <main>
+        <h1>VANILLA</h1>
+        <h2>Classic Games Reimagined</h2>
+        <p>
+            Experience timeless arcade games with modern design and smooth gameplay.
+            Relive the joy of retro gaming or discover them for the first time.
+        </p>
+        <a href="games.html" class="cta-button">Play Now</a>
+    </main>
 
-    <script type="module">
-        import { initRouter } from './js/router.js';
-        initRouter();
+    <footer>
+        <div class="brand">VANILLA</div>
+        <p>Classic Arcade Games Reimagined</p>
+        <p>© 2025 Vanilla Arcade Hub. Built with HTML5, CSS3, and JavaScript</p>
+    </footer>
+
+    <script>
+        // Detect scroll and show footer gradient
+        window.addEventListener('scroll', () => {
+            const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+            if (scrollPosition > 100) {
+                document.body.classList.add('show-footer-gradient');
+            } else {
+                document.body.classList.remove('show-footer-gradient');
+            }
+        });
     </script>
 </body>
 </html>

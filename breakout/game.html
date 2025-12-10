@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breakout - VANILLA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        header {
+            padding: 15px 40px;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        footer {
+            padding: 15px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="intro.html">← Back</a>
+        <div class="header-stats">
+            <div class="stat">
+                <div class="stat-label">Score</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Lives</div>
+                <div class="stat-value" id="lives">3</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Level</div>
+                <div class="stat-value" id="level">1</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+    </main>
+
+    <footer>
+        <p>Left/Right Arrow or A/D to move | Break all bricks!</p>
+    </footer>
+
+    <div class="game-over-overlay" id="gameOverOverlay">
+        <div class="game-over-content">
+            <h1 id="gameOverTitle">Game Over</h1>
+            <p id="gameOverMessage">Final Score: 0</p>
+            <div class="game-over-buttons">
+                <button class="game-over-btn" onclick="location.href='intro.html'">Try Again</button>
+                <button class="game-over-btn" onclick="location.href='../games.html'">Back to Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const difficulty = parseInt(new URLSearchParams(window.location.search).get('difficulty')) || 1;
+
+        const PADDLE_WIDTH = 80;
+        const PADDLE_HEIGHT = 12;
+        const BRICK_COLS = 8;
+        const BRICK_ROWS = 3 + difficulty;
+        const BRICK_WIDTH = canvas.width / BRICK_COLS;
+        const BRICK_HEIGHT = 20;
+        const BALL_RADIUS = 6;
+
+        let paddle = {
+            x: canvas.width / 2 - PADDLE_WIDTH / 2,
+            y: canvas.height - 30,
+            width: PADDLE_WIDTH,
+            height: PADDLE_HEIGHT,
+            speed: 7
+        };
+
+        let ball = {
+            x: canvas.width / 2,
+            y: canvas.height - 50,
+            dx: 4,
+            dy: -4,
+            radius: BALL_RADIUS
+        };
+
+        let bricks = [];
+        let score = 0;
+        let lives = 3;
+        let gameRunning = true;
+        let level = difficulty;
+
+        const BRICK_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'];
+
+        function initBricks() {
+            bricks = [];
+            for (let row = 0; row < BRICK_ROWS; row++) {
+                for (let col = 0; col < BRICK_COLS; col++) {
+                    bricks.push({
+                        x: col * BRICK_WIDTH,
+                        y: row * BRICK_HEIGHT + 30,
+                        width: BRICK_WIDTH,
+                        height: BRICK_HEIGHT,
+                        active: true,
+                        color: BRICK_COLORS[row % BRICK_COLORS.length]
+                    });
+                }
+            }
+        }
+
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+        });
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        function update() {
+            if (!gameRunning) return;
+
+            // Paddle movement
+            if ((keys['arrowleft'] || keys['a']) && paddle.x > 0) {
+                paddle.x -= paddle.speed;
+            }
+            if ((keys['arrowright'] || keys['d']) && paddle.x < canvas.width - paddle.width) {
+                paddle.x += paddle.speed;
+            }
+
+            // Ball movement
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Ball collision with walls
+            if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
+                ball.dx = -ball.dx;
+                ball.x = Math.max(ball.radius, Math.min(canvas.width - ball.radius, ball.x));
+            }
+
+            if (ball.y - ball.radius < 0) {
+                ball.dy = -ball.dy;
+                ball.y = ball.radius;
+            }
+
+            // Ball collision with paddle
+            if (
+                ball.y + ball.radius > paddle.y &&
+                ball.y - ball.radius < paddle.y + paddle.height &&
+                ball.x > paddle.x &&
+                ball.x < paddle.x + paddle.width
+            ) {
+                ball.dy = -Math.abs(ball.dy) - 0.5;
+                const hitPos = (ball.x - (paddle.x + paddle.width / 2)) / (paddle.width / 2);
+                ball.dx += hitPos * 4;
+                ball.y = paddle.y - ball.radius;
+            }
+
+            // Ball collision with bricks
+            for (let i = 0; i < bricks.length; i++) {
+                const brick = bricks[i];
+                if (!brick.active) continue;
+
+                if (
+                    ball.x > brick.x &&
+                    ball.x < brick.x + brick.width &&
+                    ball.y > brick.y &&
+                    ball.y < brick.y + brick.height
+                ) {
+                    brick.active = false;
+                    score += 10 * level;
+                    document.getElementById('score').textContent = score;
+                    ball.dy = -ball.dy;
+                    break;
+                }
+            }
+
+            // Ball out of bounds
+            if (ball.y > canvas.height) {
+                lives--;
+                document.getElementById('lives').textContent = lives;
+                if (lives <= 0) {
+                    gameRunning = false;
+                    endGame(false);
+                } else {
+                    ball.x = canvas.width / 2;
+                    ball.y = canvas.height - 50;
+                    ball.dx = 4;
+                    ball.dy = -4;
+                }
+            }
+
+            // Check win condition
+            if (bricks.every(b => !b.active)) {
+                gameRunning = false;
+                endGame(true);
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw paddle
+            ctx.fillStyle = '#4ECDC4';
+            ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+
+            // Draw ball
+            ctx.fillStyle = '#FFD93D';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw bricks
+            bricks.forEach(brick => {
+                if (brick.active) {
+                    ctx.fillStyle = brick.color;
+                    ctx.fillRect(brick.x + 2, brick.y + 2, brick.width - 4, brick.height - 4);
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                    ctx.strokeRect(brick.x + 2, brick.y + 2, brick.width - 4, brick.height - 4);
+                }
+            });
+        }
+
+        function endGame(won) {
+            const overlay = document.getElementById('gameOverOverlay');
+            const title = document.getElementById('gameOverTitle');
+            const message = document.getElementById('gameOverMessage');
+
+            if (won) {
+                title.textContent = 'You Win!';
+                title.style.color = '#4ECDC4';
+                message.textContent = `Final Score: ${score}`;
+            } else {
+                title.textContent = 'Game Over';
+                title.style.color = '#FF6B6B';
+                message.textContent = `Final Score: ${score}`;
+            }
+            overlay.classList.add('active');
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.getElementById('level').textContent = level;
+        initBricks();
+        gameLoop();
+    </script>
+</body>
+</html>

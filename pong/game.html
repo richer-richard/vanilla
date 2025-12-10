@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong - VANILLA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        header {
+            padding: 15px 40px;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        footer {
+            padding: 15px;
+        }
+
+        canvas {
+            max-width: 1080px;
+            max-height: 720px;
+            aspect-ratio: 1.5;
+        }
+
+        #scoreDisplay {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+            margin: 10px 0;
+        }
+
+        .header-stats {
+            gap: 40px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="intro.html">← Back</a>
+        <div class="header-stats">
+            <div class="stat">
+                <div class="stat-label">You</div>
+                <div class="stat-value" id="playerScore">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">AI</div>
+                <div class="stat-value" id="aiScore">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Level</div>
+                <div class="stat-value" id="level">1</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <canvas id="gameCanvas" width="900" height="600"></canvas>
+    </main>
+
+    <footer>
+        <p>W/Up to move up | S/Down to move down | First to 5 wins!</p>
+    </footer>
+
+    <div class="game-over-overlay" id="gameOverOverlay">
+        <div class="game-over-content">
+            <h1 id="gameOverTitle">Game Over</h1>
+            <p id="gameOverMessage">You Win!</p>
+            <div class="game-over-buttons">
+                <button class="game-over-btn" onclick="location.href='intro.html'">Play Again</button>
+                <button class="game-over-btn" onclick="location.href='../games.html'">Back to Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const difficulty = parseInt(new URLSearchParams(window.location.search).get('difficulty')) || 1;
+        
+        const PADDLE_WIDTH = 10;
+        const PADDLE_HEIGHT = 80;
+        const BALL_SIZE = 8;
+
+        let player = {
+            x: 20,
+            y: canvas.height / 2 - PADDLE_HEIGHT / 2,
+            width: PADDLE_WIDTH,
+            height: PADDLE_HEIGHT,
+            dy: 0,
+            speed: 6
+        };
+
+        let ai = {
+            x: canvas.width - 30,
+            y: canvas.height / 2 - PADDLE_HEIGHT / 2,
+            width: PADDLE_WIDTH,
+            height: PADDLE_HEIGHT,
+            speed: 2 + difficulty
+        };
+
+        let ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            dx: 5,
+            dy: 5,
+            size: BALL_SIZE
+        };
+
+        let playerScore = 0;
+        let aiScore = 0;
+        let gameRunning = true;
+        let level = difficulty;
+
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+        });
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        function update() {
+            if (!gameRunning) return;
+
+            // Player movement
+            if (keys['w'] || keys['arrowup']) {
+                player.y = Math.max(0, player.y - player.speed);
+            }
+            if (keys['s'] || keys['arrowdown']) {
+                player.y = Math.min(canvas.height - player.height, player.y + player.speed);
+            }
+
+            // AI movement
+            const aiCenter = ai.y + ai.height / 2;
+            if (aiCenter < ball.y - 35) {
+                ai.y = Math.min(canvas.height - ai.height, ai.y + ai.speed);
+            } else if (aiCenter > ball.y + 35) {
+                ai.y = Math.max(0, ai.y - ai.speed);
+            }
+
+            // Ball movement
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Ball collision with top/bottom
+            if (ball.y - ball.size < 0 || ball.y + ball.size > canvas.height) {
+                ball.dy = -ball.dy;
+                ball.y = Math.max(ball.size, Math.min(canvas.height - ball.size, ball.y));
+            }
+
+            // Ball collision with paddles
+            if (
+                ball.x - ball.size < player.x + player.width &&
+                ball.y > player.y &&
+                ball.y < player.y + player.height
+            ) {
+                ball.dx = Math.abs(ball.dx) + 0.5;
+                ball.x = player.x + player.width + ball.size;
+                ball.dy += (ball.y - (player.y + player.height / 2)) / (player.height / 2) * 3;
+            }
+
+            if (
+                ball.x + ball.size > ai.x &&
+                ball.y > ai.y &&
+                ball.y < ai.y + ai.height
+            ) {
+                ball.dx = -Math.abs(ball.dx) - 0.5;
+                ball.x = ai.x - ball.size;
+                ball.dy += (ball.y - (ai.y + ai.height / 2)) / (ai.height / 2) * 3;
+            }
+
+            // Scoring
+            if (ball.x < 0) {
+                aiScore++;
+                document.getElementById('aiScore').textContent = aiScore;
+                resetBall();
+                if (aiScore >= 5) endGame(false);
+            } else if (ball.x > canvas.width) {
+                playerScore++;
+                document.getElementById('playerScore').textContent = playerScore;
+                resetBall();
+                if (playerScore >= 5) endGame(true);
+            }
+        }
+
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx = (Math.random() > 0.5 ? 1 : -1) * 5;
+            ball.dy = (Math.random() - 0.5) * 8;
+        }
+
+        function draw() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Center line
+            ctx.strokeStyle = 'rgba(102, 126, 234, 0.2)';
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Player paddle
+            ctx.fillStyle = '#4ECDC4';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // AI paddle
+            ctx.fillStyle = '#FF6B6B';
+            ctx.fillRect(ai.x, ai.y, ai.width, ai.height);
+
+            // Ball
+            ctx.fillStyle = '#FFD93D';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function endGame(playerWon) {
+            gameRunning = false;
+            const overlay = document.getElementById('gameOverOverlay');
+            const title = document.getElementById('gameOverTitle');
+            const message = document.getElementById('gameOverMessage');
+            
+            if (playerWon) {
+                title.textContent = 'You Win!';
+                message.textContent = `Final Score: ${playerScore} - ${aiScore}`;
+                title.style.color = '#4ECDC4';
+            } else {
+                title.textContent = 'AI Wins';
+                message.textContent = `Final Score: ${playerScore} - ${aiScore}`;
+                title.style.color = '#FF6B6B';
+            }
+            overlay.classList.add('active');
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.getElementById('level').textContent = level;
+        gameLoop();
+    </script>
+</body>
+</html>

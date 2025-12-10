@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minesweeper - VANILLA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        header {
+            padding: 15px 40px;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        footer {
+            padding: 15px;
+        }
+
+        .board {
+            display: inline-grid;
+            gap: 3px;
+            background: #223;
+            padding: 10px;
+            border-radius: 8px;
+            border: 3px solid rgba(102, 126, 234, 0.5);
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            background: #45B7D1;
+            border: 2px solid #2a7d8e;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #000;
+            user-select: none;
+            transition: all 0.1s ease;
+        }
+
+        .cell:hover {
+            background: #52d4e8;
+        }
+
+        .cell.revealed {
+            background: #4A90E2;
+            border: 1px solid #2a5a9e;
+            cursor: default;
+            color: #fff;
+        }
+
+        .cell.flagged {
+            background: #FF6B6B;
+        }
+
+        .cell.mine {
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="intro.html">← Back</a>
+        <div class="header-stats">
+            <div class="stat">
+                <div class="stat-label">Flags</div>
+                <div class="stat-value" id="flags">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Level</div>
+                <div class="stat-value" id="level">1</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="board" id="gameBoard"></div>
+    </main>
+
+    <footer>
+        <p>Left Click to reveal | Right Click to flag | Reveal all safe tiles to win!</p>
+    </footer>
+
+    <div class="game-over-overlay" id="gameOverOverlay">
+        <div class="game-over-content">
+            <h1 id="gameOverTitle">Game Over</h1>
+            <p id="gameOverMessage">You hit a mine!</p>
+            <div class="game-over-buttons">
+                <button class="game-over-btn" onclick="location.href='intro.html'">Try Again</button>
+                <button class="game-over-btn" onclick="location.href='../games.html'">Back to Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const difficulty = parseInt(new URLSearchParams(window.location.search).get('difficulty')) || 1;
+        const SIZES = {1: 8, 2: 15, 3: 20};
+        const WIDTHS = {1: 12, 2: 20, 3: 30};
+        const MINES = {1: 15, 2: 50, 3: 100};
+        
+        const HEIGHT = SIZES[difficulty];
+        const WIDTH = WIDTHS[difficulty];
+        const MINE_COUNT = MINES[difficulty];
+
+        let board = [];
+        let revealed = [];
+        let flagged = [];
+        let gameRunning = true;
+        let level = difficulty;
+        let flagCount = 0;
+
+        function initBoard() {
+            board = Array(HEIGHT).fill(null).map(() => Array(WIDTH).fill(0));
+            revealed = Array(HEIGHT).fill(null).map(() => Array(WIDTH).fill(false));
+            flagged = Array(HEIGHT).fill(null).map(() => Array(WIDTH).fill(false));
+
+            let minesPlaced = 0;
+            while (minesPlaced < MINE_COUNT) {
+                const x = Math.floor(Math.random() * WIDTH);
+                const y = Math.floor(Math.random() * HEIGHT);
+                if (board[y][x] !== 'M') {
+                    board[y][x] = 'M';
+                    minesPlaced++;
+                }
+            }
+
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    if (board[y][x] !== 'M') {
+                        let count = 0;
+                        for (let dy = -1; dy <= 1; dy++) {
+                            for (let dx = -1; dx <= 1; dx++) {
+                                const ny = y + dy;
+                                const nx = x + dx;
+                                if (ny >= 0 && ny < HEIGHT && nx >= 0 && nx < WIDTH && board[ny][nx] === 'M') {
+                                    count++;
+                                }
+                            }
+                        }
+                        board[y][x] = count;
+                    }
+                }
+            }
+        }
+
+        function revealTile(x, y) {
+            if (!gameRunning || revealed[y][x] || flagged[y][x]) return;
+
+            revealed[y][x] = true;
+
+            if (board[y][x] === 'M') {
+                gameRunning = false;
+                revealAll();
+                endGame(false);
+                return;
+            }
+
+            if (board[y][x] === 0) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const ny = y + dy;
+                        const nx = x + dx;
+                        if (ny >= 0 && ny < HEIGHT && nx >= 0 && nx < WIDTH && !revealed[ny][nx]) {
+                            revealTile(nx, ny);
+                        }
+                    }
+                }
+            }
+
+            checkWin();
+            render();
+        }
+
+        function toggleFlag(x, y) {
+            if (!gameRunning || revealed[y][x]) return;
+            
+            flagged[y][x] = !flagged[y][x];
+            flagCount += flagged[y][x] ? 1 : -1;
+            document.getElementById('flags').textContent = flagCount;
+            render();
+        }
+
+        function revealAll() {
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    revealed[y][x] = true;
+                }
+            }
+        }
+
+        function checkWin() {
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    if (board[y][x] !== 'M' && !revealed[y][x]) return;
+                }
+            }
+            gameRunning = false;
+            revealAll();
+            endGame(true);
+        }
+
+        function endGame(won) {
+            const overlay = document.getElementById('gameOverOverlay');
+            const title = document.getElementById('gameOverTitle');
+            const message = document.getElementById('gameOverMessage');
+
+            if (won) {
+                title.textContent = 'You Win!';
+                title.style.color = '#4ECDC4';
+                message.textContent = 'All mines avoided!';
+            } else {
+                title.textContent = 'Game Over';
+                title.style.color = '#FF6B6B';
+                message.textContent = 'You hit a mine!';
+            }
+            overlay.classList.add('active');
+        }
+
+        function render() {
+            const boardEl = document.getElementById('gameBoard');
+            boardEl.innerHTML = '';
+            boardEl.style.gridTemplateColumns = `repeat(${WIDTH}, 1fr)`;
+
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    
+                    if (revealed[y][x]) {
+                        cell.classList.add('revealed');
+                        if (board[y][x] === 'M') {
+                            cell.classList.add('mine');
+                            cell.textContent = '💣';
+                        } else if (board[y][x] > 0) {
+                            cell.textContent = board[y][x];
+                        }
+                    } else if (flagged[y][x]) {
+                        cell.classList.add('flagged');
+                        cell.textContent = '🚩';
+                    }
+
+                    cell.addEventListener('click', () => revealTile(x, y));
+                    cell.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        toggleFlag(x, y);
+                    });
+
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        document.getElementById('level').textContent = level;
+        initBoard();
+        render();
+    </script>
+</body>
+</html>

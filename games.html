@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Game - VANILLA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        main h1 {
+            font-size: 32px;
+            text-align: center;
+        }
+
+        header a {
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="index.html">← VANILLA</a>
+        <p>Select Your Game</p>
+    </header>
+
+    <main>
+        <h1>Choose Your Game</h1>
+        <div class="games-grid">
+            <a href="snake/intro.html" class="game-card">
+                <h2>🐍 Snake</h2>
+                <p>Guide your snake through the arena, eat food to grow, but avoid hitting yourself!</p>
+                <div class="difficulty-badges">
+                    <span class="badge">Easy</span>
+                    <span class="badge">Medium</span>
+                    <span class="badge">Hard</span>
+                </div>
+            </a>
+
+            <a href="tetris/intro.html" class="game-card">
+                <h2>🧩 Tetris</h2>
+                <p>Stack falling pieces and complete rows. Classic puzzle gameplay at its finest!</p>
+                <div class="difficulty-badges">
+                    <span class="badge">Easy</span>
+                    <span class="badge">Medium</span>
+                    <span class="badge">Hard</span>
+                </div>
+            </a>
+
+            <a href="pong/intro.html" class="game-card">
+                <h2>🎾 Pong</h2>
+                <p>Legendary paddle game. Master the ball rebounds and defeat your opponent!</p>
+                <div class="difficulty-badges">
+                    <span class="badge">Easy</span>
+                    <span class="badge">Medium</span>
+                    <span class="badge">Hard</span>
+                </div>
+            </a>
+
+            <a href="breakout/intro.html" class="game-card">
+                <h2>🔨 Breakout</h2>
+                <p>Smash bricks with your paddle. Clear the board and reach new heights!</p>
+                <div class="difficulty-badges">
+                    <span class="badge">Easy</span>
+                    <span class="badge">Medium</span>
+                    <span class="badge">Hard</span>
+                </div>
+            </a>
+
+            <a href="geometry_dash/intro.html" class="game-card">
+                <h2>⬜ Geometry Dash</h2>
+                <p>Jump through obstacles with perfect timing. Master the rhythm of the game!</p>
+                <div class="difficulty-badges">
+                    <span class="badge">Easy</span>
+                    <span class="badge">Medium</span>
+                    <span class="badge">Hard</span>
+                </div>
+            </a>
+
+            <a href="minesweeper/intro.html" class="game-card">
+                <h2>💣 Minesweeper</h2>
+                <p>Reveal safe tiles and avoid hidden mines. Use logic to solve the puzzle!</p>
+                <div class="difficulty-badges">
+                    <span class="badge">Easy</span>
+                    <span class="badge">Medium</span>
+                    <span class="badge">Hard</span>
+                </div>
+            </a>
+
+            <a href="space_shooters/intro.html" class="game-card">
+                <h2>🚀 Space Shooters</h2>
+                <p>Defend against alien attacks! Fast-paced action and reflexes required!</p>
+                <div class="difficulty-badges">
+                    <span class="badge">Easy</span>
+                    <span class="badge">Medium</span>
+                    <span class="badge">Hard</span>
+                </div>
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <div class="brand">VANILLA</div>
+        <p>Choose a game to begin your adventure</p>
+        <p>© 2025 Vanilla Arcade Hub</p>
+    </footer>
+
+    <script>
+        // Detect scroll and show footer gradient
+        window.addEventListener('scroll', () => {
+            const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+            if (scrollPosition > 100) {
+                document.body.classList.add('show-footer-gradient');
+            } else {
+                document.body.classList.remove('show-footer-gradient');
+            }
+        });
+    </script>
+</body>
+</html>
