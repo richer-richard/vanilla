@@ -24,7 +24,7 @@
         }
 
         main {
-            min-height: 40vh;
+            min-height: 60vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -33,19 +33,19 @@
             position: relative;
             z-index: 5;
             gap: clamp(16px, 2vh, 32px);
-            transform: translateY(-3vh);
+            transform: translateY(-10vh);
         }
 
         @media (max-height: 900px) {
             main {
-                transform: translateY(-5vh);
+                transform: translateY(-6vh);
             }
         }
 
         @media (max-height: 720px) {
             main {
-                transform: none;
-                padding-top: 40px;
+                transform: translateY(-2vh);
+                padding-top: 30px;
             }
         }
 
@@ -90,10 +90,10 @@
     <div id="color-transition"></div>
 
     <header>
-        <div>
+        <a href="index.html" style="display:flex;flex-direction:column;text-decoration:none;">
             <h1>VANILLA</h1>
             <p>Arcade Hub</p>
-        </div>
+        </a>
     </header>
 
     <main>

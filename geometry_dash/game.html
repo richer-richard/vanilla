@@ -3,219 +3,408 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geometry Dash - VANILLA</title>
+    <title>Geometry Dash — Play | VANILLA</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
     <style>
+        body { min-height: 100vh; }
         header {
-            padding: 15px 40px;
+            padding: 16px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.1));
+            border-bottom: 1px solid rgba(102, 126, 234, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 5;
         }
-
-        main {
-            padding: 20px;
-        }
-
-        footer {
-            padding: 15px;
-        }
-
-        canvas {
-            max-width: 1000px;
-            max-height: 600px;
-        }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .crumb { color: #cdd2f1; letter-spacing: 0.6px; font-size: 12px; }
+        .pill { padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(102, 126, 234, 0.4); background: rgba(102, 126, 234, 0.12); color: #dfe4ff; font-weight: 700; font-size: 12px; letter-spacing: 0.4px; }
+        .pill-link { text-decoration: none; color: #dfe4ff; border: 1px solid rgba(102, 126, 234, 0.4); padding: 10px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); font-family: 'Press Start 2P', monospace; font-size: 10px; letter-spacing: 0.8px; transition: all 0.2s ease; }
+        .pill-link:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35); border-color: rgba(118, 75, 162, 0.75); }
+        .header-actions { display: flex; gap: 10px; }
+        .action-btn { padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15); background: linear-gradient(135deg, rgba(102, 126, 234, 0.24), rgba(118, 75, 162, 0.2)); color: #f2f4ff; font-weight: 700; letter-spacing: 0.3px; cursor: pointer; transition: all 0.2s ease; }
+        .action-btn.ghost { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.1); }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
+        main { width: min(1100px, 100%); margin: 0 auto; padding: 26px 24px 60px; display: grid; grid-template-columns: 2fr 1fr; gap: 18px; align-items: start; }
+        @media (max-width: 960px) { main { grid-template-columns: 1fr; } }
+        .glass-card { background: linear-gradient(150deg, rgba(255, 255, 255, 0.02), rgba(102, 126, 234, 0.08)); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35), 0 10px 22px rgba(102, 126, 234, 0.1); padding: 18px; position: relative; overflow: hidden; }
+        .glass-card::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 12% 18%, rgba(118, 75, 162, 0.14), transparent 32%), radial-gradient(circle at 82% 8%, rgba(102, 126, 234, 0.12), transparent 30%); pointer-events: none; }
+        .glass-card > * { position: relative; z-index: 1; }
+        .hud { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 12px; }
+        .stat { padding: 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.03); }
+        .stat .label { font-size: 11px; color: #adb6da; letter-spacing: 0.6px; text-transform: uppercase; }
+        .stat .value { font-size: 22px; font-weight: 800; margin-top: 4px; }
+        .board-shell { margin-top: 8px; background: radial-gradient(circle at 20% 20%, rgba(102, 126, 234, 0.16), transparent 35%), radial-gradient(circle at 80% 10%, rgba(118, 75, 162, 0.16), transparent 30%), rgba(6, 9, 25, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 14px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03); }
+        canvas { width: 100%; height: auto; aspect-ratio: 16 / 9; display: block; background: #050913; border-radius: 12px; }
+        .sidebar h2 { margin: 6px 0 12px; font-size: 20px; }
+        .tips { list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: 10px; color: #cbd0ea; }
+        .tips li { padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.03); }
+        .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+        .chip { padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(102, 126, 234, 0.35); background: rgba(102, 126, 234, 0.08); color: #dfe4ff; font-weight: 600; font-size: 12px; }
+        .eyebrow { letter-spacing: 1px; text-transform: uppercase; color: #9fb0ff; font-size: 11px; }
     </style>
 </head>
-<body>
+<body class="game-page">
     <header>
-        <a href="intro.html">← Back</a>
-        <div class="header-stats">
-            <div class="stat">
-                <div class="stat-label">Distance</div>
-                <div class="stat-value" id="distance">0</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Level</div>
-                <div class="stat-value" id="level">1</div>
-            </div>
+        <div class="header-left">
+            <a class="pill-link" href="../games.html">← Games</a>
+            <span class="crumb">Geometry Dash</span>
+            <span class="pill" id="difficultyLabel">Medium Pace</span>
+        </div>
+        <div class="header-actions">
+            <button class="action-btn ghost" id="pauseBtn">Pause</button>
+            <button class="action-btn" id="restartBtn">Restart</button>
         </div>
     </header>
 
     <main>
-        <canvas id="gameCanvas" width="1000" height="600"></canvas>
-    </main>
+        <section class="glass-card">
+            <div class="hud">
+                <div class="stat"><div class="label">Distance</div><div class="value" id="distance">0</div></div>
+                <div class="stat"><div class="label">Streak</div><div class="value" id="streak">0</div></div>
+                <div class="stat"><div class="label">Best</div><div class="value" id="best">0</div></div>
+                <div class="stat"><div class="label">Pace</div><div class="value" id="pace">--</div></div>
+            </div>
+            <div class="board-shell">
+                <canvas id="board"></canvas>
+            </div>
+            <div style="margin-top:10px;color:#aeb7db;font-size:13px;">Jump with Space / W / ↑. Hold to extend the arc. P to pause.</div>
+        </section>
 
-    <footer>
-        <p>SPACE or Click to jump | Double-jump in mid-air to avoid obstacles</p>
-    </footer>
+        <aside class="glass-card sidebar">
+            <div class="eyebrow">Stay ahead</div>
+            <h2>See the rhythm</h2>
+            <ul class="tips">
+                <li>Tap jumps for singles; hold briefly to clear stacked spikes.</li>
+                <li>Land on platforms to reset your coyote window.</li>
+                <li>When unsure, stay low and react late—don’t overfloat.</li>
+            </ul>
+            <div class="chip-row">
+                <span class="chip">Coyote time & buffered jumps</span>
+                <span class="chip">Procedural obstacles</span>
+                <span class="chip">Local best per difficulty</span>
+            </div>
+        </aside>
+    </main>
 
     <div class="game-over-overlay" id="gameOverOverlay">
         <div class="game-over-content">
-            <h1>Crashed!</h1>
-            <p id="gameOverMessage">Distance: 0m</p>
+            <h1 id="gameOverTitle">Game Over</h1>
+            <p id="finalScore">Distance: 0</p>
+            <p id="finalReason"></p>
             <div class="game-over-buttons">
-                <button class="game-over-btn" onclick="location.href='intro.html'">Try Again</button>
-                <button class="game-over-btn" onclick="location.href='../games.html'">Back to Menu</button>
+                <button class="game-over-btn" id="playAgain">Play Again</button>
+                <button class="game-over-btn" onclick="window.location.href='../games.html'">Back to Menu</button>
             </div>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('board');
         const ctx = canvas.getContext('2d');
-        const difficulty = parseInt(new URLSearchParams(window.location.search).get('difficulty')) || 1;
+        const distanceEl = document.getElementById('distance');
+        const streakEl = document.getElementById('streak');
+        const bestEl = document.getElementById('best');
+        const paceEl = document.getElementById('pace');
+        const difficultyLabel = document.getElementById('difficultyLabel');
+        const overlay = document.getElementById('gameOverOverlay');
+        const finalScoreEl = document.getElementById('finalScore');
+        const finalReasonEl = document.getElementById('finalReason');
+        const playAgainBtn = document.getElementById('playAgain');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const restartBtn = document.getElementById('restartBtn');
 
-        const PLAYER_SIZE = 30;
-        const GROUND_HEIGHT = 100;
-        const GRAVITY = 0.6;
-        const JUMP_POWER = -15;
+        const params = new URLSearchParams(window.location.search);
+        const requestedDifficulty = (params.get('difficulty') || 'medium').toLowerCase();
 
-        let player = {
-            x: 100,
-            y: canvas.height - GROUND_HEIGHT - PLAYER_SIZE,
-            width: PLAYER_SIZE,
-            height: PLAYER_SIZE,
-            velocityY: 0,
-            jumping: false,
-            doubleJumpReady: false,
-            color: '#4ECDC4'
+        const CONFIG = {
+            easy: { scroll: 4, gravity: 0.55, jump: 11, spawnEvery: 95, label: 'Easy' },
+            medium: { scroll: 5, gravity: 0.62, jump: 11.8, spawnEvery: 78, label: 'Medium' },
+            hard: { scroll: 6, gravity: 0.7, jump: 12.6, spawnEvery: 64, label: 'Hard' }
         };
+        const settings = CONFIG[requestedDifficulty] || CONFIG.medium;
+        difficultyLabel.textContent = `${settings.label} • ${settings.scroll}px/tick`;
+        const bestKey = `vanilla-geom-${settings.label.toLowerCase()}-best`;
+        let bestScore = Number(localStorage.getItem(bestKey)) || 0;
 
+        let width = 960;
+        let height = 540;
+        let groundY = 0;
+        let player;
         let obstacles = [];
         let distance = 0;
-        let gameRunning = true;
-        let level = difficulty;
-        let speed = 6 + difficulty;
-        let scrollX = 0;
+        let streak = 0;
+        let state = 'ready'; // ready | running | paused | over
+        let spawnTimer = 0;
+        let inputBuffer = 0;
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            width = Math.min(1000, container.clientWidth);
+            height = Math.round(width * 9 / 16);
+            canvas.width = width;
+            canvas.height = height;
+            groundY = height - 80;
+            resetGame();
+        }
+
+        function resetGame() {
+            overlay.classList.remove('active');
+            player = {
+                x: 120,
+                y: groundY - 42,
+                size: 42,
+                vy: 0,
+                grounded: true,
+                coyote: 0,
+                jumpHold: 0
+            };
+            obstacles = [];
+            distance = 0;
+            streak = 0;
+            state = 'ready';
+            spawnTimer = 0;
+            inputBuffer = 0;
+            updateHud();
+            draw();
+        }
+
+        function updateHud() {
+            distanceEl.textContent = Math.floor(distance);
+            streakEl.textContent = streak;
+            bestEl.textContent = bestScore;
+            paceEl.textContent = `${settings.scroll.toFixed(1)} px/tick`;
+        }
 
         const keys = {};
-        document.addEventListener('keydown', (e) => {
-            if (e.key === ' ') {
-                e.preventDefault();
-                jump();
-            }
+        document.addEventListener('keydown', e => {
             keys[e.key.toLowerCase()] = true;
-        });
-        document.addEventListener('keyup', (e) => {
-            keys[e.key.toLowerCase()] = false;
-        });
-        document.addEventListener('click', jump);
-
-        function jump() {
-            if (!gameRunning) return;
-            
-            if (!player.jumping) {
-                player.velocityY = JUMP_POWER;
-                player.jumping = true;
-                player.doubleJumpReady = true;
-            } else if (player.doubleJumpReady) {
-                player.velocityY = JUMP_POWER;
-                player.doubleJumpReady = false;
+            if ([' ', 'w', 'arrowup'].includes(e.key.toLowerCase())) {
+                e.preventDefault();
+                inputBuffer = 8;
+                if (state === 'ready') state = 'running';
+            } else if (e.key.toLowerCase() === 'p') {
+                togglePause();
+            } else if (e.key.toLowerCase() === 'r') {
+                resetGame();
             }
+        });
+        document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+        function togglePause() {
+            if (state === 'over') return;
+            state = state === 'paused' ? 'running' : 'paused';
+            pauseBtn.textContent = state === 'paused' ? 'Resume' : 'Pause';
         }
 
         function spawnObstacle() {
+            const type = Math.random() > 0.4 ? 'spike' : 'block';
+            const widthSpan = type === 'block' ? 60 + Math.random() * 50 : 34;
+            const heightSpan = type === 'block' ? 40 + Math.random() * 26 : 48;
             obstacles.push({
-                x: canvas.width,
-                y: canvas.height - GROUND_HEIGHT - 40,
-                width: 30,
-                height: 40,
-                color: '#FF6B6B'
+                type,
+                x: width + 40,
+                y: groundY - heightSpan,
+                w: widthSpan,
+                h: heightSpan
             });
         }
 
+        function tryJump() {
+            if (player.grounded || player.coyote > 0) {
+                player.vy = -settings.jump;
+                player.grounded = false;
+                player.coyote = 0;
+                player.jumpHold = 12;
+            }
+        }
+
         function update() {
-            if (!gameRunning) return;
+            if (state !== 'running') return;
 
-            // Player physics
-            player.velocityY += GRAVITY;
-            player.y += player.velocityY;
-
-            // Ground collision
-            const groundY = canvas.height - GROUND_HEIGHT - PLAYER_SIZE;
-            if (player.y >= groundY) {
-                player.y = groundY;
-                player.velocityY = 0;
-                player.jumping = false;
-                player.doubleJumpReady = false;
+            if (inputBuffer > 0) {
+                tryJump();
+                inputBuffer = 0;
             }
 
-            // Move obstacles
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                obstacles[i].x -= speed;
-                
-                // Collision detection
-                if (
-                    player.x < obstacles[i].x + obstacles[i].width &&
-                    player.x + player.width > obstacles[i].x &&
-                    player.y < obstacles[i].y + obstacles[i].height &&
-                    player.y + player.height > obstacles[i].y
-                ) {
-                    gameRunning = false;
-                    endGame();
-                }
-
-                // Remove off-screen obstacles
-                if (obstacles[i].x + obstacles[i].width < 0) {
-                    obstacles.splice(i, 1);
-                    distance += 10;
-                    document.getElementById('distance').textContent = Math.floor(distance / 10);
-                }
+            if (player.jumpHold > 0 && (keys[' '] || keys['w'] || keys['arrowup'])) {
+                player.vy -= 0.3;
+                player.jumpHold -= 1;
+            } else {
+                player.jumpHold = 0;
             }
 
-            // Spawn obstacles
-            if (Math.random() < 0.02 * (1 + difficulty * 0.3)) {
+            player.vy += settings.gravity;
+            player.y += player.vy;
+
+            if (player.y + player.size >= groundY) {
+                player.y = groundY - player.size;
+                player.vy = 0;
+                if (!player.grounded) streak += 1;
+                player.grounded = true;
+                player.coyote = 8;
+            } else {
+                player.grounded = false;
+                player.coyote = Math.max(0, player.coyote - 1);
+            }
+
+            obstacles.forEach(ob => ob.x -= settings.scroll);
+            obstacles = obstacles.filter(ob => ob.x + ob.w > -20);
+            spawnTimer += 1;
+            if (spawnTimer >= settings.spawnEvery) {
                 spawnObstacle();
+                spawnTimer = 0;
             }
 
-            // Increase difficulty
-            if (distance % 500 === 0 && distance > 0 && speed < 12) {
-                speed += 0.5;
+            distance += settings.scroll * 0.1;
+
+            for (const ob of obstacles) {
+                if (collides(player, ob)) {
+                    endGame('You hit an obstacle.');
+                    return;
+                }
+            }
+
+            updateHud();
+        }
+
+        function collides(player, ob) {
+            const px = player.x;
+            const py = player.y;
+            const ps = player.size;
+            if (ob.type === 'block') {
+                return px < ob.x + ob.w &&
+                       px + ps > ob.x &&
+                       py < ob.y + ob.h &&
+                       py + ps > ob.y;
+            }
+            // spike triangle: approximate with bounding box and slope check
+            const boxHit = px < ob.x + ob.w && px + ps > ob.x && py < ob.y + ob.h && py + ps > ob.y;
+            if (!boxHit) return false;
+            const spikeTipX = ob.x + ob.w / 2;
+            const spikeTipY = ob.y;
+            const leftSlope = (spikeTipY - (ob.y + ob.h)) / (spikeTipX - ob.x);
+            const rightSlope = (spikeTipY - (ob.y + ob.h)) / (spikeTipX - (ob.x + ob.w));
+            const corners = [
+                { x: px, y: py },
+                { x: px + ps, y: py },
+                { x: px, y: py + ps },
+                { x: px + ps, y: py + ps },
+            ];
+            return corners.some(corner => {
+                if (corner.x <= spikeTipX) {
+                    const yOnEdge = spikeTipY - leftSlope * (spikeTipX - corner.x);
+                    return corner.y >= yOnEdge;
+                } else {
+                    const yOnEdge = spikeTipY - rightSlope * (corner.x - spikeTipX);
+                    return corner.y >= yOnEdge;
+                }
+            });
+        }
+
+        function endGame(reason) {
+            state = 'over';
+            const scoreVal = Math.floor(distance);
+            if (scoreVal > bestScore) {
+                bestScore = scoreVal;
+                localStorage.setItem(bestKey, bestScore);
+            }
+            finalScoreEl.textContent = `Distance: ${scoreVal}`;
+            finalReasonEl.textContent = reason;
+            overlay.classList.add('active');
+        }
+
+        function drawBackground() {
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, '#0c132b');
+            gradient.addColorStop(1, '#0a0f22');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.05)';
+            ctx.fillRect(0, groundY + 1, width, height - groundY - 1);
+            for (let i = 0; i < width; i += 32) {
+                ctx.fillStyle = 'rgba(255,255,255,0.04)';
+                ctx.fillRect(i, groundY, 20, 4);
+            }
+        }
+
+        function drawPlayer() {
+            ctx.fillStyle = '#9de8c7';
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(player.x, player.y, player.size, player.size, 8);
+                ctx.fill();
+            } else {
+                ctx.fillRect(player.x, player.y, player.size, player.size);
+            }
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fillRect(player.x + 6, player.y + 6, 12, 12);
+            ctx.fillRect(player.x + player.size - 18, player.y + player.size - 18, 12, 12);
+        }
+
+        function drawObstacles() {
+            for (const ob of obstacles) {
+                if (ob.type === 'block') {
+                    ctx.fillStyle = '#fcd34d';
+                    if (ctx.roundRect) {
+                        ctx.roundRect(ob.x, ob.y, ob.w, ob.h, 6);
+                        ctx.fill();
+                    } else {
+                        ctx.fillRect(ob.x, ob.y, ob.w, ob.h);
+                    }
+                } else {
+                    ctx.fillStyle = '#fb7185';
+                    ctx.beginPath();
+                    ctx.moveTo(ob.x, ob.y + ob.h);
+                    ctx.lineTo(ob.x + ob.w / 2, ob.y);
+                    ctx.lineTo(ob.x + ob.w, ob.y + ob.h);
+                    ctx.closePath();
+                    ctx.fill();
+                }
             }
         }
 
         function draw() {
-            // Background
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+            drawObstacles();
+            drawPlayer();
 
-            // Ground
-            ctx.fillStyle = '#4A90E2';
-            ctx.fillRect(0, canvas.height - GROUND_HEIGHT, canvas.width, GROUND_HEIGHT);
-
-            // Player
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(player.x + 8, player.y + 8, 6, 6);
-            ctx.fillRect(player.x + 16, player.y + 8, 6, 6);
-
-            // Obstacles
-            obstacles.forEach(obs => {
-                ctx.fillStyle = obs.color;
-                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-            });
-
-            // Distance indicator
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.font = '14px Poppins';
-            ctx.fillText(`Distance: ${Math.floor(distance / 10)}m`, 20, 30);
+            if (state === 'paused') {
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(0, 0, width, height);
+                ctx.fillStyle = '#f1f3ff';
+                ctx.font = 'bold 28px Poppins';
+                ctx.textAlign = 'center';
+                ctx.fillText('Paused', width / 2, height / 2);
+            }
+            if (state === 'ready') {
+                ctx.fillStyle = 'rgba(255,255,255,0.08)';
+                ctx.fillRect(0, 0, width, height);
+                ctx.fillStyle = '#e5e7ff';
+                ctx.font = 'bold 22px Poppins';
+                ctx.textAlign = 'center';
+                ctx.fillText('Press Space to Start', width / 2, height / 2);
+            }
         }
 
-        function endGame() {
-            const overlay = document.getElementById('gameOverOverlay');
-            const message = document.getElementById('gameOverMessage');
-            message.textContent = `Distance: ${Math.floor(distance / 10)}m`;
-            overlay.classList.add('active');
-        }
-
-        function gameLoop() {
-            update();
+        function loop() {
+            requestAnimationFrame(loop);
+            if (state === 'running') update();
             draw();
-            requestAnimationFrame(gameLoop);
         }
 
-        document.getElementById('level').textContent = level;
-        gameLoop();
+        pauseBtn.addEventListener('click', togglePause);
+        restartBtn.addEventListener('click', resetGame);
+        playAgainBtn.addEventListener('click', resetGame);
+        window.addEventListener('resize', resizeCanvas);
+
+        resizeCanvas();
+        resetGame();
+        loop();
     </script>
 </body>
 </html>
