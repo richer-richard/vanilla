@@ -38,9 +38,9 @@
         .stat .label { font-size: 11px; color: #adb6da; letter-spacing: 0.6px; text-transform: uppercase; }
         .stat .value { font-size: 22px; font-weight: 800; margin-top: 4px; }
         .board-shell { margin-top: 8px; background: radial-gradient(circle at 20% 20%, rgba(102, 126, 234, 0.16), transparent 35%), radial-gradient(circle at 80% 10%, rgba(118, 75, 162, 0.16), transparent 30%), rgba(6, 9, 25, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 14px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03); }
-        .grid { display: grid; gap: 6px; }
+        .grid { display: grid; gap: 6px; justify-content: center; }
         .cell {
-            width: 38px; height: 38px;
+            width: var(--cell-size, 38px); height: var(--cell-size, 38px);
             display: inline-flex; align-items: center; justify-content: center;
             border-radius: 10px;
             background: rgba(255, 255, 255, 0.05);
@@ -72,6 +72,7 @@
             <span class="pill" id="difficultyLabel">Medium Board</span>
         </div>
         <div class="header-actions">
+            <button class="action-btn ghost" id="soundBtn" title="Toggle Sound">🔊</button>
             <button class="action-btn ghost" id="pauseBtn">Pause</button>
             <button class="action-btn" id="restartBtn">Restart</button>
         </div>
@@ -156,6 +157,20 @@
         let elapsed = 0;
         let paused = false;
         let ended = false;
+        let backendBoard = null;
+
+        function sizeGrid() {
+            const shell = gridEl.closest('.board-shell');
+            const shellRect = shell.getBoundingClientRect();
+            const availableWidth = shellRect.width - 24;
+            const availableHeight = Math.max(280, window.innerHeight - shellRect.top - 140);
+            const sizeByWidth = Math.floor((availableWidth - (settings.cols - 1) * 6) / settings.cols);
+            const sizeByHeight = Math.floor((availableHeight - (settings.rows - 1) * 6) / settings.rows);
+            const cellSize = Math.max(22, Math.min(46, sizeByWidth, sizeByHeight));
+            gridEl.style.setProperty('--cell-size', `${cellSize}px`);
+            gridEl.style.gridTemplateColumns = `repeat(${settings.cols}, ${cellSize}px)`;
+            gridEl.style.gridAutoRows = `${cellSize}px`;
+        }
 
         function buildGrid() {
             gridEl.style.gridTemplateColumns = `repeat(${settings.cols}, minmax(28px, 1fr))`;
@@ -169,7 +184,7 @@
                     cell.dataset.row = r;
                     cell.dataset.col = c;
                     cell.oncontextmenu = (e) => { e.preventDefault(); toggleFlag(r, c); };
-                    cell.onclick = () => reveal(r, c);
+                    cell.onclick = () => { reveal(r, c); };
                     cell.ondblclick = () => chord(r, c);
                     gridEl.appendChild(cell);
                     row.push({ mine: false, count: 0, flagged: false, revealed: false, el: cell });
@@ -184,6 +199,7 @@
             started = false;
             updateHud();
             updateTimerLabel();
+            sizeGrid();
         }
 
         function startTimer() {
@@ -205,7 +221,46 @@
             revealedEl.textContent = revealed;
         }
 
-        function placeMines(safeRow, safeCol) {
+        async function requestBackendBoard(safeRow, safeCol) {
+            try {
+                const resp = await fetch('/api/minesweeper/board', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        rows: settings.rows,
+                        cols: settings.cols,
+                        mines: settings.mines,
+                        safe_row: safeRow,
+                        safe_col: safeCol
+                    })
+                });
+                if (!resp.ok) return null;
+                const data = await resp.json();
+                if (Array.isArray(data.mines) && Array.isArray(data.counts)) {
+                    return data;
+                }
+            } catch (err) {
+                console.warn('Minesweeper backend unavailable, using local placement.', err);
+            }
+            return null;
+        }
+
+        async function placeMines(safeRow, safeCol) {
+            backendBoard = await requestBackendBoard(safeRow, safeCol);
+            if (backendBoard && Array.isArray(backendBoard.mines)) {
+                backendBoard.mines.forEach(([r, c]) => {
+                    if (cells[r] && cells[r][c]) cells[r][c].mine = true;
+                });
+                minesPlaced = backendBoard.mines.length;
+                for (let r = 0; r < settings.rows; r++) {
+                    for (let c = 0; c < settings.cols; c++) {
+                        const count = backendBoard.counts?.[r]?.[c];
+                        cells[r][c].count = typeof count === 'number' ? count : countNeighbors(r, c);
+                    }
+                }
+                return;
+            }
+
             let placed = 0;
             while (placed < settings.mines) {
                 const r = Math.floor(Math.random() * settings.rows);
@@ -234,18 +289,20 @@
             return count;
         }
 
-        function reveal(r, c) {
+        async function reveal(r, c) {
             if (ended || paused) return;
             const cell = cells[r][c];
             if (cell.flagged || cell.revealed) return;
             if (!started) {
                 started = true;
-                placeMines(r, c);
+                await placeMines(r, c);
                 startTimer();
             }
             cell.revealed = true;
             revealed++;
             cell.el.classList.add('revealed');
+            soundEngine.init();
+            soundEngine.click();
             if (cell.mine) {
                 cell.el.classList.add('mine');
                 cell.el.textContent = '💣';
@@ -337,13 +394,16 @@
             finalReasonEl.textContent = reason;
             finalScoreEl.textContent = `Time: ${elapsed}s`;
             document.getElementById('gameOverTitle').textContent = won ? 'You Win!' : 'Game Over';
+            soundEngine.init();
             if (won) {
+                soundEngine.victory();
                 if (!bestTime || elapsed < bestTime) {
                     bestTime = elapsed;
                     localStorage.setItem(bestKey, bestTime);
                     bestEl.textContent = `${bestTime}s`;
                 }
             } else {
+                soundEngine.explode();
                 // reveal mines
                 cells.flat().forEach(cell => {
                     if (cell.mine) {
@@ -371,9 +431,20 @@
         pauseBtn.addEventListener('click', togglePause);
         restartBtn.addEventListener('click', () => { buildGrid(); });
         playAgainBtn.addEventListener('click', () => { overlay.classList.remove('active'); buildGrid(); });
-        window.addEventListener('resize', () => {});
+        window.addEventListener('resize', sizeGrid);
 
         buildGrid();
+    </script>
+    <script src="../sounds.js"></script>
+    <script>
+        // Initialize sound button
+        soundBtn.textContent = soundEngine.isEnabled() ? '🔊' : '🔇';
+        soundBtn.addEventListener('click', () => {
+            soundEngine.init();
+            soundEngine.toggle();
+            soundBtn.textContent = soundEngine.isEnabled() ? '🔊' : '🔇';
+            soundEngine.click();
+        });
     </script>
 </body>
 </html>

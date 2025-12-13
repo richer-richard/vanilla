@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - VANILLA Arcade Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            min-height: 100vh;
+        }
+
+        header {
+            padding: 18px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.25);
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.06));
+        }
+
+        .brand-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .brand-link h1 {
+            margin: 0;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 18px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 1px;
+        }
+
+        .brand-link span {
+            font-size: 11px;
+            color: #b0b0b0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .pill-link {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            text-decoration: none;
+            border: 1px solid rgba(102, 126, 234, 0.35);
+            color: #dfe4ff;
+            background: rgba(102, 126, 234, 0.08);
+            transition: all 0.25s ease;
+        }
+
+        .pill-link:hover {
+            border-color: rgba(118, 75, 162, 0.75);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.25);
+            transform: translateY(-2px);
+        }
+
+        main {
+            flex: 1;
+            width: min(900px, 100%);
+            margin: 0 auto;
+            padding: 50px 30px 80px;
+        }
+
+        .content-section {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.02), rgba(102, 126, 234, 0.07));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 40px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35), 0 8px 20px rgba(102, 126, 234, 0.08);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .content-section::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(118, 75, 162, 0.18), transparent 40%),
+                        radial-gradient(circle at 80% 10%, rgba(102, 126, 234, 0.18), transparent 35%);
+            pointer-events: none;
+        }
+
+        .content-section > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .eyebrow {
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            color: #9fb0ff;
+            font-size: 11px;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: clamp(32px, 5vw, 48px);
+            line-height: 1.2;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            font-size: clamp(24px, 4vw, 32px);
+            margin: 30px 0 16px;
+            color: #f2f3ff;
+        }
+
+        h2:first-of-type {
+            margin-top: 0;
+        }
+
+        p {
+            color: #c9cee8;
+            line-height: 1.8;
+            margin-bottom: 16px;
+            font-size: 16px;
+        }
+
+        .game-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .game-item {
+            padding: 20px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.1));
+            transition: all 0.25s ease;
+        }
+
+        .game-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(118, 75, 162, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        .game-item h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #f4f6ff;
+        }
+
+        .game-item p {
+            font-size: 14px;
+            color: #dfe4ff;
+            margin: 0;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .tech-tag {
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.35);
+            background: rgba(102, 126, 234, 0.08);
+            color: #dfe4ff;
+            font-weight: 600;
+            font-size: 13px;
+            letter-spacing: 0.3px;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .feature-list li {
+            padding: 12px 0;
+            color: #c9cee8;
+            line-height: 1.6;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-list li::before {
+            content: "▸";
+            color: #9de8c7;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .cta-section {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 15px 40px;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a class="brand-link" href="index.html">
+            <h1>VANILLA</h1>
+            <span>Arcade Hub</span>
+        </a>
+        <div class="nav-actions">
+            <a class="pill-link" href="games.html">Play Games</a>
+            <a class="pill-link" href="index.html">Home</a>
+        </div>
+    </header>
+
+    <main>
+        <div class="content-section">
+            <div class="eyebrow">About the Project</div>
+            <h1>Classic Arcade Games, Reimagined for the Web</h1>
+            <p>
+                VANILLA is a web-based arcade hub that brings timeless classic games into the modern era. 
+                Built with pure HTML5, CSS3, JavaScript, and a Python Flask backend, this project showcases 
+                how retro gaming experiences can be recreated with contemporary web technologies while 
+                maintaining the essence of what made these games legendary.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2>🎮 The Games</h2>
+            <p>
+                Each game has been carefully crafted with attention to gameplay mechanics, visual polish, 
+                and responsive controls. All games include multiple difficulty levels, persistent high scores, 
+                and seamless integration with the Python backend for enhanced features.
+            </p>
+
+            <div class="game-list">
+                <div class="game-item">
+                    <h3>🐍 Snake</h3>
+                    <p>Navigate a growing snake through a grid. Eat food without hitting yourself or walls.</p>
+                </div>
+                <div class="game-item">
+                    <h3>🎾 Pong</h3>
+                    <p>Classic paddle game with adaptive AI. Master the ball physics and outsmart your opponent.</p>
+                </div>
+                <div class="game-item">
+                    <h3>🔨 Breakout</h3>
+                    <p>Break colorful bricks with your paddle. Clear levels and watch the speed ramp up.</p>
+                </div>
+                <div class="game-item">
+                    <h3>⬜ Geometry Dash</h3>
+                    <p>Jump through procedural obstacles. Time your moves and use double-jumps wisely.</p>
+                </div>
+                <div class="game-item">
+                    <h3>💣 Minesweeper</h3>
+                    <p>Logic puzzle classic. Reveal safe tiles and flag mines using deduction.</p>
+                </div>
+                <div class="game-item">
+                    <h3>🚀 Space Shooters</h3>
+                    <p>Defend against alien waves. Collect power-ups and survive progressively harder attacks.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2>🛠️ Technology Stack</h2>
+            <p>
+                This project demonstrates modern web development practices while maintaining clean, 
+                readable code without heavy frameworks.
+            </p>
+
+            <div class="tech-stack">
+                <span class="tech-tag">HTML5 Canvas</span>
+                <span class="tech-tag">CSS3</span>
+                <span class="tech-tag">Vanilla JavaScript</span>
+                <span class="tech-tag">Python 3.8+</span>
+                <span class="tech-tag">Flask</span>
+                <span class="tech-tag">JSON API</span>
+            </div>
+
+            <ul class="feature-list">
+                <li><strong>Frontend:</strong> Pure HTML5 Canvas for game rendering, CSS3 for UI styling, and vanilla JavaScript for game logic</li>
+                <li><strong>Backend:</strong> Python Flask server providing REST API endpoints for game data, leaderboards, and procedural generation</li>
+                <li><strong>Persistence:</strong> LocalStorage for client-side high scores, JSON file store for global leaderboards</li>
+                <li><strong>Responsive Design:</strong> Adaptive canvas sizing and mobile-friendly controls</li>
+                <li><strong>Performance:</strong> 60 FPS target with optimized rendering and efficient game loops</li>
+            </ul>
+        </div>
+
+        <div class="content-section">
+            <h2>✨ Key Features</h2>
+            <ul class="feature-list">
+                <li>Six fully-functional arcade games with polished gameplay</li>
+                <li>Multiple difficulty levels for each game</li>
+                <li>Persistent high scores and leaderboards</li>
+                <li>Smooth 60 FPS gameplay with responsive controls</li>
+                <li>Clean, modern UI with gradient themes and glass-morphism effects</li>
+                <li>Python backend for procedural content generation and AI opponents</li>
+                <li>Keyboard and mouse/touch controls</li>
+                <li>Pause, restart, and navigation features</li>
+                <li>Cross-browser compatible</li>
+            </ul>
+        </div>
+
+        <div class="content-section">
+            <h2>📖 Design Philosophy</h2>
+            <p>
+                VANILLA embraces simplicity and elegance. The name itself reflects the core approach: 
+                <strong>pure, unadulterated web technologies</strong> without relying on heavy frameworks 
+                or libraries. Every line of code serves a purpose, and every feature is carefully considered.
+            </p>
+            <p>
+                The visual design combines retro arcade nostalgia with modern aesthetics—vibrant gradients, 
+                smooth animations, and a consistent purple-blue color scheme create an immersive experience 
+                that feels both classic and contemporary.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2>🚀 Future Enhancements</h2>
+            <p>
+                While VANILLA is fully functional, there are exciting possibilities for expansion:
+            </p>
+            <ul class="feature-list">
+                <li>Additional games (Pac-Man, Asteroids, Tetris, etc.)</li>
+                <li>Sound effects and background music</li>
+                <li>Global online leaderboards with user accounts</li>
+                <li>Multiplayer support for compatible games</li>
+                <li>Achievement system and game statistics</li>
+                <li>Customizable themes and color schemes</li>
+                <li>Mobile app versions (PWA)</li>
+                <li>Tournament mode and daily challenges</li>
+            </ul>
+        </div>
+
+        <div class="cta-section">
+            <h2>Ready to Play?</h2>
+            <p style="margin-bottom: 30px;">Experience classic arcade gaming in your browser, right now.</p>
+            <a href="games.html" class="cta-button">Play Games</a>
+        </div>
+    </main>
+
+    <footer>
+        <div class="brand">VANILLA</div>
+        <p>Arcade Hub — Classic Games Reimagined for the Web</p>
+        <p>© 2025 Built with HTML5, CSS3, JavaScript, and Python Flask</p>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+            if (scrollPosition > 100) {
+                document.body.classList.add('show-footer-gradient');
+            } else {
+                document.body.classList.remove('show-footer-gradient');
+            }
+        });
+    </script>
+</body>
+</html>

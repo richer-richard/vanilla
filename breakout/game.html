@@ -97,6 +97,7 @@
             <span class="pill" id="difficultyLabel">Medium Wall</span>
         </div>
         <div class="header-actions">
+            <button class="action-btn ghost" id="soundBtn" title="Toggle Sound">🔊</button>
             <button class="action-btn ghost" id="pauseBtn">Pause</button>
             <button class="action-btn" id="restartBtn">Restart</button>
         </div>
@@ -163,9 +164,9 @@
         const requestedDifficulty = (params.get('difficulty') || 'medium').toLowerCase();
 
         const CONFIG = {
-            easy: { rows: 5, speed: 4, paddle: 120, label: 'Easy' },
-            medium: { rows: 6, speed: 4.6, paddle: 105, label: 'Medium' },
-            hard: { rows: 7, speed: 5.2, paddle: 90, label: 'Hard' }
+            easy: { rows: 4, speed: 3.5, paddle: 140, label: 'Easy' },
+            medium: { rows: 5, speed: 4.4, paddle: 115, label: 'Medium' },
+            hard: { rows: 6, speed: 5.2, paddle: 95, label: 'Hard' }
         };
 
         const settings = CONFIG[requestedDifficulty] || CONFIG.medium;
@@ -177,6 +178,7 @@
         let width = 800;
         let height = 600;
         let paddle, ball, bricks;
+        const backendLayouts = new Map();
         let score = 0;
         let lives = 3;
         let level = 1;
@@ -196,6 +198,7 @@
         }
 
         function rebuildEntities() {
+            if (!backendLayouts.has(level)) requestBackendLayout(level);
             paddle = {
                 width: settings.paddle,
                 height: 14,
@@ -208,14 +211,53 @@
                 y: paddle.y - 14,
                 r: 9,
                 speed: settings.speed,
-                dx: settings.speed * 0.7,
+                dx: settings.speed * 0.6,
                 dy: -settings.speed,
                 stuck: true
             };
             bricks = buildBricks();
+            requestBackendLayout(level + 1);
+        }
+
+        async function requestBackendLayout(targetLevel) {
+            try {
+                const resp = await fetch('/api/breakout/level', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        level: targetLevel,
+                        width,
+                        difficulty: settings.label.toLowerCase()
+                    })
+                });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (Array.isArray(data.bricks)) {
+                    backendLayouts.set(targetLevel, data);
+                    if (targetLevel === level) {
+                        bricks = buildBricks();
+                        draw();
+                    }
+                }
+            } catch (err) {
+                console.warn('Breakout backend layout unavailable, using local layout.', err);
+            }
         }
 
         function buildBricks() {
+            const layout = backendLayouts.get(level);
+            if (layout && Array.isArray(layout.bricks) && layout.bricks.length) {
+                return layout.bricks.map(b => ({
+                    x: b.x ?? 0,
+                    y: b.y ?? 0,
+                    w: b.w ?? 60,
+                    h: b.h ?? 24,
+                    hp: b.hp ?? 1,
+                    color: b.color || colors[0],
+                    alive: true
+                }));
+            }
+
             const cols = 10;
             const rows = settings.rows;
             const brickWidth = width / cols;
@@ -270,6 +312,7 @@
             lives = 3;
             level = 1;
             state = 'ready';
+            backendLayouts.clear();
             rebuildEntities();
             updateHud();
         }
@@ -296,10 +339,14 @@
             if (ball.x - ball.r < 0 || ball.x + ball.r > width) {
                 ball.dx *= -1;
                 ball.x = Math.max(ball.r, Math.min(width - ball.r, ball.x));
+                soundEngine.init();
+                soundEngine.beep(200, 0.05, 0.2);
             }
             if (ball.y - ball.r < 0) {
                 ball.dy *= -1;
                 ball.y = ball.r;
+                soundEngine.init();
+                soundEngine.beep(200, 0.05, 0.2);
             }
 
             if (
@@ -309,9 +356,11 @@
                 ball.x <= paddle.x + paddle.width
             ) {
                 const hitPos = (ball.x - (paddle.x + paddle.width / 2)) / (paddle.width / 2);
-                ball.dx = hitPos * ball.speed * 1.2;
-                ball.dy = -Math.abs(ball.dy);
+                ball.dx = hitPos * ball.speed * 1.1;
+                ball.dy = -Math.max(Math.abs(ball.dy), ball.speed * 0.9);
                 ball.y = paddle.y - ball.r;
+                soundEngine.init();
+                soundEngine.hit();
             }
 
             for (const brick of bricks) {
@@ -326,10 +375,15 @@
                     if (brick.hp <= 0) {
                         brick.alive = false;
                         score += 15 * level;
-                        ball.speed += 0.06;
-                        ball.dx = Math.sign(ball.dx) * Math.max(3.5, Math.abs(ball.dx) + 0.05);
-                        ball.dy = Math.sign(ball.dy) * Math.max(3.5, Math.abs(ball.dy) + 0.05);
+                        ball.speed += 0.05;
+                        ball.dx = Math.sign(ball.dx) * Math.max(3.3, Math.abs(ball.dx) + 0.04);
+                        ball.dy = Math.sign(ball.dy) * Math.max(3.3, Math.abs(ball.dy) + 0.04);
                         updatePaceLabel();
+                        soundEngine.init();
+                        soundEngine.coin();
+                    } else {
+                        soundEngine.init();
+                        soundEngine.beep(400, 0.08, 0.2);
                     }
                     const overlapX = Math.min(ball.x + ball.r - brick.x, brick.x + brick.w - (ball.x - ball.r));
                     const overlapY = Math.min(ball.y + ball.r - brick.y, brick.y + brick.h - (ball.y - ball.r));
@@ -361,6 +415,7 @@
             if (bricks.every(b => !b.alive)) {
                 level += 1;
                 bricks = buildBricks();
+                requestBackendLayout(level + 1);
                 ball.speed += 0.2;
                 state = 'ready';
                 ball.stuck = true;
@@ -451,6 +506,17 @@
         resetGame();
         updateHud();
         loop();
+    </script>
+    <script src="../sounds.js"></script>
+    <script>
+        // Initialize sound button
+        soundBtn.textContent = soundEngine.isEnabled() ? '🔊' : '🔇';
+        soundBtn.addEventListener('click', () => {
+            soundEngine.init();
+            soundEngine.toggle();
+            soundBtn.textContent = soundEngine.isEnabled() ? '🔊' : '🔇';
+            soundEngine.click();
+        });
     </script>
 </body>
 </html>

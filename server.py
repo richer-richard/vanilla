@@ -17,16 +17,18 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List
 
-from flask import Flask, jsonify, request
+from backends import breakout, geometry_dash, minesweeper, pong as pong_backend, snake as snake_backend, space_shooters
+
+from flask import Flask, jsonify, request, send_from_directory
 
 DEFAULT_SCORES = {
     "snake": [],
-    "tetris": [],
     "pong": [],
     "breakout": [],
     "geometry_dash": [],
@@ -101,12 +103,16 @@ class GameServer:
 
     def __init__(self, scores_path: str | Path | None = None):
         self.store = ScoreStore(scores_path)
-        self.app = Flask(__name__)
+        self.root_dir = Path(__file__).parent.resolve()
+        self.app = Flask(__name__, static_folder=str(self.root_dir), static_url_path='')
         self._register_routes()
 
     def _register_routes(self) -> None:
         app = self.app
         store = self.store
+
+        def clamp(value: float, low: float, high: float) -> float:
+            return max(low, min(high, value))
 
         @app.after_request
         def add_cors_headers(response):
@@ -114,6 +120,10 @@ class GameServer:
             response.headers["Access-Control-Allow-Headers"] = "Content-Type"
             response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
             return response
+
+        @app.route("/", methods=["GET"])
+        def root():
+            return send_from_directory(self.root_dir, "index.html")
 
         @app.route("/health", methods=["GET"])
         def health():
@@ -123,6 +133,10 @@ class GameServer:
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
             )
+
+        @app.route("/api/health", methods=["GET"])
+        def api_health():
+            return health()
 
         @app.route("/scores", methods=["GET"])
         def scores():
@@ -158,6 +172,85 @@ class GameServer:
                 return jsonify({"error": str(exc)}), 400
 
             return jsonify({"ok": True, "entry": entry, "leaderboard": store.leaderboard(game)}), 201
+
+        @app.route("/api/score", methods=["POST", "OPTIONS"])
+        def api_score():
+            return score()
+
+        @app.route("/api/scores", methods=["GET"])
+        def api_scores():
+            return scores()
+
+        @app.route("/api/leaderboard/<game>", methods=["GET"])
+        def api_leaderboard(game: str):
+            return leaderboard(game)
+
+        @app.route("/api/pong/ai-target", methods=["POST", "OPTIONS"])
+        def pong_ai_target():
+            if request.method == "OPTIONS":
+                return ("", 204)
+            payload = request.get_json(silent=True) or {}
+            return jsonify(pong_backend.ai_target(payload))
+
+        @app.route("/api/space/wave", methods=["POST", "OPTIONS"])
+        def space_wave():
+            if request.method == "OPTIONS":
+                return ("", 204)
+            payload = request.get_json(silent=True) or {}
+            wave_num = int(payload.get("wave") or 1)
+            difficulty = str(payload.get("difficulty") or "medium").lower()
+            width_val = float(payload.get("width") or 900)
+            height_val = float(payload.get("height") or 600)
+            plan = space_shooters.wave_plan(wave_num, difficulty, width_val, height_val)
+            # clamp x to canvas width
+            for enemy in plan.get("enemies", []):
+                enemy["x"] = clamp(float(enemy.get("x", 0)), 24, width_val - 24)
+            for power in plan.get("powerups", []):
+                power["x"] = clamp(float(power.get("x", 0)), 24, width_val - 24)
+            return jsonify(plan)
+
+        @app.route("/api/snake/food", methods=["POST", "OPTIONS"])
+        def snake_food():
+            if request.method == "OPTIONS":
+                return ("", 204)
+            payload = request.get_json(silent=True) or {}
+            grid = int(payload.get("grid") or 16)
+            snake_body = payload.get("snake") or []
+            return jsonify(snake_backend.next_food(grid, snake_body))
+
+        @app.route("/api/breakout/level", methods=["POST", "OPTIONS"])
+        def breakout_level():
+            if request.method == "OPTIONS":
+                return ("", 204)
+            payload = request.get_json(silent=True) or {}
+            level = int(payload.get("level") or 1)
+            width_val = float(payload.get("width") or 900)
+            difficulty = str(payload.get("difficulty") or "medium").lower()
+            return jsonify(breakout.level_layout(level, width_val, difficulty))
+
+        @app.route("/api/geometry/pattern", methods=["POST", "OPTIONS"])
+        def geometry_pattern():
+            if request.method == "OPTIONS":
+                return ("", 204)
+            payload = request.get_json(silent=True) or {}
+            distance = float(payload.get("distance") or 0)
+            difficulty = str(payload.get("difficulty") or "medium").lower()
+            ground_y = float(payload.get("ground_y") or 540)
+            width_val = float(payload.get("width") or 960)
+            return jsonify(geometry_dash.pattern(distance, difficulty, ground_y, width_val))
+
+        @app.route("/api/minesweeper/board", methods=["POST", "OPTIONS"])
+        def minesweeper_board():
+            if request.method == "OPTIONS":
+                return ("", 204)
+            payload = request.get_json(silent=True) or {}
+            rows = int(payload.get("rows") or 9)
+            cols = int(payload.get("cols") or 9)
+            mines = int(payload.get("mines") or 10)
+            safe_row = int(payload.get("safe_row") or 0)
+            safe_col = int(payload.get("safe_col") or 0)
+            layout = minesweeper.generate_board(rows, cols, mines, (safe_row, safe_col))
+            return jsonify(layout)
 
     def run(self, host: str = "0.0.0.0", port: int = 5000, debug: bool = False) -> None:
         self.app.run(host=host, port=port, debug=debug)

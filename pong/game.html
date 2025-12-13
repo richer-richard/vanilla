@@ -86,6 +86,7 @@
             <span class="pill" id="difficultyLabel">Medium Rally</span>
         </div>
         <div class="header-actions">
+            <button class="action-btn ghost" id="soundBtn" title="Toggle Sound">🔊</button>
             <button class="action-btn ghost" id="pauseBtn">Pause</button>
             <button class="action-btn" id="restartBtn">Restart</button>
         </div>
@@ -150,9 +151,9 @@
         const requestedDifficulty = (params.get('difficulty') || 'medium').toLowerCase();
 
         const CONFIG = {
-            easy: { ball: 4.2, ai: 0.16, target: 7, label: 'Easy' },
-            medium: { ball: 5.1, ai: 0.21, target: 9, label: 'Medium' },
-            hard: { ball: 6.0, ai: 0.26, target: 11, label: 'Hard' }
+            easy: { ball: 3.6, aiSpeed: 3.6, aiError: 140, target: 7, label: 'Easy', aiMissChance: 0.45, aiLag: 11 },
+            medium: { ball: 4.8, aiSpeed: 4.2, aiError: 110, target: 9, label: 'Medium', aiMissChance: 0.32, aiLag: 9 },
+            hard: { ball: 5.8, aiSpeed: 4.9, aiError: 90, target: 11, label: 'Hard', aiMissChance: 0.24, aiLag: 8 }
         };
         const settings = CONFIG[requestedDifficulty] || CONFIG.medium;
         difficultyLabel.textContent = `${settings.label} • Race to ${settings.target}`;
@@ -160,12 +161,13 @@
 
         let width = 800;
         let height = 600;
-        const paddle = { width: 14, height: 90, speed: 7, x: 0, y: 0 };
-        const ai = { width: 14, height: 90, speed: 6, x: 0, y: 0, targetY: 0 };
-        const ball = { x: 0, y: 0, r: 9, dx: settings.ball, dy: settings.ball * 0.6, speed: settings.ball, trail: [] };
+        const paddle = { width: 14, height: 96, speed: 7, x: 0, y: 0 };
+        const ai = { width: 14, height: 96, speed: settings.aiSpeed, x: 0, y: 0, targetY: 0, idleFrames: 0, missBounce: null };
+        const ball = { x: 0, y: 0, r: 9, dx: settings.ball, dy: settings.ball * 0.55, speed: settings.ball, trail: [] };
         let state = 'ready'; // ready | running | paused | over
         let scores = { player: 0, ai: 0 };
         const keys = {};
+        let bounceId = 0;
 
         function resizeCanvas() {
             const container = canvas.parentElement;
@@ -182,17 +184,23 @@
             paddle.y = height / 2 - paddle.height / 2;
             ai.x = width - paddle.width - 18;
             ai.y = height / 2 - ai.height / 2;
+            ai.targetY = height / 2;
+            ai.idleFrames = 0;
+            ai.missBounce = null;
             ball.x = width / 2;
             ball.y = height / 2;
-            ball.dx = settings.ball * (Math.random() > 0.5 ? 1 : -1);
-            ball.dy = settings.ball * (Math.random() * 0.6 - 0.3);
+            ball.speed = settings.ball;
+            ball.dx = ball.speed * (Math.random() > 0.5 ? 1 : -1);
+            ball.dy = ball.speed * (Math.random() * 0.6 - 0.3);
             ball.trail = [];
+            noteBounce('serve');
         }
 
         function resetMatch() {
             overlay.classList.remove('active');
             scores = { player: 0, ai: 0 };
             state = 'ready';
+            bounceId = 0;
             resetPositions();
             updateHud();
         }
@@ -222,15 +230,84 @@
             pauseBtn.textContent = state === 'paused' ? 'Resume' : 'Pause';
         }
 
+        function clampTargetY(target) {
+            const min = paddle.height / 2 + 12;
+            const max = height - paddle.height / 2 - 12;
+            return Math.max(min, Math.min(max, target));
+        }
+
+        function localAiPlan(reason) {
+            const ballHeadingToAi = ball.dx > 0;
+            let targetY;
+            if (!ballHeadingToAi) {
+                targetY = height / 2 + (Math.random() - 0.5) * (settings.aiError * 0.35);
+            } else {
+                const travel = (ai.x - ball.x) / Math.max(1, Math.abs(ball.dx));
+                let predicted = ball.y + ball.dy * travel;
+                // mirror against top/bottom to approximate wall bounces
+                while (predicted < 0 || predicted > height) {
+                    predicted = predicted < 0 ? -predicted : height - (predicted - height);
+                }
+                const wobble = (Math.random() - 0.5) * settings.aiError;
+                targetY = predicted + wobble;
+            }
+            const miss = Math.random() < settings.aiMissChance;
+            return { targetY: clampTargetY(targetY), miss };
+        }
+
+        function applyAiPlan(plan, tag) {
+            if (tag !== bounceId) return;
+            ai.targetY = clampTargetY(plan.targetY);
+            ai.missBounce = plan.miss ? tag : null;
+            ai.idleFrames = Math.max(ai.idleFrames, plan.idle || settings.aiLag);
+        }
+
+        async function requestBackendAiPlan(reason, tag) {
+            try {
+                const resp = await fetch('/api/pong/ai-target', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        difficulty: settings.label.toLowerCase(),
+                        bounce: { id: tag, reason },
+                        ball: { x: ball.x, y: ball.y, dx: ball.dx, dy: ball.dy },
+                        ai: { y: ai.y, height: ai.height },
+                        player: { y: paddle.y, height: paddle.height },
+                        court: { width, height }
+                    })
+                });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (typeof data.targetY === 'number') {
+                    applyAiPlan({ targetY: data.targetY, miss: !!data.miss, idle: data.idle }, tag);
+                }
+            } catch (err) {
+                console.warn('AI backend unavailable, staying on local plan.', err);
+            }
+        }
+
+        function noteBounce(reason) {
+            bounceId += 1;
+            const tag = bounceId;
+            applyAiPlan(localAiPlan(reason), tag);
+            requestBackendAiPlan(reason, tag);
+        }
+
         function movePaddles() {
             if (keys['arrowup'] || keys['w']) paddle.y -= paddle.speed;
             if (keys['arrowdown'] || keys['s']) paddle.y += paddle.speed;
             paddle.y = Math.max(10, Math.min(height - paddle.height - 10, paddle.y));
 
-            const prediction = ball.y + ball.dy * (ai.x - ball.x) / Math.max(1, ball.dx);
-            ai.targetY = prediction + (Math.random() - 0.5) * 60;
-            if (ai.targetY < ai.y + ai.height / 2) ai.y -= ai.speed + settings.ai;
-            else ai.y += ai.speed + settings.ai;
+            const aiCenter = ai.y + ai.height / 2;
+            if (ai.idleFrames > 0) {
+                ai.idleFrames -= 1;
+            } else {
+                const delta = ai.targetY - aiCenter;
+                const missFactor = ai.missBounce === bounceId ? 0.45 : 1;
+                const maxStep = settings.aiSpeed * missFactor;
+                const step = Math.max(-maxStep, Math.min(maxStep, delta));
+                ai.y += step * 0.9;
+            }
             ai.y = Math.max(10, Math.min(height - ai.height - 10, ai.y));
         }
 
@@ -243,30 +320,40 @@
             if (ball.y - ball.r < 0 || ball.y + ball.r > height) {
                 ball.dy *= -1;
                 ball.y = Math.max(ball.r, Math.min(height - ball.r, ball.y));
+                noteBounce('wall');
+                soundEngine.init();
+                soundEngine.beep(200, 0.05, 0.2);
             }
 
-            const hitPaddle = (p) => {
+            const hitPaddle = (p, who) => {
                 if (ball.x - ball.r < p.x + p.width &&
                     ball.x + ball.r > p.x &&
                     ball.y + ball.r > p.y &&
                     ball.y - ball.r < p.y + p.height) {
                     const offset = (ball.y - (p.y + p.height / 2)) / (p.height / 2);
                     ball.dx = -ball.dx;
-                    ball.dy = offset * ball.speed;
+                    ball.dy = offset * ball.speed * 0.8;
                     ball.x = p === paddle ? p.x + p.width + ball.r : p.x - ball.r;
-                    ball.speed = Math.min(ball.speed + 0.2, settings.ball + 4);
+                    ball.speed = Math.min(ball.speed + 0.18, settings.ball + 2);
                     ball.dx = Math.sign(ball.dx) * ball.speed;
+                    noteBounce(`${who}-paddle`);
+                    soundEngine.init();
+                    soundEngine.hit();
                 }
             };
 
-            hitPaddle(paddle);
-            hitPaddle(ai);
+            hitPaddle(paddle, 'player');
+            hitPaddle(ai, 'ai');
 
             if (ball.x < 0) {
                 scores.ai += 1;
+                soundEngine.init();
+                soundEngine.beep(150, 0.2, 0.3);
                 handlePoint();
             } else if (ball.x > width) {
                 scores.player += 1;
+                soundEngine.init();
+                soundEngine.victory();
                 handlePoint();
             }
         }
@@ -361,6 +448,17 @@
         resizeCanvas();
         resetMatch();
         loop();
+    </script>
+    <script src="../sounds.js"></script>
+    <script>
+        // Initialize sound button
+        soundBtn.textContent = soundEngine.isEnabled() ? '🔊' : '🔇';
+        soundBtn.addEventListener('click', () => {
+            soundEngine.init();
+            soundEngine.toggle();
+            soundBtn.textContent = soundEngine.isEnabled() ? '🔊' : '🔇';
+            soundEngine.click();
+        });
     </script>
 </body>
 </html>

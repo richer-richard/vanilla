@@ -240,6 +240,7 @@
             <span class="pill" id="difficultyLabel">Medium Grid</span>
         </div>
         <div class="header-actions">
+            <button class="action-btn ghost" id="soundBtn" title="Toggle Sound">🔊</button>
             <button class="action-btn ghost" id="pauseBtn">Pause</button>
             <button class="action-btn" id="restartBtn">Restart</button>
         </div>
@@ -299,6 +300,7 @@
         </div>
     </div>
 
+    <script src="../sounds.js"></script>
     <script>
         const canvas = document.getElementById('board');
         const ctx = canvas.getContext('2d');
@@ -313,6 +315,16 @@
         const playAgainBtn = document.getElementById('playAgain');
         const pauseBtn = document.getElementById('pauseBtn');
         const restartBtn = document.getElementById('restartBtn');
+        const soundBtn = document.getElementById('soundBtn');
+
+        // Initialize sound button
+        soundBtn.textContent = soundEngine.isEnabled() ? '🔊' : '🔇';
+        soundBtn.addEventListener('click', () => {
+            soundEngine.init();
+            soundEngine.toggle();
+            soundBtn.textContent = soundEngine.isEnabled() ? '🔊' : '🔇';
+            soundEngine.click();
+        });
 
         const params = new URLSearchParams(window.location.search);
         const requestedDifficulty = (params.get('difficulty') || 'medium').toLowerCase();
@@ -331,6 +343,7 @@
 
         let snake = [];
         let food = null;
+        const foodQueue = [];
         let direction = { x: 1, y: 0 };
         let queuedDirection = { x: 1, y: 0 };
         let score = 0;
@@ -352,15 +365,42 @@
             cellSize = snapped / settings.grid;
         }
 
+        async function requestBackendFood() {
+            try {
+                const resp = await fetch('/api/snake/food', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ grid: settings.grid, snake })
+                });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (typeof data.x === 'number' && typeof data.y === 'number') {
+                    foodQueue.push({ x: data.x, y: data.y });
+                }
+            } catch (err) {
+                console.warn('Snake backend food unavailable, using client RNG.', err);
+            }
+        }
+
         function placeFood() {
-            let candidate;
-            do {
-                candidate = {
-                    x: Math.floor(Math.random() * settings.grid),
-                    y: Math.floor(Math.random() * settings.grid)
-                };
-            } while (snake.some(segment => segment.x === candidate.x && segment.y === candidate.y));
-            food = candidate;
+            const isOccupied = (candidate) => snake.some(segment => segment.x === candidate.x && segment.y === candidate.y);
+            if (foodQueue.length > 0) {
+                const candidate = foodQueue.shift();
+                if (!isOccupied(candidate)) {
+                    food = candidate;
+                }
+            }
+            if (!food || isOccupied(food)) {
+                let candidate;
+                do {
+                    candidate = {
+                        x: Math.floor(Math.random() * settings.grid),
+                        y: Math.floor(Math.random() * settings.grid)
+                    };
+                } while (isOccupied(candidate));
+                food = candidate;
+            }
+            if (foodQueue.length < 2) requestBackendFood();
         }
 
         function resetGame() {
@@ -376,6 +416,7 @@
                 { x: center - 3, y: center }
             ];
             placeFood();
+            requestBackendFood();
             state = 'running';
             accumulator = 0;
             lastFrame = performance.now();
@@ -437,6 +478,8 @@
             overlay.classList.add('active');
             finalScoreEl.textContent = `Score: ${score}`;
             finalReasonEl.textContent = reason;
+            soundEngine.init();
+            soundEngine.gameOver();
             if (score > bestScore) {
                 bestScore = score;
                 localStorage.setItem(bestKey, bestScore);
@@ -469,6 +512,8 @@
                 score += 10;
                 tickInterval = Math.max(settings.tick * 0.6, tickInterval - 2);
                 placeFood();
+                soundEngine.init();
+                soundEngine.coin();
             } else {
                 snake.pop();
             }
