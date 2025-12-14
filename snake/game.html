@@ -304,12 +304,68 @@
 
     <div class="game-over-overlay" id="gameOverOverlay">
         <div class="game-over-content">
-            <h1 id="gameOverTitle">Game Over</h1>
-            <p id="finalScore">Score: 0</p>
-            <p id="finalReason"></p>
+            <div class="game-over-header">
+                <div class="game-over-icon" id="gameOverIcon">💀</div>
+                <div class="game-over-eyebrow" id="gameOverEyebrow">RUN ENDED</div>
+                <h1 id="gameOverTitle">Game Over</h1>
+                <p class="game-over-subtitle" id="gameOverSubtitle">You hit the wall</p>
+            </div>
+            
+            <div class="game-over-stats">
+                <div class="game-over-stats-grid">
+                    <div class="game-over-stat highlight" id="scoreStatBox">
+                        <div class="game-over-stat-value" id="finalScoreValue">0</div>
+                        <div class="game-over-stat-label">Final Score</div>
+                    </div>
+                    <div class="game-over-stat" id="bestStatBox">
+                        <div class="game-over-stat-value" id="finalBestValue">0</div>
+                        <div class="game-over-stat-label">Best Score</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalLengthValue">0</div>
+                        <div class="game-over-stat-label">Snake Length</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalPaceValue">--</div>
+                        <div class="game-over-stat-label">Final Pace</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalFoodValue">0</div>
+                        <div class="game-over-stat-label">Food Eaten</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalDiffValue">--</div>
+                        <div class="game-over-stat-label">Difficulty</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="game-over-message" id="gameOverMessage">
+                <div class="game-over-message-icon">💡</div>
+                <div class="game-over-message-text">
+                    <div class="game-over-message-title" id="messageTitleEl">Keep practicing!</div>
+                    <div class="game-over-message-desc" id="messageDescEl">Try claiming the perimeter early to avoid boxing yourself in.</div>
+                </div>
+            </div>
+            
+            <div class="game-over-progress" id="progressSection">
+                <div class="game-over-progress-header">
+                    <span class="game-over-progress-label">Progress to Best</span>
+                    <span class="game-over-progress-value" id="progressPercent">0%</span>
+                </div>
+                <div class="game-over-progress-bar">
+                    <div class="game-over-progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="game-over-hints">
+                <div class="game-over-hint"><kbd>Space</kbd> Play again</div>
+                <div class="game-over-hint"><kbd>Esc</kbd> Back to menu</div>
+            </div>
+            
             <div class="game-over-buttons">
-                <button class="game-over-btn" id="playAgain">Play Again</button>
-                <button class="game-over-btn" onclick="window.location.href='../games.html'">Back to Menu</button>
+                <button class="game-over-btn primary" id="playAgain">Play Again</button>
+                <button class="game-over-btn secondary" onclick="window.location.href='../games.html'">Back to Menu</button>
             </div>
         </div>
     </div>
@@ -317,7 +373,7 @@
     <script src="../sounds.js"></script>
     <script>
         const canvas = document.getElementById('board');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
         const scoreEl = document.getElementById('score');
         const bestEl = document.getElementById('best');
         const lengthEl = document.getElementById('length');
@@ -344,9 +400,9 @@
         const requestedDifficulty = (params.get('difficulty') || 'medium').toLowerCase();
 
         const DIFFICULTIES = {
-            easy: { grid: 16, tick: 150, label: 'Easy' },
-            medium: { grid: 18, tick: 115, label: 'Medium' },
-            hard: { grid: 22, tick: 90, label: 'Hard' }
+            easy: { grid: 16, tick: 100, label: 'Easy' },
+            medium: { grid: 18, tick: 75, label: 'Medium' },
+            hard: { grid: 22, tick: 55, label: 'Hard' }
         };
 
         const settings = DIFFICULTIES[requestedDifficulty] || DIFFICULTIES.medium;
@@ -487,19 +543,125 @@
             pauseBtn.textContent = state === 'paused' ? 'Resume' : 'Pause';
         }
 
+        // Game over screen elements
+        const gameOverIcon = document.getElementById('gameOverIcon');
+        const gameOverEyebrow = document.getElementById('gameOverEyebrow');
+        const gameOverTitle = document.getElementById('gameOverTitle');
+        const gameOverSubtitle = document.getElementById('gameOverSubtitle');
+        const finalScoreValue = document.getElementById('finalScoreValue');
+        const finalBestValue = document.getElementById('finalBestValue');
+        const finalLengthValue = document.getElementById('finalLengthValue');
+        const finalPaceValue = document.getElementById('finalPaceValue');
+        const finalFoodValue = document.getElementById('finalFoodValue');
+        const finalDiffValue = document.getElementById('finalDiffValue');
+        const scoreStatBox = document.getElementById('scoreStatBox');
+        const bestStatBox = document.getElementById('bestStatBox');
+        const messageTitleEl = document.getElementById('messageTitleEl');
+        const messageDescEl = document.getElementById('messageDescEl');
+        const progressPercent = document.getElementById('progressPercent');
+        const progressFill = document.getElementById('progressFill');
+        const progressSection = document.getElementById('progressSection');
+
+        const tips = [
+            { title: "Perimeter Strategy", desc: "Claim the edges early to give yourself escape routes later." },
+            { title: "Think Two Moves Ahead", desc: "Don't reverse on instinct—plan your next two turns." },
+            { title: "Pace Yourself", desc: "The game speeds up after each snack. Stay calm under pressure." },
+            { title: "Corner Awareness", desc: "Avoid trapping yourself in corners when your snake gets long." },
+            { title: "S-Pattern Movement", desc: "Moving in S-patterns helps cover the board efficiently." },
+            { title: "Stay Central", desc: "Keep near the center for more escape options." }
+        ];
+
+        function getRandomTip() {
+            return tips[Math.floor(Math.random() * tips.length)];
+        }
+
         function endGame(reason) {
             state = 'over';
-            overlay.classList.add('active');
-            finalScoreEl.textContent = `Score: ${score}`;
-            finalReasonEl.textContent = reason;
-            soundEngine.init();
-            soundEngine.gameOver();
-            if (score > bestScore) {
+            const isNewRecord = score > bestScore;
+            const foodEaten = Math.floor(score / 10);
+            
+            // Update best score if needed
+            if (isNewRecord) {
                 bestScore = score;
                 localStorage.setItem(bestKey, bestScore);
             }
+            
+            // Configure overlay based on whether it's a new record
+            if (isNewRecord && score > 0) {
+                overlay.classList.add('victory');
+                gameOverIcon.textContent = '🏆';
+                gameOverIcon.classList.add('victory');
+                gameOverEyebrow.textContent = 'NEW HIGH SCORE!';
+                gameOverEyebrow.classList.add('victory');
+                gameOverTitle.textContent = 'Amazing Run!';
+                scoreStatBox.classList.add('new-record');
+                scoreStatBox.classList.remove('highlight');
+            } else {
+                overlay.classList.remove('victory');
+                gameOverIcon.textContent = '💀';
+                gameOverIcon.classList.remove('victory');
+                gameOverEyebrow.textContent = 'RUN ENDED';
+                gameOverEyebrow.classList.remove('victory');
+                gameOverTitle.textContent = 'Game Over';
+                scoreStatBox.classList.remove('new-record');
+                scoreStatBox.classList.add('highlight');
+            }
+            
+            // Set subtitle based on reason
+            gameOverSubtitle.textContent = reason;
+            
+            // Populate stats
+            finalScoreValue.textContent = score;
+            finalBestValue.textContent = bestScore;
+            finalLengthValue.textContent = snake.length;
+            finalPaceValue.textContent = `${Math.round(1000 / tickInterval)}/s`;
+            finalFoodValue.textContent = foodEaten;
+            finalDiffValue.textContent = settings.label;
+            
+            // Show/update progress bar
+            if (bestScore > 0 && !isNewRecord) {
+                const progress = Math.min(100, Math.round((score / bestScore) * 100));
+                progressPercent.textContent = `${progress}%`;
+                progressFill.style.width = `${progress}%`;
+                progressSection.style.display = 'block';
+            } else if (isNewRecord) {
+                progressPercent.textContent = '100%';
+                progressFill.style.width = '100%';
+                progressSection.style.display = 'block';
+            } else {
+                progressSection.style.display = 'none';
+            }
+            
+            // Set tip message
+            const tip = getRandomTip();
+            messageTitleEl.textContent = tip.title;
+            messageDescEl.textContent = tip.desc;
+            
+            // Show overlay
+            overlay.classList.add('active');
+            
+            soundEngine.init();
+            if (isNewRecord && score > 0) {
+                soundEngine.victory();
+            } else {
+                soundEngine.gameOver();
+            }
+            
             updateHud();
         }
+        
+        // Handle keyboard shortcuts in game over screen
+        document.addEventListener('keydown', (e) => {
+            if (state === 'over') {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    resetGame();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    window.location.href = '../games.html';
+                }
+            }
+        });
 
         function step() {
             direction = queuedDirection;
@@ -524,7 +686,7 @@
             const ateFood = food && next.x === food.x && next.y === food.y;
             if (ateFood) {
                 score += 10;
-                tickInterval = Math.max(settings.tick * 0.6, tickInterval - 2);
+                tickInterval = Math.max(settings.tick * 0.35, tickInterval - 3);
                 placeFood();
                 soundEngine.init();
                 soundEngine.coin();

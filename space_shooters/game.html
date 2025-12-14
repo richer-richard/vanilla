@@ -119,7 +119,7 @@
             backdrop-filter: blur(8px);
             transition: opacity 0.2s ease, transform 0.2s ease;
         }
-        .canvas-overlay.hidden { opacity: 0; pointer-events: none; transform: translateY(6px); }
+        /* (visibility handled by shared .canvas-overlay/.active styles in styles.css) */
 
         .overlay-card {
             width: min(520px, 92%);
@@ -215,7 +215,7 @@
 
             <div class="canvas-shell">
                 <canvas id="board" width="960" height="540" aria-label="Space Shooters game canvas"></canvas>
-                <div class="canvas-overlay" id="startOverlay">
+                <div class="canvas-overlay active" id="startOverlay">
                     <div class="overlay-card">
                         <div class="eyebrow">Mission Brief</div>
                         <h1>Enemies shoot back.</h1>
@@ -261,20 +261,76 @@
 
     <div class="game-over-overlay" id="gameOverOverlay">
         <div class="game-over-content">
-            <h1 id="gameOverTitle">Game Over</h1>
-            <p id="finalScore">Score: 0</p>
-            <p id="finalReason"></p>
+            <div class="game-over-header">
+                <div class="game-over-icon" id="gameOverIcon">🚀</div>
+                <div class="game-over-eyebrow" id="gameOverEyebrow">MISSION FAILED</div>
+                <h1 id="gameOverTitle">Ship Destroyed</h1>
+                <p class="game-over-subtitle" id="gameOverSubtitle">Your shields were depleted</p>
+            </div>
+            
+            <div class="game-over-stats">
+                <div class="game-over-stats-grid">
+                    <div class="game-over-stat highlight" id="scoreStatBox">
+                        <div class="game-over-stat-value" id="finalScoreValue">0</div>
+                        <div class="game-over-stat-label">Final Score</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalWaveValue">1</div>
+                        <div class="game-over-stat-label">Wave Reached</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalKillsValue">0</div>
+                        <div class="game-over-stat-label">Enemies Killed</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalShieldsValue">0</div>
+                        <div class="game-over-stat-label">Shields Used</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalPowerupsValue">0</div>
+                        <div class="game-over-stat-label">Powerups</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalDiffValue">--</div>
+                        <div class="game-over-stat-label">Difficulty</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="game-over-message" id="gameOverMessage">
+                <div class="game-over-message-icon">💡</div>
+                <div class="game-over-message-text">
+                    <div class="game-over-message-title" id="messageTitleEl">Stay mobile</div>
+                    <div class="game-over-message-desc" id="messageDescEl">Keep moving to dodge enemy fire and grab powerups.</div>
+                </div>
+            </div>
+            
+            <div class="game-over-progress" id="progressSection" style="display:none;">
+                <div class="game-over-progress-header">
+                    <span class="game-over-progress-label">Mission Progress</span>
+                    <span class="game-over-progress-value" id="progressPercent">0%</span>
+                </div>
+                <div class="game-over-progress-bar">
+                    <div class="game-over-progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="game-over-hints">
+                <div class="game-over-hint"><kbd>Space</kbd> Play again</div>
+                <div class="game-over-hint"><kbd>Esc</kbd> Back to menu</div>
+            </div>
+            
             <div class="game-over-buttons">
-                <button class="game-over-btn" id="playAgain" type="button">Play Again</button>
-                <button class="game-over-btn" type="button" onclick="window.location.href='../games.html'">Back to Menu</button>
+                <button class="game-over-btn primary" id="playAgain" type="button">Play Again</button>
+                <button class="game-over-btn secondary" type="button" onclick="window.location.href='../games.html'">Back to Menu</button>
             </div>
         </div>
     </div>
 
-    <script src="../sounds.js"></script>
+        <script src="../sounds.js"></script>
     <script>
         const canvas = document.getElementById('board');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
 
         const scoreEl = document.getElementById('score');
         const waveEl = document.getElementById('wave');
@@ -304,6 +360,11 @@
         };
         const settings = CONFIG[requestedDifficulty] || CONFIG.medium;
         difficultyLabel.textContent = `${settings.label} • ${settings.lives} shields`;
+
+        const TARGET_FPS = 120;
+        const STEP = 1 / TARGET_FPS;
+        const MAX_FRAME_DT = 0.05;
+        const MAX_STEPS_PER_FRAME = Math.ceil(MAX_FRAME_DT / STEP);
 
         const WORLD = { w: canvas.width, h: canvas.height };
 
@@ -490,6 +551,7 @@
         const game = {
             state: 'ready', // ready | running | paused | over
             lastTime: 0,
+            accumulator: 0,
             score: 0,
             wave: 0,
             stars: initStars(),
@@ -522,11 +584,12 @@
             gameOverOverlay.classList.remove('active');
             game.state = 'ready';
             game.lastTime = 0;
+            game.accumulator = 0;
             game.score = 0;
             game.wave = 0;
             input.fireHeld = false;
             input.pointerActive = false;
-            startOverlay.classList.remove('hidden');
+            startOverlay.classList.add('active');
             pauseBtn.textContent = 'Pause';
             resetEntities();
             updateHud();
@@ -537,7 +600,7 @@
             if (game.state === 'paused') return;
             if (game.state === 'running') return;
             game.state = 'running';
-            startOverlay.classList.add('hidden');
+            startOverlay.classList.remove('active');
             spawnWave(1);
             updateHud();
         }
@@ -549,14 +612,79 @@
             pauseBtn.textContent = game.state === 'paused' ? 'Resume' : 'Pause';
         }
 
+        // Game over screen elements
+        const gameOverIcon = document.getElementById('gameOverIcon');
+        const gameOverEyebrow = document.getElementById('gameOverEyebrow');
+        const gameOverTitle = document.getElementById('gameOverTitle');
+        const gameOverSubtitle = document.getElementById('gameOverSubtitle');
+        const finalScoreValue = document.getElementById('finalScoreValue');
+        const finalWaveValue = document.getElementById('finalWaveValue');
+        const finalKillsValue = document.getElementById('finalKillsValue');
+        const finalShieldsValue = document.getElementById('finalShieldsValue');
+        const finalPowerupsValue = document.getElementById('finalPowerupsValue');
+        const finalDiffValue = document.getElementById('finalDiffValue');
+        const scoreStatBox = document.getElementById('scoreStatBox');
+        const messageTitleEl = document.getElementById('messageTitleEl');
+        const messageDescEl = document.getElementById('messageDescEl');
+
+        let totalKills = 0;
+        let totalShieldsUsed = 0;
+        let totalPowerups = 0;
+
+        const tips = [
+            { title: "Stay Mobile", desc: "Keep moving to dodge enemy fire and grab powerups." },
+            { title: "Autofire Advantage", desc: "Use Shift to toggle autofire during heavy waves." },
+            { title: "Powerup Priority", desc: "Grab Multi buds for wave clears, Rapid for bosses." },
+            { title: "Watch the Lanes", desc: "Track yellow enemy bullets—they're your biggest threat." },
+            { title: "Edge Safety", desc: "Use screen edges to limit enemy approach angles." },
+            { title: "Multi-Shot Timing", desc: "Triple shots are best against spread formations." }
+        ];
+
+        function getRandomTip() {
+            return tips[Math.floor(Math.random() * tips.length)];
+        }
+
         function endGame(reason) {
             game.state = 'over';
-            finalScoreEl.textContent = `Score: ${game.score}`;
-            finalReasonEl.textContent = reason || '';
+            
+            // Configure overlay
+            gameOverIcon.textContent = '💥';
+            gameOverEyebrow.textContent = 'MISSION FAILED';
+            gameOverTitle.textContent = 'Ship Destroyed';
+            gameOverSubtitle.textContent = reason || 'Your shields were depleted';
+            
+            // Populate stats
+            finalScoreValue.textContent = game.score;
+            finalWaveValue.textContent = game.wave;
+            finalKillsValue.textContent = totalKills;
+            finalShieldsValue.textContent = totalShieldsUsed;
+            finalPowerupsValue.textContent = totalPowerups;
+            finalDiffValue.textContent = settings.label;
+            
+            // Set tip message
+            const tip = getRandomTip();
+            messageTitleEl.textContent = tip.title;
+            messageDescEl.textContent = tip.desc;
+            
+            // Show overlay
             gameOverOverlay.classList.add('active');
+            
             soundEngine.init();
             soundEngine.gameOver();
         }
+        
+        // Handle keyboard shortcuts in game over screen
+        document.addEventListener('keydown', (e) => {
+            if (game.state === 'over') {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    resetGame();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    window.location.href = '../games.html';
+                }
+            }
+        });
 
         function schedulePowerupDrop(type, x, delay) {
             const t = normalizePowerType(type);
@@ -859,8 +987,26 @@
                 const hit = Math.abs(e.x - player.x) < (e.w + player.w) / 2 && Math.abs(e.y - player.y) < (e.h + player.h) / 2;
                 if (!hit) continue;
                 if (player.invuln > 0) continue;
+                
+                // Direct collision = instant heavy damage
                 player.hp = 0;
-                player.invuln = 0.1;
+                player.lives -= 1;
+                explode(player.x, player.y, 'rgba(255, 122, 162, 0.9)');
+                soundEngine.init();
+                soundEngine.explode();
+                
+                if (player.lives <= 0) {
+                    endGame('Collided with enemy ship.');
+                    return;
+                }
+                
+                // Respawn with invulnerability
+                player.hp = player.maxHp;
+                player.invuln = 1.5;
+                game.bullets = [];
+                game.enemyBullets = [];
+                game.powerups = [];
+                game.scheduledDrops = [];
                 break;
             }
 
@@ -998,9 +1144,17 @@
             if (!game.lastTime) game.lastTime = now;
             const rawDt = (now - game.lastTime) / 1000;
             game.lastTime = now;
-            const dt = clamp(rawDt, 0, 0.05);
+            const frameDt = clamp(rawDt, 0, MAX_FRAME_DT);
+            game.accumulator += frameDt;
 
-            if (game.state !== 'over') step(dt);
+            let steps = 0;
+            while (game.accumulator >= STEP && steps < MAX_STEPS_PER_FRAME) {
+                if (game.state !== 'over') step(STEP);
+                game.accumulator -= STEP;
+                steps += 1;
+            }
+            if (steps === MAX_STEPS_PER_FRAME) game.accumulator = 0;
+
             render();
             requestAnimationFrame(frame);
         }

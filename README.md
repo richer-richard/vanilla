@@ -9,31 +9,83 @@
 [![HTML5](https://img.shields.io/badge/HTML5-Canvas-orange.svg)](https://developer.mozilla.org/en-US/docs/Web/HTML)
 [![JavaScript](https://img.shields.io/badge/JavaScript-Vanilla-yellow.svg)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 
-A modern web-based arcade hub featuring 6 classic games reimagined with HTML5 Canvas, vanilla JavaScript, and a Python Flask backend. Experience timeless arcade gameplay with smooth 60 FPS rendering, responsive controls, and polished modern UI.
+A modern web-based arcade hub featuring 6 classic games reimagined with HTML5 Canvas, vanilla JavaScript, and a small Python Flask backend.
+
+If you’ve never run a local web project before: you’ll run one Python command to start a local server, then open a link in your browser (Chrome/Firefox/Safari) to play. The backend is optional for gameplay, but enables leaderboards and “helper” endpoints (procedural levels, AI planning) that some games can use.
+
+## 🚀 Quick Start (Play)
+
+1. **Install Python 3.8+**
+   - Check it’s installed: `python --version` (or `python3 --version`)
+2. **Install the Python dependencies**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+3. **Run the arcade hub**
+   ```bash
+   python3 app.py
+   ```
+4. **Play**
+   - If a browser tab doesn’t open automatically, go to `http://localhost:5000`
+   - Click **Games** → pick a game → choose a difficulty → click **Start** on the game screen
+
+> Tip: You *can* open `index.html` directly, but most browsers restrict some features on `file://` pages (especially `fetch('/api/...')`). Running the server avoids that and gives you the full experience.
 
 ## 🎮 Games Included
 
-1. **Snake** 🐍 - Navigate your growing snake through the grid. Eat food without hitting yourself or walls.
-2. **Pong** 🎾 - Classic two-player paddle game with adaptive AI opponent and realistic ball physics.
-3. **Breakout** 🔨 - Break colorful bricks with your paddle. Clear levels as speed ramps up.
-4. **Geometry Dash** ⬜ - Jump through procedurally generated obstacles with double-jump mechanics.
-5. **Minesweeper** 💣 - Logic puzzle classic. Reveal safe tiles and flag mines using deduction.
-6. **Space Shooters** 🚀 - Defend your ship against alien waves. Collect power-ups and survive!
+Each game is a standalone HTML5 Canvas experience with its own intro page, difficulty selection, and persistent local bests. Some games optionally call the Flask backend for AI/procedural content (and fall back to local logic if the backend is offline).
+
+1. **Snake** 🐍 — Grid-based speedrun classic
+   - Eat food to grow and rack up points; avoid walls and your own tail.
+   - Difficulty tunes the initial tick speed and how quickly the snake accelerates.
+   - Optional backend endpoint (`/api/snake/food`) can generate “good” food placement; the game still plays fine without it.
+
+2. **Pong** 🎾 — Readable physics + adaptive opponent
+   - Player vs AI with wall bounces, paddle deflections, and pace ramping.
+   - AI has reaction delay, aim wobble, and “miss” chance that scale by difficulty (plus an optional backend planner at `/api/pong/ai-target`).
+   - Clean HUD and instant restarts make it great for quick matches.
+
+3. **Breakout** 🔨 — Brick clearing with level progression
+   - Clear a wall of bricks while keeping the ball in play; lose a life if it falls past the paddle.
+   - Level layouts can be generated locally or fetched from the backend (`/api/breakout/level`).
+   - Pace increases as you progress, keeping later levels tense without turning random.
+
+4. **Geometry Dash** ⬜ — Fixed-step runner with procedural patterns
+   - Endless runner with jump + double-jump timing, plus orbs/portals that change the flow.
+   - Obstacle patterns can be generated locally or requested from the backend (`/api/geometry/pattern`).
+   - Includes a global leaderboard powered by the Flask score API.
+
+5. **Minesweeper** 💣 — Logic puzzle with modern UX
+   - Left-click reveals, right-click flags, double-click “chords” to clear around a number.
+   - Board generation can be local or backend-assisted (`/api/minesweeper/board`) for consistent first-click safety.
+   - Built to be playable on trackpads/touch with big targets and clear states.
+
+6. **Space Shooters** 🚀 — Wave survival with power-ups
+   - Dodge enemy fire, clear waves, and manage survivability (hull/shields).
+   - Power-ups (“buds”) temporarily change your weapon (rapid fire / multi-shot).
+   - Enemy waves can be generated locally or planned by the backend (`/api/space/wave`).
 
 ## ✨ Features
 
-- **Modern Web Interface**: Beautiful gradient backgrounds, smooth animations, and glass-morphism UI
-- **Multiple Difficulty Levels**: Easy, Medium, and Hard modes for each game
-- **Responsive Design**: Adaptive canvas scaling for different screen sizes
-- **Persistent High Scores**: LocalStorage for client-side best scores, backend for global leaderboards
-- **Python Backend**: Flask server for procedural generation, AI logic, and score persistence
-- **Smooth Gameplay**: 60 FPS target with optimized rendering and efficient game loops
-- **Full Controls**: Keyboard, mouse, and touch support with pause/restart functionality
+- **Modern Web Interface**: Gradient backgrounds, glass-morphism cards, and consistent HUD styling across the hub and each game.
+- **Multiple Difficulty Levels**: Easy/Medium/Hard per game, usually adjusting speed, density, or AI forgiveness rather than just “more enemies”.
+- **Responsive Design**: Canvases scale with the viewport, keeping gameplay readable on desktop and smaller screens.
+- **Persistent Scores**:
+  - Local bests saved with `localStorage` (per game + difficulty).
+  - Optional global leaderboards via the Flask server (`/api/leaderboard/<game>`, `/api/score`).
+- **Python Backend (Flask)**: Provides procedural generation helpers and lightweight JSON persistence (`scores.json`), but the frontend degrades gracefully when the server is offline.
+- **Smooth Gameplay (120 FPS Target)**:
+  - Games run a fixed-step 120Hz simulation for consistent timing and input feel.
+  - Rendering uses `requestAnimationFrame`, so the visible FPS is capped by your monitor (e.g., 60Hz monitors render at ~60fps, 120/144Hz monitors can render smoother).
+- **Full Controls**: Keyboard-first controls, with mouse/touch support where it improves UX (e.g., Minesweeper interactions, Space Shooters steering).
 
 ## 📋 Project Structure
 
 ```
 vanilla/
+├── favicon.svg                  # Browser tab icon (linked via <link rel="icon">)
 ├── index.html                   # Homepage
 ├── games.html                   # Game selection page
 ├── about.html                   # About/introduction page
@@ -68,11 +120,25 @@ vanilla/
     └── game.html
 ```
 
+### What are `intro.html` and `game.html`?
+
+- `intro.html` is the “lobby” for a game: it explains the goal, shows the controls, and lets you choose a difficulty.
+- `game.html` is the actual game: it renders to a `<canvas>` and runs the game loop.
+- Difficulty is passed as a URL parameter like `game.html?difficulty=medium`. If you open a `game.html` directly, it will default to Medium.
+
+## 🧷 What is `favicon.svg`?
+
+A **favicon** is the small site icon that browsers show in places like the tab bar, bookmarks, and “recent sites”. This project uses an SVG favicon so it stays crisp at any size.
+
+In this repo, `favicon.svg` is referenced by basically every page via a `<link rel="icon" ...>` tag (for example: `index.html` uses `favicon.svg`, while game pages use `../favicon.svg`).
+
+It’s not required for gameplay or the backend API — it’s purely branding/UX. If you ever want to remove it, delete the `<link rel="icon" ...>` tags across the HTML files and then delete `favicon.svg`.
+
 ## 🔧 Installation
 
 ### Requirements
 - Python 3.8 or higher
-- Flask 2.0+
+- Flask 2.0+ (installed via `requirements.txt`)
 
 ### Setup
 
@@ -83,40 +149,46 @@ cd vanilla
 ```
 
 2. **Create a virtual environment (recommended)**
+
+A virtual environment keeps this project’s Python packages separate from the rest of your machine.
 ```bash
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
 3. **Install dependencies**
 ```bash
-pip install flask
+pip install -r requirements.txt
 ```
 
 ## ▶️ Running the Application
 
 ### Option 1: Using app.py (Recommended)
 ```bash
-python app.py
+python3 app.py
 ```
-This will start the server and automatically open the arcade hub in your default browser.
+This will start the server and (by default) open the arcade hub in your default browser.
+
+- If the browser doesn’t open: visit `http://localhost:5000`
+- To stop the server: press `Ctrl+C` in the terminal
 
 ### Option 2: Using server.py
 ```bash
-python server.py
+python3 server.py
 ```
 This starts just the server without auto-opening the browser.
 
 The server will start on `http://localhost:5000` by default. Open this URL in your web browser to access the arcade hub.
 
 ### Environment Variables (Optional)
-- `HOST` - Server host (default: 0.0.0.0)
+- `HOST` - Server host (server.py default: 0.0.0.0, app.py default: 127.0.0.1)
 - `PORT` - Server port (default: 5000)
 - `DEBUG` - Enable debug mode (default: False)
+- `AUTO_OPEN` - Auto-open browser when running app.py (default: 1)
 
 ```bash
 # Example
-HOST=127.0.0.1 PORT=8080 DEBUG=1 python server.py
+HOST=127.0.0.1 PORT=8080 DEBUG=1 python3 server.py
 ```
 
 ## 🎮 Game Controls
@@ -221,7 +293,7 @@ const CONFIG = {
 
 ## 📊 Performance
 
-- **FPS**: 60 frames per second target with requestAnimationFrame
+- **FPS**: 120 FPS simulation target (fixed 120Hz step); rendering uses requestAnimationFrame and is limited by display refresh rate
 - **Memory**: Efficient state management with minimal memory footprint
 - **CPU**: Optimized rendering with minimal CPU usage
 - **Responsive**: Instant UI responsiveness across all interactions
@@ -234,11 +306,18 @@ const CONFIG = {
 - Check browser console for JavaScript errors
 - Verify all HTML files are in correct directories
 
+If you see errors like “`GET /api/... 404`”:
+- You’re probably opening the HTML directly as a file, or the server isn’t running.
+- Start the server (`python3 app.py`) and load the site from `http://localhost:5000`.
+
 ### Backend features not working
-- Check that Flask server is running: `python server.py`
+- Check that Flask server is running: `python3 server.py`
 - Verify Python dependencies are installed: `pip install flask`
 - Check server console for error messages
 - Games will use fallback client-side logic if backend is unavailable
+
+Quick sanity check:
+- Open `http://localhost:5000/health` and confirm you get `{ "status": "ok", ... }`
 
 ### Performance issues
 - Close other browser tabs to free resources
@@ -257,18 +336,34 @@ Tested and working on:
 ## 📝 Technical Details
 
 ### Game Loop Pattern
-All games use a consistent pattern:
+All games use a consistent fixed-step simulation pattern (120Hz) with `requestAnimationFrame` rendering.
+
+What that means in practice:
+- The **simulation** advances in fixed, tiny time slices (120 times per second), so physics and input feel consistent even when your laptop is busy.
+- The **rendering** (drawing to the screen) happens as fast as your monitor refreshes (usually 60Hz, 120Hz, or 144Hz).
+- So you might *see* ~60 FPS on a 60Hz monitor, but the game still *simulates* at 120Hz internally.
+
+Reference pattern:
 ```javascript
-function loop(timestamp) {
+const TARGET_FPS = 120;
+const STEP = 1 / TARGET_FPS;
+let last = performance.now();
+let accumulator = 0;
+
+function loop(now) {
     requestAnimationFrame(loop);
-    const deltaTime = timestamp - lastTime;
-    lastTime = timestamp;
-    
-    if (state === 'running') {
-        update(deltaTime);
+    accumulator += Math.min(0.05, (now - last) / 1000);
+    last = now;
+
+    while (accumulator >= STEP) {
+        if (state === 'running') update(STEP);
+        accumulator -= STEP;
     }
+
     render();
 }
+
+requestAnimationFrame(loop);
 ```
 
 ### Collision Detection

@@ -12,6 +12,77 @@ PALETTE = [
 ]
 
 
+def _physics_for_level(level: int, difficulty: str, rng: random.Random) -> Dict[str, float]:
+    difficulty_key = (difficulty or "medium").lower()
+    base = {
+        "easy": {
+            "maxBounceDeg": 60.0,
+            "paddleInfluence": 0.20,
+            "spinFromPaddle": 0.016,
+            "spinFromEdge": 0.14,
+            "spinMagnus": 0.060,
+            "spinDecay": 0.992,
+            "maxSpin": 0.50,
+            "speedUpBrick": 0.050,
+            "speedUpLevel": 0.22,
+            "maxSpeed": 8.2,
+            "minSpeed": 3.0,
+            "paddleSpeed": 8.3,
+        },
+        "medium": {
+            "maxBounceDeg": 62.0,
+            "paddleInfluence": 0.24,
+            "spinFromPaddle": 0.020,
+            "spinFromEdge": 0.18,
+            "spinMagnus": 0.075,
+            "spinDecay": 0.991,
+            "maxSpin": 0.55,
+            "speedUpBrick": 0.060,
+            "speedUpLevel": 0.26,
+            "maxSpeed": 8.7,
+            "minSpeed": 3.2,
+            "paddleSpeed": 8.6,
+        },
+        "hard": {
+            "maxBounceDeg": 64.0,
+            "paddleInfluence": 0.27,
+            "spinFromPaddle": 0.023,
+            "spinFromEdge": 0.20,
+            "spinMagnus": 0.085,
+            "spinDecay": 0.990,
+            "maxSpin": 0.60,
+            "speedUpBrick": 0.070,
+            "speedUpLevel": 0.30,
+            "maxSpeed": 9.2,
+            "minSpeed": 3.4,
+            "paddleSpeed": 9.0,
+        },
+    }.get(difficulty_key, {})
+
+    lvl = max(1, int(level))
+    progress = min(1.0, max(0.0, (lvl - 1) / 6))
+
+    # Gentle per-level tuning (deterministic via seed).
+    max_speed = base.get("maxSpeed", 8.7) + progress * 0.55 + rng.uniform(-0.05, 0.05)
+    speed_up_brick = base.get("speedUpBrick", 0.06) + progress * 0.015 + rng.uniform(-0.004, 0.004)
+    paddle_influence = base.get("paddleInfluence", 0.24) + progress * 0.02 + rng.uniform(-0.01, 0.01)
+
+    return {
+        "maxBounceDeg": base.get("maxBounceDeg", 62.0) + rng.uniform(-2.0, 2.0) * 0.35,
+        "paddleInfluence": max(0.0, paddle_influence),
+        "spinFromPaddle": max(0.0, base.get("spinFromPaddle", 0.02) + rng.uniform(-0.002, 0.002)),
+        "spinFromEdge": max(0.0, base.get("spinFromEdge", 0.18) + rng.uniform(-0.02, 0.02)),
+        "spinMagnus": max(0.0, base.get("spinMagnus", 0.075) + rng.uniform(-0.01, 0.01)),
+        "spinDecay": min(0.999, max(0.95, base.get("spinDecay", 0.991) + rng.uniform(-0.002, 0.002))),
+        "maxSpin": max(0.0, base.get("maxSpin", 0.55) + rng.uniform(-0.04, 0.04)),
+        "speedUpBrick": max(0.0, speed_up_brick),
+        "speedUpLevel": max(0.0, base.get("speedUpLevel", 0.26) + rng.uniform(-0.03, 0.03) * 0.35),
+        "maxSpeed": max(1.0, max_speed),
+        "minSpeed": max(0.5, base.get("minSpeed", 3.2) + rng.uniform(-0.1, 0.1) * 0.2),
+        "paddleSpeed": max(1.0, base.get("paddleSpeed", 8.6) + progress * 0.25 + rng.uniform(-0.1, 0.1)),
+    }
+
+
 def level_layout(level: int, width: float, difficulty: str) -> Dict[str, object]:
     rng = random.Random(f"breakout-{difficulty}-{level}-{width}")
     cols = 10
@@ -39,5 +110,5 @@ def level_layout(level: int, width: float, difficulty: str) -> Dict[str, object]
                 }
             )
 
-    return {"cols": cols, "rows": rows, "bricks": bricks}
-
+    physics = _physics_for_level(level, difficulty, rng)
+    return {"cols": cols, "rows": rows, "bricks": bricks, "physics": physics}

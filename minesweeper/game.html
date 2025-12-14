@@ -38,7 +38,7 @@
         .stat { padding: 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.03); }
         .stat .label { font-size: 11px; color: #adb6da; letter-spacing: 0.6px; text-transform: uppercase; }
         .stat .value { font-size: 22px; font-weight: 800; margin-top: 4px; }
-        .board-shell { margin-top: 8px; background: radial-gradient(circle at 20% 20%, rgba(102, 126, 234, 0.16), transparent 35%), radial-gradient(circle at 80% 10%, rgba(118, 75, 162, 0.16), transparent 30%), rgba(6, 9, 25, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 14px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03); }
+        .board-shell { margin-top: 8px; background: radial-gradient(circle at 20% 20%, rgba(102, 126, 234, 0.16), transparent 35%), radial-gradient(circle at 80% 10%, rgba(118, 75, 162, 0.16), transparent 30%), rgba(6, 9, 25, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 14px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03); position: relative; overflow: hidden; --overlay-inset: 14px; --overlay-radius: 12px; }
         .grid { display: grid; gap: 6px; justify-content: center; }
         .cell {
             width: var(--cell-size, 38px); height: var(--cell-size, 38px);
@@ -89,6 +89,23 @@
             </div>
             <div class="board-shell">
                 <div id="grid" class="grid"></div>
+                <div class="canvas-overlay active" id="startOverlay">
+                    <div class="overlay-card">
+                        <div class="eyebrow">Ready to sweep</div>
+                        <h1>Think in numbers.</h1>
+                        <p>Left click reveals a tile. Right click flags a mine. Double click a revealed number to chord when flags match.</p>
+                        <div class="overlay-actions">
+                            <button class="primary-btn" id="startBtn" type="button">Start</button>
+                        </div>
+                        <div class="kbd-row">
+                            <span class="kbd">Click</span>
+                            <span class="kbd">Right‑click</span>
+                            <span class="kbd">Double‑click</span>
+                            <span class="kbd">P</span>
+                            <span class="kbd">R</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div style="margin-top:10px;color:#aeb7db;font-size:13px;">Left click to reveal, right click to flag. Double click a number to chord when flags match.</div>
         </section>
@@ -111,12 +128,68 @@
 
     <div class="game-over-overlay" id="gameOverOverlay">
         <div class="game-over-content">
-            <h1 id="gameOverTitle">Game Over</h1>
-            <p id="finalScore">Time: 0s</p>
-            <p id="finalReason"></p>
+            <div class="game-over-header">
+                <div class="game-over-icon" id="gameOverIcon">💣</div>
+                <div class="game-over-eyebrow" id="gameOverEyebrow">GAME OVER</div>
+                <h1 id="gameOverTitle">Mine Hit!</h1>
+                <p class="game-over-subtitle" id="gameOverSubtitle">That tile was dangerous</p>
+            </div>
+            
+            <div class="game-over-stats">
+                <div class="game-over-stats-grid">
+                    <div class="game-over-stat highlight" id="timeStatBox">
+                        <div class="game-over-stat-value" id="finalTimeValue">0s</div>
+                        <div class="game-over-stat-label">Time</div>
+                    </div>
+                    <div class="game-over-stat" id="bestStatBox">
+                        <div class="game-over-stat-value" id="finalBestValue">--</div>
+                        <div class="game-over-stat-label">Best Time</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalRevealedValue">0</div>
+                        <div class="game-over-stat-label">Tiles Revealed</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalTotalValue">0</div>
+                        <div class="game-over-stat-label">Total Safe</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalFlagsValue">0</div>
+                        <div class="game-over-stat-label">Flags Used</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalDiffValue">--</div>
+                        <div class="game-over-stat-label">Difficulty</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="game-over-message" id="gameOverMessage">
+                <div class="game-over-message-icon">💡</div>
+                <div class="game-over-message-text">
+                    <div class="game-over-message-title" id="messageTitleEl">Stay logical</div>
+                    <div class="game-over-message-desc" id="messageDescEl">Use numbers to deduce safe tiles. Flag only when certain.</div>
+                </div>
+            </div>
+            
+            <div class="game-over-progress" id="progressSection">
+                <div class="game-over-progress-header">
+                    <span class="game-over-progress-label">Board Progress</span>
+                    <span class="game-over-progress-value" id="progressPercent">0%</span>
+                </div>
+                <div class="game-over-progress-bar">
+                    <div class="game-over-progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="game-over-hints">
+                <div class="game-over-hint"><kbd>Space</kbd> Play again</div>
+                <div class="game-over-hint"><kbd>Esc</kbd> Back to menu</div>
+            </div>
+            
             <div class="game-over-buttons">
-                <button class="game-over-btn" id="playAgain">Play Again</button>
-                <button class="game-over-btn" onclick="window.location.href='../games.html'">Back to Menu</button>
+                <button class="game-over-btn primary" id="playAgain">Play Again</button>
+                <button class="game-over-btn secondary" onclick="window.location.href='../games.html'">Back to Menu</button>
             </div>
         </div>
     </div>
@@ -135,6 +208,18 @@
         const playAgainBtn = document.getElementById('playAgain');
         const pauseBtn = document.getElementById('pauseBtn');
         const restartBtn = document.getElementById('restartBtn');
+        const soundBtn = document.getElementById('soundBtn');
+
+        const startOverlay = document.getElementById('startOverlay');
+        const startBtn = document.getElementById('startBtn');
+        let hasStartedOverlay = false;
+
+        function dismissStartOverlay() {
+            if (hasStartedOverlay) return;
+            hasStartedOverlay = true;
+            startOverlay.classList.remove('active');
+            soundEngine.init();
+        }
 
         const params = new URLSearchParams(window.location.search);
         const requestedDifficulty = (params.get('difficulty') || 'medium').toLowerCase();
@@ -388,25 +473,78 @@
             }
         }
 
+        // Game over screen elements
+        const gameOverIcon = document.getElementById('gameOverIcon');
+        const gameOverEyebrow = document.getElementById('gameOverEyebrow');
+        const gameOverTitle = document.getElementById('gameOverTitle');
+        const gameOverSubtitle = document.getElementById('gameOverSubtitle');
+        const finalTimeValue = document.getElementById('finalTimeValue');
+        const finalBestValue = document.getElementById('finalBestValue');
+        const finalRevealedValue = document.getElementById('finalRevealedValue');
+        const finalTotalValue = document.getElementById('finalTotalValue');
+        const finalFlagsValue = document.getElementById('finalFlagsValue');
+        const finalDiffValue = document.getElementById('finalDiffValue');
+        const timeStatBox = document.getElementById('timeStatBox');
+        const bestStatBox = document.getElementById('bestStatBox');
+        const messageTitleEl = document.getElementById('messageTitleEl');
+        const messageDescEl = document.getElementById('messageDescEl');
+        const progressPercent = document.getElementById('progressPercent');
+        const progressFill = document.getElementById('progressFill');
+        const progressSection = document.getElementById('progressSection');
+
+        const tips = [
+            { title: "Corner Strategy", desc: "Start near corners to open big areas safely." },
+            { title: "Number Logic", desc: "Use numbers to deduce safe tiles—flag only when certain." },
+            { title: "Chord Technique", desc: "Double-click confirmed numbers to speed up clears." },
+            { title: "Pattern Recognition", desc: "Learn common patterns like 1-2-1 to identify mines faster." },
+            { title: "Edge Work", desc: "Work from the edges where you have more information." },
+            { title: "Don't Guess Early", desc: "Avoid guessing until you've exhausted all logic." }
+        ];
+
+        function getRandomTip() {
+            return tips[Math.floor(Math.random() * tips.length)];
+        }
+
         function endGame(won, reason) {
             if (ended) return;
             ended = true;
             clearInterval(timer);
-            overlay.classList.add('active');
-            finalReasonEl.textContent = reason;
-            finalScoreEl.textContent = `Time: ${elapsed}s`;
-            document.getElementById('gameOverTitle').textContent = won ? 'You Win!' : 'Game Over';
-            soundEngine.init();
+            
+            const totalSafe = settings.rows * settings.cols - settings.mines;
+            const isNewRecord = won && (!bestTime || elapsed < bestTime);
+            
+            // Update best time if needed
+            if (isNewRecord) {
+                bestTime = elapsed;
+                localStorage.setItem(bestKey, bestTime);
+                bestEl.textContent = `${bestTime}s`;
+            }
+            
+            // Configure overlay based on outcome
             if (won) {
-                soundEngine.victory();
-                if (!bestTime || elapsed < bestTime) {
-                    bestTime = elapsed;
-                    localStorage.setItem(bestKey, bestTime);
-                    bestEl.textContent = `${bestTime}s`;
+                overlay.classList.add('victory');
+                gameOverIcon.textContent = isNewRecord ? '🏆' : '✅';
+                gameOverIcon.classList.add('victory');
+                gameOverEyebrow.textContent = isNewRecord ? 'NEW RECORD!' : 'BOARD CLEARED';
+                gameOverEyebrow.classList.add('victory');
+                gameOverTitle.textContent = isNewRecord ? 'New Best Time!' : 'You Win!';
+                gameOverSubtitle.textContent = reason;
+                if (isNewRecord) {
+                    timeStatBox.classList.add('new-record');
+                    timeStatBox.classList.remove('highlight');
                 }
             } else {
-                soundEngine.explode();
-                // reveal mines
+                overlay.classList.remove('victory');
+                gameOverIcon.textContent = '💣';
+                gameOverIcon.classList.remove('victory');
+                gameOverEyebrow.textContent = 'GAME OVER';
+                gameOverEyebrow.classList.remove('victory');
+                gameOverTitle.textContent = 'Mine Hit!';
+                gameOverSubtitle.textContent = reason;
+                timeStatBox.classList.remove('new-record');
+                timeStatBox.classList.add('highlight');
+                
+                // reveal all mines
                 cells.flat().forEach(cell => {
                     if (cell.mine) {
                         cell.el.textContent = '💣';
@@ -414,7 +552,50 @@
                     }
                 });
             }
+            
+            // Populate stats
+            finalTimeValue.textContent = `${elapsed}s`;
+            finalBestValue.textContent = bestTime ? `${bestTime}s` : '--';
+            finalRevealedValue.textContent = revealed;
+            finalTotalValue.textContent = totalSafe;
+            finalFlagsValue.textContent = flags;
+            finalDiffValue.textContent = settings.label;
+            
+            // Show progress bar
+            const progress = Math.min(100, Math.round((revealed / totalSafe) * 100));
+            progressPercent.textContent = `${progress}%`;
+            progressFill.style.width = `${progress}%`;
+            progressSection.style.display = 'block';
+            
+            // Set tip message
+            const tip = getRandomTip();
+            messageTitleEl.textContent = tip.title;
+            messageDescEl.textContent = tip.desc;
+            
+            // Show overlay
+            overlay.classList.add('active');
+            
+            soundEngine.init();
+            if (won) {
+                soundEngine.victory();
+            } else {
+                soundEngine.explode();
+            }
         }
+        
+        // Handle keyboard shortcuts in game over screen
+        document.addEventListener('keydown', (e) => {
+            if (ended) {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    overlay.classList.remove('active');
+                    buildGrid();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    window.location.href = '../games.html';
+                }
+            }
+        });
 
         function numberColor(num) {
             const palette = {
@@ -429,6 +610,14 @@
             paused = !paused;
             pauseBtn.textContent = paused ? 'Resume' : 'Pause';
         }
+
+        startBtn.addEventListener('click', dismissStartOverlay);
+        document.addEventListener('keydown', (event) => {
+            if (!hasStartedOverlay && (event.key === ' ' || event.key === 'Enter')) {
+                event.preventDefault();
+                dismissStartOverlay();
+            }
+        });
 
         pauseBtn.addEventListener('click', togglePause);
         restartBtn.addEventListener('click', () => { buildGrid(); });

@@ -440,7 +440,7 @@
                 <li>Portals are intentional: commit to the new gravity and keep moving.</li>
             </ul>
             <div class="badge-row" style="margin-top: 14px;">
-                <span class="chip">60 FPS loop</span>
+                <span class="chip">120 FPS loop</span>
                 <span class="chip">Procedural patterns</span>
                 <span class="chip">Global leaderboard</span>
             </div>
@@ -1702,12 +1702,27 @@
                 }
             }
 
+            const TARGET_FPS = 120;
+            const STEP = 1 / TARGET_FPS;
+            const MAX_FRAME_DT = 0.05;
+            const MAX_STEPS_PER_FRAME = Math.ceil(MAX_FRAME_DT / STEP);
+
             let last = performance.now();
+            let accumulator = 0;
             function loop(now) {
                 requestAnimationFrame(loop);
-                const dt = clamp((now - last) / 1000, 0, 0.04);
+                const frameDt = clamp((now - last) / 1000, 0, MAX_FRAME_DT);
                 last = now;
-                if (state.mode === 'running') update(dt);
+                accumulator += frameDt;
+
+                let steps = 0;
+                while (accumulator >= STEP && steps < MAX_STEPS_PER_FRAME) {
+                    if (state.mode === 'running') update(STEP);
+                    accumulator -= STEP;
+                    steps += 1;
+                }
+                if (steps === MAX_STEPS_PER_FRAME) accumulator = 0;
+
                 draw();
             }
 
@@ -1757,7 +1772,7 @@
             setTheme(THEME_FALLBACK.name, THEME_FALLBACK.palette);
             resizeCanvas();
             loadLeaderboard();
-            loop(last);
+            requestAnimationFrame(loop);
         })();
     </script>
 </body>

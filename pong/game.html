@@ -70,6 +70,7 @@
         .stat .label { font-size: 11px; color: #adb6da; letter-spacing: 0.6px; text-transform: uppercase; }
         .stat .value { font-size: 22px; font-weight: 800; margin-top: 4px; }
         .board-shell { margin-top: 8px; background: radial-gradient(circle at 20% 20%, rgba(102, 126, 234, 0.16), transparent 35%), radial-gradient(circle at 80% 10%, rgba(118, 75, 162, 0.16), transparent 30%), rgba(6, 9, 25, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 14px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03); }
+        .board-shell { position: relative; overflow: hidden; --overlay-inset: 14px; --overlay-radius: 12px; }
         canvas { width: 100%; height: auto; aspect-ratio: 4 / 3; display: block; background: #050913; border-radius: 12px; }
         .sidebar h2 { margin: 6px 0 12px; font-size: 20px; }
         .tips { list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: 10px; color: #cbd0ea; }
@@ -103,6 +104,23 @@
             </div>
             <div class="board-shell">
                 <canvas id="board"></canvas>
+                <div class="canvas-overlay active" id="startOverlay">
+                    <div class="overlay-card">
+                        <div class="eyebrow">Ready to rally</div>
+                        <h1>Win the race.</h1>
+                        <p>Move your paddle, serve the ball, and outplay the AI. Use angled returns to force mistakes.</p>
+                        <div class="overlay-actions">
+                            <button class="primary-btn" id="startBtn" type="button">Start</button>
+                        </div>
+                        <div class="kbd-row">
+                            <span class="kbd">W/S</span>
+                            <span class="kbd">↑/↓</span>
+                            <span class="kbd">Space</span>
+                            <span class="kbd">P</span>
+                            <span class="kbd">R</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div style="margin-top:10px;color:#aeb7db;font-size:13px;">Move with W/S or ↑/↓. Space to serve. P to pause.</div>
         </section>
@@ -125,11 +143,58 @@
 
     <div class="game-over-overlay" id="gameOverOverlay">
         <div class="game-over-content">
-            <h1 id="gameOverTitle">Game Over</h1>
-            <p id="finalScore">Score: 0 - 0</p>
+            <div class="game-over-header">
+                <div class="game-over-icon" id="gameOverIcon">🏓</div>
+                <div class="game-over-eyebrow" id="gameOverEyebrow">MATCH COMPLETE</div>
+                <h1 id="gameOverTitle">Game Over</h1>
+                <p class="game-over-subtitle" id="gameOverSubtitle">You gave it your best</p>
+            </div>
+            
+            <div class="game-over-stats">
+                <div class="game-over-stats-grid">
+                    <div class="game-over-stat highlight" id="playerStatBox">
+                        <div class="game-over-stat-value" id="finalPlayerValue">0</div>
+                        <div class="game-over-stat-label">Your Score</div>
+                    </div>
+                    <div class="game-over-stat" id="aiStatBox">
+                        <div class="game-over-stat-value" id="finalAiValue">0</div>
+                        <div class="game-over-stat-label">AI Score</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalRallyValue">0</div>
+                        <div class="game-over-stat-label">Longest Rally</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalPaceValue">--</div>
+                        <div class="game-over-stat-label">Max Speed</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalRaceValue">9</div>
+                        <div class="game-over-stat-label">Race To</div>
+                    </div>
+                    <div class="game-over-stat">
+                        <div class="game-over-stat-value" id="finalDiffValue">--</div>
+                        <div class="game-over-stat-label">Difficulty</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="game-over-message" id="gameOverMessage">
+                <div class="game-over-message-icon">💡</div>
+                <div class="game-over-message-text">
+                    <div class="game-over-message-title" id="messageTitleEl">Control the center</div>
+                    <div class="game-over-message-desc" id="messageDescEl">Return to mid-court after each hit to cut angles.</div>
+                </div>
+            </div>
+            
+            <div class="game-over-hints">
+                <div class="game-over-hint"><kbd>Space</kbd> Play again</div>
+                <div class="game-over-hint"><kbd>Esc</kbd> Back to menu</div>
+            </div>
+            
             <div class="game-over-buttons">
-                <button class="game-over-btn" id="playAgain">Play Again</button>
-                <button class="game-over-btn" onclick="window.location.href='../games.html'">Back to Menu</button>
+                <button class="game-over-btn primary" id="playAgain">Play Again</button>
+                <button class="game-over-btn secondary" onclick="window.location.href='../games.html'">Back to Menu</button>
             </div>
         </div>
     </div>
@@ -137,7 +202,7 @@
     <script src="../sounds.js"></script>
     <script>
         const canvas = document.getElementById('board');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
         const playerScoreEl = document.getElementById('playerScore');
         const aiScoreEl = document.getElementById('aiScore');
         const raceToEl = document.getElementById('raceTo');
@@ -148,28 +213,79 @@
         const playAgainBtn = document.getElementById('playAgain');
         const pauseBtn = document.getElementById('pauseBtn');
         const restartBtn = document.getElementById('restartBtn');
+        const soundBtn = document.getElementById('soundBtn');
+
+        const startOverlay = document.getElementById('startOverlay');
+        const startBtn = document.getElementById('startBtn');
+        let hasStarted = false;
+
+        function startOrServe() {
+            if (!hasStarted) {
+                hasStarted = true;
+                startOverlay.classList.remove('active');
+                soundEngine.init();
+            }
+            if (state === 'ready') state = 'running';
+        }
 
         const params = new URLSearchParams(window.location.search);
         const requestedDifficulty = (params.get('difficulty') || 'medium').toLowerCase();
 
         const CONFIG = {
-            easy: { ball: 3.6, aiSpeed: 3.6, aiError: 140, target: 7, label: 'Easy', aiMissChance: 0.45, aiLag: 11 },
-            medium: { ball: 4.8, aiSpeed: 4.2, aiError: 110, target: 9, label: 'Medium', aiMissChance: 0.32, aiLag: 9 },
-            hard: { ball: 5.8, aiSpeed: 4.9, aiError: 90, target: 11, label: 'Hard', aiMissChance: 0.24, aiLag: 8 }
+            easy: { ball: 5.5, aiSpeed: 5.2, aiError: 70, target: 7, label: 'Easy', aiMissChance: 0.18, aiLag: 6 },
+            medium: { ball: 7.0, aiSpeed: 6.5, aiError: 50, target: 9, label: 'Medium', aiMissChance: 0.12, aiLag: 4 },
+            hard: { ball: 8.5, aiSpeed: 7.8, aiError: 35, target: 11, label: 'Hard', aiMissChance: 0.06, aiLag: 2 }
         };
         const settings = CONFIG[requestedDifficulty] || CONFIG.medium;
         difficultyLabel.textContent = `${settings.label} • Race to ${settings.target}`;
         raceToEl.textContent = settings.target;
 
+        const BASE_FPS = 60;
+        const TARGET_FPS = 120;
+        const FRAME_SCALE = TARGET_FPS / BASE_FPS;
+        const TICK_SCALE = BASE_FPS / TARGET_FPS;
+        const STEP_MS = 1000 / TARGET_FPS;
+        const MAX_FRAME_MS = 50;
+        const MAX_STEPS_PER_FRAME = Math.ceil(MAX_FRAME_MS / STEP_MS);
+        const TRAIL_LENGTH = Math.round(12 * FRAME_SCALE);
+
+        function clamp(value, min, max) {
+            return Math.max(min, Math.min(max, value));
+        }
+
+        function defaultPhysics(difficultyKey) {
+            const diff = (difficultyKey || 'medium').toLowerCase();
+            const base = {
+                easy:   { maxBounceDeg: 52, paddleInfluence: 0.10, spinFromPaddle: 0.010, spinFromEdge: 0.08, spinCurvature: 0.040, spinDecay: 0.992, maxSpin: 0.65, speedUpHit: 0.25, maxSpeed: settings.ball + 4.0 },
+                medium: { maxBounceDeg: 56, paddleInfluence: 0.12, spinFromPaddle: 0.012, spinFromEdge: 0.10, spinCurvature: 0.050, spinDecay: 0.991, maxSpin: 0.75, speedUpHit: 0.30, maxSpeed: settings.ball + 5.0 },
+                hard:   { maxBounceDeg: 60, paddleInfluence: 0.14, spinFromPaddle: 0.014, spinFromEdge: 0.12, spinCurvature: 0.060, spinDecay: 0.990, maxSpin: 0.85, speedUpHit: 0.35, maxSpeed: settings.ball + 6.0 },
+            }[diff] || { maxBounceDeg: 56, paddleInfluence: 0.12, spinFromPaddle: 0.012, spinFromEdge: 0.10, spinCurvature: 0.050, spinDecay: 0.991, maxSpin: 0.75, speedUpHit: 0.30, maxSpeed: settings.ball + 5.0 };
+            return { ...base };
+        }
+
+        let physics = defaultPhysics(requestedDifficulty);
+
+        function applyBackendPhysics(payload) {
+            if (!payload || typeof payload !== 'object') return;
+            const merged = { ...physics };
+            for (const [key, value] of Object.entries(payload)) {
+                if (typeof value === 'number' && Number.isFinite(value)) merged[key] = value;
+            }
+            physics = merged;
+        }
+
         let width = 800;
         let height = 600;
-        const paddle = { width: 14, height: 96, speed: 7, x: 0, y: 0 };
-        const ai = { width: 14, height: 96, speed: settings.aiSpeed, x: 0, y: 0, targetY: 0, idleFrames: 0, missBounce: null };
-        const ball = { x: 0, y: 0, r: 9, dx: settings.ball, dy: settings.ball * 0.55, speed: settings.ball, trail: [] };
+        const paddle = { width: 14, height: 96, speed: 7, x: 0, y: 0, vy: 0 };
+        const ai = { width: 14, height: 96, speed: settings.aiSpeed, x: 0, y: 0, vy: 0, targetY: 0, idleFrames: 0, missBounce: null };
+        const ball = { x: 0, y: 0, r: 9, dx: settings.ball, dy: settings.ball * 0.55, speed: settings.ball, spin: 0, trail: [] };
         let state = 'ready'; // ready | running | paused | over
         let scores = { player: 0, ai: 0 };
         const keys = {};
         let bounceId = 0;
+        let lastTime = 0;
+        let accumulator = 0;
+        const hudCache = { player: null, ai: null, pace: null };
 
         function resizeCanvas() {
             const container = canvas.parentElement;
@@ -184,8 +300,10 @@
         function resetPositions() {
             paddle.x = 18;
             paddle.y = height / 2 - paddle.height / 2;
+            paddle.vy = 0;
             ai.x = width - paddle.width - 18;
             ai.y = height / 2 - ai.height / 2;
+            ai.vy = 0;
             ai.targetY = height / 2;
             ai.idleFrames = 0;
             ai.missBounce = null;
@@ -194,6 +312,7 @@
             ball.speed = settings.ball;
             ball.dx = ball.speed * (Math.random() > 0.5 ? 1 : -1);
             ball.dy = ball.speed * (Math.random() * 0.6 - 0.3);
+            ball.spin = 0;
             ball.trail = [];
             noteBounce('serve');
         }
@@ -208,16 +327,26 @@
         }
 
         function updateHud() {
-            playerScoreEl.textContent = scores.player;
-            aiScoreEl.textContent = scores.ai;
-            paceEl.textContent = `${ball.speed.toFixed(1)} px/tick`;
+            if (hudCache.player !== scores.player) {
+                hudCache.player = scores.player;
+                playerScoreEl.textContent = scores.player;
+            }
+            if (hudCache.ai !== scores.ai) {
+                hudCache.ai = scores.ai;
+                aiScoreEl.textContent = scores.ai;
+            }
+            const paceText = `${Math.round(ball.speed * BASE_FPS)} px/s`;
+            if (hudCache.pace !== paceText) {
+                hudCache.pace = paceText;
+                paceEl.textContent = paceText;
+            }
         }
 
         document.addEventListener('keydown', e => {
             keys[e.key.toLowerCase()] = true;
             if (e.key === ' ') {
                 e.preventDefault();
-                if (state === 'ready') state = 'running';
+                startOrServe();
             } else if (e.key.toLowerCase() === 'p') {
                 togglePause();
             } else if (e.key.toLowerCase() === 'r') {
@@ -261,7 +390,8 @@
             if (tag !== bounceId) return;
             ai.targetY = clampTargetY(plan.targetY);
             ai.missBounce = plan.miss ? tag : null;
-            ai.idleFrames = Math.max(ai.idleFrames, plan.idle || settings.aiLag);
+            const idleFrames = Number.isFinite(plan.idle) ? plan.idle : settings.aiLag;
+            ai.idleFrames = Math.max(ai.idleFrames, Math.round(idleFrames * FRAME_SCALE));
         }
 
         async function requestBackendAiPlan(reason, tag) {
@@ -280,6 +410,7 @@
                 });
                 if (!resp.ok) return;
                 const data = await resp.json();
+                if (data.physics) applyBackendPhysics(data.physics);
                 if (typeof data.targetY === 'number') {
                     applyAiPlan({ targetY: data.targetY, miss: !!data.miss, idle: data.idle }, tag);
                 }
@@ -296,10 +427,13 @@
         }
 
         function movePaddles() {
-            if (keys['arrowup'] || keys['w']) paddle.y -= paddle.speed;
-            if (keys['arrowdown'] || keys['s']) paddle.y += paddle.speed;
+            const prevPlayerY = paddle.y;
+            if (keys['arrowup'] || keys['w']) paddle.y -= paddle.speed * TICK_SCALE;
+            if (keys['arrowdown'] || keys['s']) paddle.y += paddle.speed * TICK_SCALE;
             paddle.y = Math.max(10, Math.min(height - paddle.height - 10, paddle.y));
+            paddle.vy = (paddle.y - prevPlayerY) / Math.max(TICK_SCALE, 1e-6);
 
+            const prevAiY = ai.y;
             const aiCenter = ai.y + ai.height / 2;
             if (ai.idleFrames > 0) {
                 ai.idleFrames -= 1;
@@ -308,44 +442,76 @@
                 const missFactor = ai.missBounce === bounceId ? 0.45 : 1;
                 const maxStep = settings.aiSpeed * missFactor;
                 const step = Math.max(-maxStep, Math.min(maxStep, delta));
-                ai.y += step * 0.9;
+                ai.y += step * 0.9 * TICK_SCALE;
             }
             ai.y = Math.max(10, Math.min(height - ai.height - 10, ai.y));
+            ai.vy = (ai.y - prevAiY) / Math.max(TICK_SCALE, 1e-6);
         }
 
         function stepBall() {
-            ball.x += ball.dx;
-            ball.y += ball.dy;
+            if (physics.spinCurvature && Math.abs(ball.spin) > 1e-4) {
+                ball.dy += ball.spin * physics.spinCurvature * TICK_SCALE;
+                const mag = Math.max(0.001, Math.hypot(ball.dx, ball.dy));
+                const scale = ball.speed / mag;
+                ball.dx *= scale;
+                ball.dy *= scale;
+            }
+            ball.spin *= physics.spinDecay;
+
+            ball.x += ball.dx * TICK_SCALE;
+            ball.y += ball.dy * TICK_SCALE;
             ball.trail.push({ x: ball.x, y: ball.y });
-            if (ball.trail.length > 12) ball.trail.shift();
+            if (ball.trail.length > TRAIL_LENGTH) ball.trail.shift();
 
             if (ball.y - ball.r < 0 || ball.y + ball.r > height) {
                 ball.dy *= -1;
-                ball.y = Math.max(ball.r, Math.min(height - ball.r, ball.y));
+                ball.spin *= -0.85;
+                ball.y = clamp(ball.y, ball.r, height - ball.r);
                 noteBounce('wall');
                 soundEngine.init();
                 soundEngine.beep(200, 0.05, 0.2);
             }
 
-            const hitPaddle = (p, who) => {
-                if (ball.x - ball.r < p.x + p.width &&
+            const hitPaddle = (p, who, dir) => {
+                const approaching = dir > 0 ? ball.dx < 0 : ball.dx > 0;
+                if (!approaching) return;
+                if (
+                    ball.x - ball.r < p.x + p.width &&
                     ball.x + ball.r > p.x &&
                     ball.y + ball.r > p.y &&
-                    ball.y - ball.r < p.y + p.height) {
+                    ball.y - ball.r < p.y + p.height
+                ) {
                     const offset = (ball.y - (p.y + p.height / 2)) / (p.height / 2);
-                    ball.dx = -ball.dx;
-                    ball.dy = offset * ball.speed * 0.8;
-                    ball.x = p === paddle ? p.x + p.width + ball.r : p.x - ball.r;
-                    ball.speed = Math.min(ball.speed + 0.18, settings.ball + 2);
-                    ball.dx = Math.sign(ball.dx) * ball.speed;
+                    const clampedOffset = clamp(offset, -1, 1);
+                    const maxAngle = (physics.maxBounceDeg * Math.PI) / 180;
+                    const angle = clampedOffset * maxAngle;
+
+                    ball.speed = Math.min(ball.speed + physics.speedUpHit, physics.maxSpeed);
+
+                    let vx = dir * ball.speed * Math.cos(angle);
+                    let vy = ball.speed * Math.sin(angle);
+                    const pv = p.vy || 0;
+                    vy += pv * physics.paddleInfluence;
+
+                    const mag = Math.max(0.001, Math.hypot(vx, vy));
+                    const scale = ball.speed / mag;
+                    ball.dx = vx * scale;
+                    ball.dy = vy * scale;
+                    ball.spin = clamp(
+                        ball.spin + pv * physics.spinFromPaddle + clampedOffset * physics.spinFromEdge,
+                        -physics.maxSpin,
+                        physics.maxSpin
+                    );
+
+                    ball.x = dir > 0 ? p.x + p.width + ball.r : p.x - ball.r;
                     noteBounce(`${who}-paddle`);
                     soundEngine.init();
                     soundEngine.hit();
                 }
             };
 
-            hitPaddle(paddle, 'player');
-            hitPaddle(ai, 'ai');
+            hitPaddle(paddle, 'player', 1);
+            hitPaddle(ai, 'ai', -1);
 
             if (ball.x < 0) {
                 scores.ai += 1;
@@ -370,11 +536,104 @@
             updateHud();
         }
 
+        // Game over screen elements
+        const gameOverIcon = document.getElementById('gameOverIcon');
+        const gameOverEyebrow = document.getElementById('gameOverEyebrow');
+        const gameOverTitle = document.getElementById('gameOverTitle');
+        const gameOverSubtitle = document.getElementById('gameOverSubtitle');
+        const finalPlayerValue = document.getElementById('finalPlayerValue');
+        const finalAiValue = document.getElementById('finalAiValue');
+        const finalRallyValue = document.getElementById('finalRallyValue');
+        const finalPaceValue = document.getElementById('finalPaceValue');
+        const finalRaceValue = document.getElementById('finalRaceValue');
+        const finalDiffValue = document.getElementById('finalDiffValue');
+        const playerStatBox = document.getElementById('playerStatBox');
+        const messageTitleEl = document.getElementById('messageTitleEl');
+        const messageDescEl = document.getElementById('messageDescEl');
+
+        let longestRally = 0;
+        let currentRally = 0;
+        let maxSpeed = settings.ball;
+
+        const tips = [
+            { title: "Center Control", desc: "Return to mid-court after each hit to cut off angles." },
+            { title: "Edge Spin", desc: "Hit near the paddle edge to add spin—use sparingly." },
+            { title: "Serve Strategy", desc: "Serve with slight offset to keep AI guessing." },
+            { title: "Watch the Bounce", desc: "Predict wall bounces to position yourself early." },
+            { title: "Patience Wins", desc: "Don't reach too far—let the AI make mistakes." },
+            { title: "Speed Awareness", desc: "Ball speeds up each rally. Stay calm under pressure." }
+        ];
+
+        function getRandomTip() {
+            return tips[Math.floor(Math.random() * tips.length)];
+        }
+
         function endGame() {
             state = 'over';
-            finalScoreEl.textContent = `${scores.player} - ${scores.ai}`;
+            const playerWon = scores.player >= settings.target;
+            
+            // Update max speed
+            maxSpeed = Math.max(maxSpeed, ball.speed);
+            
+            // Configure overlay based on outcome
+            if (playerWon) {
+                overlay.classList.add('victory');
+                gameOverIcon.textContent = '🏆';
+                gameOverIcon.classList.add('victory');
+                gameOverEyebrow.textContent = 'VICTORY!';
+                gameOverEyebrow.classList.add('victory');
+                gameOverTitle.textContent = 'You Win!';
+                gameOverSubtitle.textContent = `Dominated the AI ${scores.player}-${scores.ai}`;
+                playerStatBox.classList.add('new-record');
+                playerStatBox.classList.remove('highlight');
+            } else {
+                overlay.classList.remove('victory');
+                gameOverIcon.textContent = '🏓';
+                gameOverIcon.classList.remove('victory');
+                gameOverEyebrow.textContent = 'MATCH COMPLETE';
+                gameOverEyebrow.classList.remove('victory');
+                gameOverTitle.textContent = 'Game Over';
+                gameOverSubtitle.textContent = `AI won ${scores.ai}-${scores.player}`;
+                playerStatBox.classList.remove('new-record');
+                playerStatBox.classList.add('highlight');
+            }
+            
+            // Populate stats
+            finalPlayerValue.textContent = scores.player;
+            finalAiValue.textContent = scores.ai;
+            finalRallyValue.textContent = longestRally;
+            finalPaceValue.textContent = `${Math.round(maxSpeed * BASE_FPS)}`;
+            finalRaceValue.textContent = settings.target;
+            finalDiffValue.textContent = settings.label;
+            
+            // Set tip message
+            const tip = getRandomTip();
+            messageTitleEl.textContent = tip.title;
+            messageDescEl.textContent = tip.desc;
+            
+            // Show overlay
             overlay.classList.add('active');
+            
+            soundEngine.init();
+            if (playerWon) {
+                soundEngine.victory();
+            } else {
+                soundEngine.gameOver();
+            }
         }
+        
+        // Handle keyboard shortcuts in game over screen
+        document.addEventListener('keydown', (e) => {
+            if (state === 'over') {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    resetMatch();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    window.location.href = '../games.html';
+                }
+            }
+        });
 
         function draw() {
             ctx.clearRect(0, 0, width, height);
@@ -420,7 +679,7 @@
                 ctx.textAlign = 'center';
                 ctx.fillText('Paused', width / 2, height / 2);
             }
-            if (state === 'ready') {
+            if (state === 'ready' && hasStarted) {
                 ctx.fillStyle = 'rgba(255,255,255,0.08)';
                 ctx.fillRect(0, 0, width, height);
                 ctx.fillStyle = '#e5e7ff';
@@ -430,26 +689,43 @@
             }
         }
 
-        function loop() {
-            requestAnimationFrame(loop);
+        function tick() {
             if (state === 'running') {
                 movePaddles();
                 stepBall();
-                updateHud();
             } else if (state === 'ready') {
                 movePaddles();
             }
+        }
+
+        function loop(now) {
+            requestAnimationFrame(loop);
+            if (!lastTime) lastTime = now;
+            const frameDelta = Math.min(MAX_FRAME_MS, now - lastTime);
+            lastTime = now;
+            accumulator += frameDelta;
+
+            let steps = 0;
+            while (accumulator >= STEP_MS && steps < MAX_STEPS_PER_FRAME) {
+                tick();
+                accumulator -= STEP_MS;
+                steps += 1;
+            }
+            if (steps === MAX_STEPS_PER_FRAME) accumulator = 0;
+
+            updateHud();
             draw();
         }
 
         pauseBtn.addEventListener('click', togglePause);
         restartBtn.addEventListener('click', resetMatch);
         playAgainBtn.addEventListener('click', resetMatch);
+        startBtn.addEventListener('click', startOrServe);
         window.addEventListener('resize', () => { resizeCanvas(); draw(); });
 
         resizeCanvas();
         resetMatch();
-        loop();
+        requestAnimationFrame(loop);
         
         // Initialize sound button
         soundBtn.textContent = soundEngine.isEnabled() ? '🔊' : '🔇';
