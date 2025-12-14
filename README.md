@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="vanilla-banner.svg" alt="VANILLA — Arcade Hub" />
+</p>
+
 # VANILLA - Arcade Hub
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
