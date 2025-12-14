@@ -1,4 +1,4 @@
-#!/Users/richardhuang/GitHub/vanilla/venv/bin/python3
+#!/usr/bin/env python3
 """
 VANILLA Arcade Hub - Lightweight JSON API
 

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snake — Play | VANILLA</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
     <style>
@@ -266,8 +267,21 @@
                     <div class="value" id="pace">--</div>
                 </div>
             </div>
-            <div class="board-shell">
+            <div class="board-shell" style="position: relative;">
                 <canvas id="board"></canvas>
+                <div class="canvas-overlay active" id="startOverlay" style="position: absolute; inset: 14px; border-radius: 12px; display: grid; place-items: center; background: radial-gradient(circle at 20% 15%, rgba(78, 205, 196, 0.14), transparent 45%), radial-gradient(circle at 78% 22%, rgba(157, 232, 199, 0.14), transparent 50%), rgba(4, 7, 16, 0.82); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px); padding: 16px; z-index: 10;">
+                    <div style="width: min(420px, 100%); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.10); background: rgba(255, 255, 255, 0.05); box-shadow: 0 26px 70px rgba(0, 0, 0, 0.45); padding: 24px; text-align: center;">
+                        <div style="letter-spacing: 1px; text-transform: uppercase; color: #9de8c7; font-size: 11px; margin-bottom: 10px;">Ready to play</div>
+                        <h2 style="font-size: 22px; line-height: 1.2; margin-bottom: 10px; color: #f2f3ff;">Thread the neon maze</h2>
+                        <p style="margin: 0 auto 18px; color: rgba(238, 241, 255, 0.78); line-height: 1.6; font-size: 13px;">Use Arrow keys or WASD to move. Eat food to grow, but don't hit the walls or yourself!</p>
+                        <button class="action-btn" id="startBtn" style="padding: 14px 28px; font-family: 'Press Start 2P', monospace; font-size: 11px;">Start Game</button>
+                        <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; font-size: 12px;">
+                            <span style="font-family: 'Press Start 2P', monospace; font-size: 10px; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(0, 0, 0, 0.24); color: #e9edff;">Space</span>
+                            <span style="font-family: 'Press Start 2P', monospace; font-size: 10px; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(0, 0, 0, 0.24); color: #e9edff;">WASD</span>
+                            <span style="font-family: 'Press Start 2P', monospace; font-size: 10px; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(0, 0, 0, 0.24); color: #e9edff;">R</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="help-text">Use Arrow keys or WASD to move. Space to pause, R to restart.</div>
         </section>
@@ -623,8 +637,62 @@
             draw();
         });
 
+        // Start overlay handling
+        const startOverlay = document.getElementById('startOverlay');
+        const startBtn = document.getElementById('startBtn');
+        
+        function showStartOverlay() {
+            startOverlay.style.display = 'grid';
+            state = 'idle';
+        }
+        
+        function hideStartOverlay() {
+            startOverlay.style.display = 'none';
+        }
+        
+        function startGame() {
+            hideStartOverlay();
+            soundEngine.init();
+            resetGame();
+        }
+        
+        startBtn.addEventListener('click', startGame);
+        
+        // Override resetGame to not auto-start
+        const originalResetGame = resetGame;
+        resetGame = function() {
+            overlay.classList.remove('active');
+            score = 0;
+            tickInterval = settings.tick;
+            direction = { x: 1, y: 0 };
+            queuedDirection = { x: 1, y: 0 };
+            const center = Math.floor(settings.grid / 2);
+            snake = [
+                { x: center - 1, y: center },
+                { x: center - 2, y: center },
+                { x: center - 3, y: center }
+            ];
+            placeFood();
+            requestBackendFood();
+            state = 'running';
+            accumulator = 0;
+            lastFrame = performance.now();
+            updateHud();
+        };
+
         resizeCanvas();
-        resetGame();
+        // Don't auto-start - show overlay instead
+        score = 0;
+        tickInterval = settings.tick;
+        const center = Math.floor(settings.grid / 2);
+        snake = [
+            { x: center - 1, y: center },
+            { x: center - 2, y: center },
+            { x: center - 3, y: center }
+        ];
+        placeFood();
+        updateHud();
+        state = 'idle';
         startLoop();
     </script>
 </body>

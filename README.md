@@ -91,10 +91,17 @@ pip install flask
 
 ## ▶️ Running the Application
 
-### Start the Flask server:
+### Option 1: Using app.py (Recommended)
+```bash
+python app.py
+```
+This will start the server and automatically open the arcade hub in your default browser.
+
+### Option 2: Using server.py
 ```bash
 python server.py
 ```
+This starts just the server without auto-opening the browser.
 
 The server will start on `http://localhost:5000` by default. Open this URL in your web browser to access the arcade hub.
 

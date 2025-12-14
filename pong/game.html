@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pong — Play | VANILLA</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
     <style>
@@ -133,6 +134,7 @@
         </div>
     </div>
 
+    <script src="../sounds.js"></script>
     <script>
         const canvas = document.getElementById('board');
         const ctx = canvas.getContext('2d');
@@ -448,9 +450,7 @@
         resizeCanvas();
         resetMatch();
         loop();
-    </script>
-    <script src="../sounds.js"></script>
-    <script>
+        
         // Initialize sound button
         soundBtn.textContent = soundEngine.isEnabled() ? '🔊' : '🔇';
         soundBtn.addEventListener('click', () => {

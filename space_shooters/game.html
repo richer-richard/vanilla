@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Space Shooters — Play | VANILLA</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
     <style>
@@ -195,6 +196,7 @@
             <span class="pill" id="difficultyLabel">Medium</span>
         </div>
         <div class="header-actions">
+            <button class="action-btn ghost" id="soundBtn" type="button" title="Toggle Sound">🔊</button>
             <button class="action-btn ghost" id="pauseBtn" type="button">Pause</button>
             <button class="action-btn" id="restartBtn" type="button">Restart</button>
         </div>
@@ -269,6 +271,7 @@
         </div>
     </div>
 
+    <script src="../sounds.js"></script>
     <script>
         const canvas = document.getElementById('board');
         const ctx = canvas.getContext('2d');
@@ -551,6 +554,8 @@
             finalScoreEl.textContent = `Score: ${game.score}`;
             finalReasonEl.textContent = reason || '';
             gameOverOverlay.classList.add('active');
+            soundEngine.init();
+            soundEngine.gameOver();
         }
 
         function schedulePowerupDrop(type, x, delay) {
@@ -645,6 +650,8 @@
             const rapidFactor = p.rapidTimer > 0 ? 0.52 : 1.0;
             const cd = clamp(p.baseFireCd * rapidFactor, 0.08, 0.5);
             p.fireTimer = cd;
+            soundEngine.init();
+            soundEngine.shoot();
 
             const speed = 660;
             if (p.multiTimer > 0) {
@@ -802,6 +809,8 @@
                         if (e.hp <= 0) {
                             game.score += 12 + Math.round(game.wave * 1.5);
                             explode(e.x, e.y, 'rgba(251, 113, 133, 0.85)');
+                            soundEngine.init();
+                            soundEngine.explode();
                             if (Math.random() < 0.18) schedulePowerupDrop(Math.random() < 0.5 ? 'rapid' : 'multi', e.x, 0.25);
                         } else {
                             game.score += 3;
@@ -863,6 +872,8 @@
                     game.powerups.splice(i, 1);
                     applyPowerup(p.type);
                     explode(p.x, p.y, p.type === 'rapid' ? 'rgba(251,113,133,0.85)' : p.type === 'multi' ? 'rgba(250,204,21,0.85)' : 'rgba(110,231,255,0.85)');
+                    soundEngine.init();
+                    soundEngine.powerup();
                 }
             }
 
@@ -1002,6 +1013,16 @@
 
         resetGame();
         requestAnimationFrame(frame);
+        
+        // Initialize sound button
+        const soundBtn = document.getElementById('soundBtn');
+        soundBtn.textContent = soundEngine.isEnabled() ? '🔊' : '🔇';
+        soundBtn.addEventListener('click', () => {
+            soundEngine.init();
+            soundEngine.toggle();
+            soundBtn.textContent = soundEngine.isEnabled() ? '🔊' : '🔇';
+            soundEngine.click();
+        });
     </script>
 </body>
 </html>

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Geometry Dash — Play | VANILLA</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
     <style>
@@ -1036,10 +1037,15 @@
                         player.coyote = settings.coyote;
                         player.jumpsLeft = 2;
                         player.hold = 0;
-                    } else if (py < ceilingEdge - 80) {
-                        endRun('You lost the lane.');
+                    }
+                    // Ceiling bump - just stop upward momentum, don't kill
+                    if (py < ceilingEdge) {
+                        player.y = ceilingEdge;
+                        player.vy = Math.abs(player.vy) * 0.3; // Bounce down gently
+                        player.hold = 0;
                     }
                 } else {
+                    // Inverted gravity - ceiling is "ground"
                     if (py <= ceilingEdge) {
                         player.y = ceilingEdge;
                         player.vy = 0;
@@ -1047,8 +1053,12 @@
                         player.coyote = settings.coyote;
                         player.jumpsLeft = 2;
                         player.hold = 0;
-                    } else if (py + ps > groundEdge + 80) {
-                        endRun('You lost the lane.');
+                    }
+                    // Ground bump when inverted - just stop, don't kill
+                    if (py + ps > groundEdge) {
+                        player.y = groundEdge - ps;
+                        player.vy = -Math.abs(player.vy) * 0.3; // Bounce up gently
+                        player.hold = 0;
                     }
                 }
 
