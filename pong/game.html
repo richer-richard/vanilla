@@ -100,6 +100,7 @@
                 <div class="stat"><div class="label">You</div><div class="value" id="playerScore">0</div></div>
                 <div class="stat"><div class="label">AI</div><div class="value" id="aiScore">0</div></div>
                 <div class="stat"><div class="label">Race To</div><div class="value" id="raceTo">9</div></div>
+                <div class="stat"><div class="label">Best Rally</div><div class="value" id="best">0</div></div>
                 <div class="stat"><div class="label">Pace</div><div class="value" id="pace">--</div></div>
             </div>
             <div class="board-shell">
@@ -126,6 +127,7 @@
         </section>
 
         <aside class="glass-card sidebar">
+            <div id="scoreboardMount"></div>
             <div class="eyebrow">Control the center</div>
             <h2>Keep a calm rally</h2>
             <ul class="tips">
@@ -164,6 +166,10 @@
                         <div class="game-over-stat-value" id="finalRallyValue">0</div>
                         <div class="game-over-stat-label">Longest Rally</div>
                     </div>
+                    <div class="game-over-stat" id="bestStatBox">
+                        <div class="game-over-stat-value" id="finalBestValue">0</div>
+                        <div class="game-over-stat-label">Best Rally</div>
+                    </div>
                     <div class="game-over-stat">
                         <div class="game-over-stat-value" id="finalPaceValue">--</div>
                         <div class="game-over-stat-label">Max Speed</div>
@@ -200,12 +206,14 @@
     </div>
 
     <script src="../sounds.js"></script>
+    <script src="../scoreboard.js"></script>
     <script>
         const canvas = document.getElementById('board');
         const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
         const playerScoreEl = document.getElementById('playerScore');
         const aiScoreEl = document.getElementById('aiScore');
         const raceToEl = document.getElementById('raceTo');
+        const bestEl = document.getElementById('best');
         const paceEl = document.getElementById('pace');
         const difficultyLabel = document.getElementById('difficultyLabel');
         const overlay = document.getElementById('gameOverOverlay');
@@ -237,8 +245,25 @@
             hard: { ball: 8.5, aiSpeed: 7.8, aiError: 35, target: 11, label: 'Hard', aiMissChance: 0.06, aiLag: 2 }
         };
         const settings = CONFIG[requestedDifficulty] || CONFIG.medium;
+        const difficultyKey = CONFIG[requestedDifficulty] ? requestedDifficulty : 'medium';
         difficultyLabel.textContent = `${settings.label} • Race to ${settings.target}`;
         raceToEl.textContent = settings.target;
+
+        const bestKey = `vanilla-pong-${difficultyKey}-best`;
+        let bestRally = Number(localStorage.getItem(bestKey)) || 0;
+        bestEl.textContent = bestRally;
+
+        const scoreboard = window.VanillaScoreboard?.mount({
+            mount: document.getElementById('scoreboardMount'),
+            gameId: 'pong',
+            difficulty: difficultyKey,
+            bestKey,
+            bestLabel: 'Personal best rally',
+            scoreLabel: 'Longest rally',
+            formatScore: (value) => String(Math.floor(Number(value) || 0)),
+            getSubmitScore: () => bestRally,
+        });
+        scoreboard?.setBest(bestRally);
 
         const BASE_FPS = 60;
         const TARGET_FPS = 120;
@@ -285,7 +310,7 @@
         let bounceId = 0;
         let lastTime = 0;
         let accumulator = 0;
-        const hudCache = { player: null, ai: null, pace: null };
+        const hudCache = { player: null, ai: null, pace: null, best: null };
 
         function resizeCanvas() {
             const container = canvas.parentElement;
@@ -322,6 +347,23 @@
             scores = { player: 0, ai: 0 };
             state = 'ready';
             bounceId = 0;
+            longestRally = 0;
+            currentRally = 0;
+            maxSpeed = settings.ball;
+            resetPositions();
+            updateHud();
+        }
+
+        function resetToMenu() {
+            overlay.classList.remove('active');
+            scores = { player: 0, ai: 0 };
+            state = 'ready';
+            bounceId = 0;
+            longestRally = 0;
+            currentRally = 0;
+            maxSpeed = settings.ball;
+            hasStarted = false;
+            startOverlay.classList.add('active');
             resetPositions();
             updateHud();
         }
@@ -334,6 +376,10 @@
             if (hudCache.ai !== scores.ai) {
                 hudCache.ai = scores.ai;
                 aiScoreEl.textContent = scores.ai;
+            }
+            if (hudCache.best !== bestRally) {
+                hudCache.best = bestRally;
+                bestEl.textContent = bestRally;
             }
             const paceText = `${Math.round(ball.speed * BASE_FPS)} px/s`;
             if (hudCache.pace !== paceText) {
@@ -507,6 +553,10 @@
                     noteBounce(`${who}-paddle`);
                     soundEngine.init();
                     soundEngine.hit();
+
+                    currentRally += 1;
+                    longestRally = Math.max(longestRally, currentRally);
+                    maxSpeed = Math.max(maxSpeed, ball.speed);
                 }
             };
 
@@ -517,11 +567,13 @@
                 scores.ai += 1;
                 soundEngine.init();
                 soundEngine.beep(150, 0.2, 0.3);
+                currentRally = 0;
                 handlePoint();
             } else if (ball.x > width) {
                 scores.player += 1;
                 soundEngine.init();
                 soundEngine.victory();
+                currentRally = 0;
                 handlePoint();
             }
         }
@@ -544,10 +596,12 @@
         const finalPlayerValue = document.getElementById('finalPlayerValue');
         const finalAiValue = document.getElementById('finalAiValue');
         const finalRallyValue = document.getElementById('finalRallyValue');
+        const finalBestValue = document.getElementById('finalBestValue');
         const finalPaceValue = document.getElementById('finalPaceValue');
         const finalRaceValue = document.getElementById('finalRaceValue');
         const finalDiffValue = document.getElementById('finalDiffValue');
         const playerStatBox = document.getElementById('playerStatBox');
+        const bestStatBox = document.getElementById('bestStatBox');
         const messageTitleEl = document.getElementById('messageTitleEl');
         const messageDescEl = document.getElementById('messageDescEl');
 
@@ -572,8 +626,13 @@
             state = 'over';
             const playerWon = scores.player >= settings.target;
             
-            // Update max speed
-            maxSpeed = Math.max(maxSpeed, ball.speed);
+            // Persist best rally per difficulty
+            const isNewRallyRecord = longestRally > bestRally;
+            if (isNewRallyRecord) {
+                bestRally = longestRally;
+                localStorage.setItem(bestKey, String(bestRally));
+                scoreboard?.setBest(bestRally);
+            }
             
             // Configure overlay based on outcome
             if (playerWon) {
@@ -602,9 +661,16 @@
             finalPlayerValue.textContent = scores.player;
             finalAiValue.textContent = scores.ai;
             finalRallyValue.textContent = longestRally;
+            finalBestValue.textContent = bestRally;
             finalPaceValue.textContent = `${Math.round(maxSpeed * BASE_FPS)}`;
             finalRaceValue.textContent = settings.target;
             finalDiffValue.textContent = settings.label;
+
+            if (isNewRallyRecord && bestRally > 0) {
+                bestStatBox.classList.add('new-record');
+            } else {
+                bestStatBox.classList.remove('new-record');
+            }
             
             // Set tip message
             const tip = getRandomTip();
@@ -627,7 +693,7 @@
             if (state === 'over') {
                 if (e.key === ' ' || e.key === 'Enter') {
                     e.preventDefault();
-                    resetMatch();
+                    resetToMenu();
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
                     window.location.href = '../games.html';
@@ -719,7 +785,7 @@
 
         pauseBtn.addEventListener('click', togglePause);
         restartBtn.addEventListener('click', resetMatch);
-        playAgainBtn.addEventListener('click', resetMatch);
+        playAgainBtn.addEventListener('click', resetToMenu);
         startBtn.addEventListener('click', startOrServe);
         window.addEventListener('resize', () => { resizeCanvas(); draw(); });
 

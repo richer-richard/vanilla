@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake — VANILLA</title>
+    <title>Tetris — VANILLA</title>
     <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
@@ -120,7 +120,7 @@
         }
 
         .hero h1 span {
-            color: #9de8c7;
+            color: #00d4ff;
         }
 
         .hero p {
@@ -217,6 +217,85 @@
             color: #9fb0ff;
             letter-spacing: 0.4px;
         }
+
+        .status-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin: 14px 0 10px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 212, 255, 0.35);
+            background: rgba(0, 212, 255, 0.08);
+            color: #baf5ff;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+        }
+
+        .status-pill::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00d4ff;
+            box-shadow: 0 0 14px rgba(0, 212, 255, 0.6);
+        }
+
+        .status-note {
+            color: rgba(201, 206, 232, 0.75);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Tetromino preview */
+        .tetromino-preview {
+            display: flex;
+            gap: 16px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tetromino-piece {
+            display: grid;
+            gap: 2px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .tetromino-piece.i-piece { grid-template-columns: repeat(4, 12px); }
+        .tetromino-piece.o-piece { grid-template-columns: repeat(2, 12px); }
+        .tetromino-piece.t-piece,
+        .tetromino-piece.s-piece,
+        .tetromino-piece.z-piece,
+        .tetromino-piece.j-piece,
+        .tetromino-piece.l-piece { grid-template-columns: repeat(3, 12px); }
+
+        .block {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .block.filled { box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.2); }
+        .block.cyan { background: linear-gradient(135deg, #00d4ff, #0099cc); }
+        .block.yellow { background: linear-gradient(135deg, #ffd93d, #f0c000); }
+        .block.purple { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+        .block.green { background: linear-gradient(135deg, #22c55e, #16a34a); }
+        .block.red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .block.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .block.orange { background: linear-gradient(135deg, #f97316, #ea580c); }
     </style>
 </head>
 <body>
@@ -233,40 +312,110 @@
 
     <main>
         <section class="glass-card hero">
-            <div class="eyebrow">Snake, rebuilt</div>
-            <h1>Thread the neon maze <span>without losing your cool.</span></h1>
-            <p>Every movement matters. A crisp grid, responsive controls, and a subtle speed ramp keep the classic Snake loop tight and modern.</p>
+            <div class="eyebrow">Tetris, reimagined</div>
+            <h1>Stack blocks, clear lines, <span>chase perfection.</span></h1>
+            <p>The timeless puzzle game where falling tetrominoes challenge your spatial reasoning and quick thinking. Rotate, position, and stack pieces to clear lines before they reach the top.</p>
+            <div class="status-row">
+                <div class="status-pill">Now Playable</div>
+                <div class="status-note">Full gameplay with hold, ghost piece, scoring, and a speed ramp. Run the server to submit to the global leaderboard.</div>
+            </div>
             <div class="tag-row">
-                <div class="tag">No wrap-around walls</div>
-                <div class="tag">Momentum-friendly pacing</div>
-                <div class="tag">Instant restart</div>
+                <div class="tag">7-bag randomizer</div>
+                <div class="tag">Ghost piece</div>
+                <div class="tag">Hold + next queue</div>
+                <div class="tag">Combos + level ramp</div>
             </div>
             <div class="controls">
-                <div class="control-chip">WASD / Arrow Keys — Move</div>
-                <div class="control-chip">Space — Pause/Resume</div>
-                <div class="control-chip">R — Restart run</div>
+                <div class="control-chip">← → / A D — Move</div>
+                <div class="control-chip">↑ / W / X — Rotate CW</div>
+                <div class="control-chip">Z / Ctrl — Rotate CCW</div>
+                <div class="control-chip">↓ / S — Soft Drop</div>
+                <div class="control-chip">Space — Hard Drop</div>
+                <div class="control-chip">C / Shift — Hold Piece</div>
+            </div>
+
+            <div class="tetromino-preview">
+                <!-- I piece -->
+                <div class="tetromino-piece i-piece">
+                    <div class="block filled cyan"></div>
+                    <div class="block filled cyan"></div>
+                    <div class="block filled cyan"></div>
+                    <div class="block filled cyan"></div>
+                </div>
+                <!-- O piece -->
+                <div class="tetromino-piece o-piece">
+                    <div class="block filled yellow"></div>
+                    <div class="block filled yellow"></div>
+                    <div class="block filled yellow"></div>
+                    <div class="block filled yellow"></div>
+                </div>
+                <!-- T piece -->
+                <div class="tetromino-piece t-piece">
+                    <div class="block"></div>
+                    <div class="block filled purple"></div>
+                    <div class="block"></div>
+                    <div class="block filled purple"></div>
+                    <div class="block filled purple"></div>
+                    <div class="block filled purple"></div>
+                </div>
+                <!-- S piece -->
+                <div class="tetromino-piece s-piece">
+                    <div class="block"></div>
+                    <div class="block filled green"></div>
+                    <div class="block filled green"></div>
+                    <div class="block filled green"></div>
+                    <div class="block filled green"></div>
+                    <div class="block"></div>
+                </div>
+                <!-- Z piece -->
+                <div class="tetromino-piece z-piece">
+                    <div class="block filled red"></div>
+                    <div class="block filled red"></div>
+                    <div class="block"></div>
+                    <div class="block"></div>
+                    <div class="block filled red"></div>
+                    <div class="block filled red"></div>
+                </div>
+                <!-- J piece -->
+                <div class="tetromino-piece j-piece">
+                    <div class="block filled blue"></div>
+                    <div class="block"></div>
+                    <div class="block"></div>
+                    <div class="block filled blue"></div>
+                    <div class="block filled blue"></div>
+                    <div class="block filled blue"></div>
+                </div>
+                <!-- L piece -->
+                <div class="tetromino-piece l-piece">
+                    <div class="block"></div>
+                    <div class="block"></div>
+                    <div class="block filled orange"></div>
+                    <div class="block filled orange"></div>
+                    <div class="block filled orange"></div>
+                    <div class="block filled orange"></div>
+                </div>
             </div>
         </section>
 
         <section class="glass-card start-card">
-            <div class="eyebrow">Choose a pace</div>
-            <h2>Pick your starting speed</h2>
-            <p>Each difficulty tweaks grid density and tick rate. You can always restart mid-run if you want to bump it up.</p>
+            <div class="eyebrow">Choose a speed</div>
+            <h2>Choose your starting speed</h2>
+            <p>Pick a difficulty to start the game. Your personal best saves per difficulty, and the global leaderboard is available when the server is running.</p>
             <div class="difficulty-grid">
                 <button class="difficulty-card" data-difficulty="easy">
                     <strong>Easy</strong>
-                    <span>Open lanes and a calmer tempo.</span>
-                    <span class="meta">16 × 16 grid • 150ms tick</span>
+                    <span>Relaxed pace for learning the flow.</span>
+                    <span class="meta">Level 1 • Slower gravity</span>
                 </button>
                 <button class="difficulty-card" data-difficulty="medium">
                     <strong>Medium</strong>
-                    <span>Balanced space with a steady climb.</span>
-                    <span class="meta">18 × 18 grid • 115ms tick</span>
+                    <span>Balanced tempo with faster drops.</span>
+                    <span class="meta">Level 5 • Medium gravity</span>
                 </button>
                 <button class="difficulty-card" data-difficulty="hard">
                     <strong>Hard</strong>
-                    <span>Dense arena, snappier decisions.</span>
-                    <span class="meta">22 × 22 grid • 90ms tick</span>
+                    <span>High speed with demanding reactions.</span>
+                    <span class="meta">Level 10 • Faster gravity</span>
                 </button>
             </div>
         </section>

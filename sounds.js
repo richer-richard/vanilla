@@ -1,5 +1,5 @@
 /**
- * VANILLA Arcade Hub - Sound System
+ * VANILLA Collection - Sound System
  * 
  * A lightweight sound engine using Web Audio API to generate retro arcade-style sounds.
  * All sounds are procedurally generated - no audio files needed!

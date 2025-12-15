@@ -1,8 +1,8 @@
 """
-VANILLA Arcade Hub bootstrapper.
+VANILLA Collection bootstrapper.
 
 Launches the unified Flask backend (static files + game helper APIs) and
-optionally opens the arcade landing page in the browser.
+optionally opens the collection landing page in the browser.
 """
 
 from __future__ import annotations
@@ -11,9 +11,7 @@ import os
 import threading
 import webbrowser
 from typing import Optional
-
 from server import GameServer
-
 
 def _open_browser(url: str, delay: float = 1.0) -> None:
     """Open the given URL after a short delay to let the server start."""
@@ -27,7 +25,6 @@ def _open_browser(url: str, delay: float = 1.0) -> None:
     timer = threading.Timer(delay, _launch)
     timer.daemon = True
     timer.start()
-
 
 def run(host: Optional[str] = None, port: Optional[int] = None, debug: Optional[bool] = None) -> None:
     server = GameServer()
@@ -43,7 +40,6 @@ def run(host: Optional[str] = None, port: Optional[int] = None, debug: Optional[
     print(f"Static root: {server.root_dir}")
     print(f"Scores file: {server.store.path}")
     server.run(host=resolved_host, port=resolved_port, debug=resolved_debug)
-
 
 if __name__ == "__main__":
     run()

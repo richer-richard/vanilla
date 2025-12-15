@@ -3,106 +3,727 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select Game - VANILLA</title>
+    <title>Choose Your Game - Vanilla Collection</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <style>
-        main h1 {
-            font-size: 32px;
-            text-align: center;
+        body {
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        header {
+            padding: 18px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+            background: transparent;
+            position: relative;
+            z-index: 100;
+        }
+
+        .brand-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .brand-link h1 {
+            margin: 0;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 18px;
             background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.5));
-            text-shadow: 0 0 30px rgba(102, 126, 234, 0.4);
-            margin-bottom: 50px;
         }
 
-        header a {
-            font-size: 16px;
+        .brand-link span {
+            font-size: 11px;
+            color: #b0b0b0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
-        header {
-            flex-direction: column;
-            gap: 10px;
+        .nav-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
         }
 
-        header div, header p {
+        .nav-link {
+            font-size: 13px;
+            color: rgba(223, 228, 255, 0.7);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: #dfe4ff;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .nav-link.active {
+            color: #dfe4ff;
+            background: rgba(102, 126, 234, 0.15);
+        }
+
+        /* Hero */
+        .hero {
             text-align: center;
+            padding: 70px 30px 50px;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 400px;
+            background: radial-gradient(ellipse, rgba(102, 126, 234, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(157, 232, 199, 0.1);
+            border: 1px solid rgba(157, 232, 199, 0.25);
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #9de8c7;
+            margin-bottom: 24px;
+            letter-spacing: 0.5px;
+        }
+
+        .hero-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #9de8c7;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .hero h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: clamp(36px, 5vw, 52px);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #f2f4ff 0%, #c9d1ff 50%, #a8b5ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .hero p {
+            font-size: 17px;
+            color: rgba(201, 206, 232, 0.75);
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            padding: 24px 30px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: rgba(201, 206, 232, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 4px;
+        }
+
+        /* Main Content */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 40px 100px;
+        }
+
+        /* Section Header */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 16px;
+            margin-bottom: 30px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(159, 176, 255, 0.9);
+        }
+
+        .game-count {
+            font-size: 12px;
+            color: rgba(201, 206, 232, 0.5);
+        }
+
+        /* Games Grid */
+        .games-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        /* Game Card */
+        .game-card {
+            position: relative;
+            background: linear-gradient(165deg, rgba(255, 255, 255, 0.04), rgba(102, 126, 234, 0.06), rgba(118, 75, 162, 0.04));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 0;
+            text-decoration: none;
+            color: inherit;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: flex;
+            flex-direction: row;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(102, 126, 234, 0.12), transparent 50%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+
+        .game-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(102, 126, 234, 0.4);
+            box-shadow: 
+                0 25px 60px rgba(0, 0, 0, 0.35),
+                0 0 40px rgba(102, 126, 234, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .game-card:hover::before {
+            opacity: 1;
+        }
+
+        .card-header {
+            flex: 1;
+            padding: 28px 32px;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            display: block;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+            transition: transform 0.3s ease;
+        }
+
+        .game-card:hover .card-icon {
+            transform: scale(1.1);
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #f4f6ff;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .game-card:hover .card-title {
+            text-shadow: 0 0 25px rgba(102, 126, 234, 0.5);
+        }
+
+        .card-desc {
+            font-size: 14px;
+            color: rgba(201, 206, 232, 0.7);
+            line-height: 1.65;
+            margin: 0;
+        }
+
+        .card-footer {
+            padding: 28px 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 12px;
+            min-width: 200px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .difficulty-badges {
+            display: flex;
+            gap: 6px;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            background: rgba(102, 126, 234, 0.12);
+            border: 1px solid rgba(102, 126, 234, 0.25);
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            color: rgba(159, 176, 255, 0.9);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+        }
+
+        .badge.easy {
+            background: rgba(157, 232, 199, 0.12);
+            border-color: rgba(157, 232, 199, 0.3);
+            color: #9de8c7;
+        }
+
+        .badge.medium {
+            background: rgba(252, 211, 77, 0.12);
+            border-color: rgba(252, 211, 77, 0.3);
+            color: #fcd34d;
+        }
+
+        .badge.hard {
+            background: rgba(251, 113, 133, 0.12);
+            border-color: rgba(251, 113, 133, 0.3);
+            color: #fb7185;
+        }
+
+        .play-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(201, 206, 232, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .play-indicator svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .game-card:hover .play-indicator {
+            color: #9de8c7;
+        }
+
+        .game-card:hover .play-indicator svg {
+            transform: translateX(4px);
+        }
+
+        /* Featured Card */
+        .game-card.featured {
+            min-height: 220px;
+        }
+
+        .game-card.featured .card-header {
+            flex: 1;
+            padding: 36px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .game-card.featured .card-icon {
+            font-size: 72px;
+            margin-bottom: 20px;
+        }
+
+        .game-card.featured .card-title {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .game-card.featured .card-desc {
+            font-size: 15px;
+            line-height: 1.7;
+            max-width: 500px;
+        }
+
+        .game-card.featured .card-footer {
+            padding: 36px 40px;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 16px;
+            min-width: 240px;
+            background: transparent;
+            border-left: none;
+        }
+
+        .featured-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: linear-gradient(135deg, rgba(252, 211, 77, 0.15), rgba(251, 146, 60, 0.1));
+            border: 1px solid rgba(252, 211, 77, 0.3);
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fcd34d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .featured-badge::before {
+            content: '★';
+        }
+
+        .game-card.featured .difficulty-badges {
+            gap: 8px;
+        }
+
+        .game-card.featured .badge {
+            padding: 6px 12px;
+            font-size: 11px;
+        }
+
+        .game-card.featured .play-indicator {
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        /* Footer */
+        footer {
+            display: block;
+            text-align: center;
+            padding: 50px 30px 60px;
+            border-top: 1px solid rgba(102, 126, 234, 0.1);
+            background: linear-gradient(180deg, transparent, rgba(102, 126, 234, 0.03));
+        }
+
+        footer .brand {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+
+        footer p {
+            color: rgba(176, 176, 176, 0.6);
+            font-size: 12px;
+            margin: 6px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .game-card {
+                flex-direction: column;
+            }
+
+            .game-card .card-footer {
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 20px 28px 28px;
+                min-width: auto;
+            }
+
+            .game-card.featured {
+                min-height: auto;
+            }
+
+            .game-card.featured .card-header {
+                padding: 28px;
+            }
+
+            .game-card.featured .card-icon {
+                font-size: 56px;
+            }
+
+            .game-card.featured .card-title {
+                font-size: 26px;
+            }
+
+            .stats-bar {
+                gap: 24px;
+            }
+
+            .stat-value {
+                font-size: 22px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 16px 20px;
+            }
+
+            .hero {
+                padding: 50px 20px 30px;
+            }
+
+            main {
+                padding: 20px 20px 80px;
+            }
+
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-bar {
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+
+            .nav-actions {
+                display: none;
+            }
         }
     </style>
 </head>
-<body class="footer-enabled">
+<body>
     <header>
-        <a href="index.html" style="display:flex;flex-direction:column;text-decoration:none;">
+        <a class="brand-link" href="index.html">
             <h1>VANILLA</h1>
-            <p>Arcade Hub</p>
+            <span>Collection</span>
         </a>
-        <p style="position: absolute; right: 40px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #b0b0b0; letter-spacing: 1px; text-transform: uppercase; margin: 0;">Select Your Game</p>
+        <nav class="nav-actions">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="games.html" class="nav-link active">Games</a>
+            <a href="about.html" class="nav-link">About</a>
+        </nav>
     </header>
 
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">7 Games Available</div>
+            <h1>Choose Your Game</h1>
+            <p>Seven classic games reimagined for the modern web. Pick a favorite and start playing instantly.</p>
+        </div>
+    </section>
+
+    <div class="stats-bar">
+        <div class="stat-item">
+            <div class="stat-value">7</div>
+            <div class="stat-label">Games</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">21</div>
+            <div class="stat-label">Difficulty Levels</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">120</div>
+            <div class="stat-label">Target FPS</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">∞</div>
+            <div class="stat-label">Fun</div>
+        </div>
+    </div>
+
     <main>
-        <h1>Choose Your Game</h1>
+        <div class="section-header">
+            <span class="section-title">All Games</span>
+            <span class="game-count">7 titles</span>
+        </div>
+
         <div class="games-grid">
+            <a href="space_shooters/intro.html" class="game-card featured">
+                <div class="card-header">
+                    <span class="card-icon">🚀</span>
+                    <h2 class="card-title">Space Shooters</h2>
+                    <p class="card-desc">Defend Earth against waves of alien invaders! Fast-paced action with power-ups, multiple enemy types, and progressively intense challenges.</p>
+                </div>
+                <div class="card-footer">
+                    <span class="featured-badge">Featured</span>
+                    <div class="difficulty-badges">
+                        <span class="badge easy">Easy</span>
+                        <span class="badge medium">Medium</span>
+                        <span class="badge hard">Hard</span>
+                    </div>
+                    <div class="play-indicator">
+                        Play Now
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
+            <a href="tetris/intro.html" class="game-card">
+                <div class="card-header">
+                    <span class="card-icon">🧩</span>
+                    <h2 class="card-title">Tetris</h2>
+                    <p class="card-desc">The iconic block-stacking puzzle. Rotate, place, and clear lines with hold + ghost piece support and a clean scoring ramp.</p>
+                </div>
+                <div class="card-footer">
+                    <div class="difficulty-badges">
+                        <span class="badge easy">Easy</span>
+                        <span class="badge medium">Medium</span>
+                        <span class="badge hard">Hard</span>
+                    </div>
+                    <div class="play-indicator">
+                        Play
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
             <a href="snake/intro.html" class="game-card">
-                <h2>🐍 Snake</h2>
-                <p>Guide your snake through the arena, eat food to grow, but avoid hitting yourself!</p>
-                <div class="difficulty-badges">
-                    <span class="badge">Easy</span>
-                    <span class="badge">Medium</span>
-                    <span class="badge">Hard</span>
+                <div class="card-header">
+                    <span class="card-icon">🐍</span>
+                    <h2 class="card-title">Snake</h2>
+                    <p class="card-desc">Guide your growing snake through the arena. Eat food to grow longer, but avoid walls and your own tail!</p>
+                </div>
+                <div class="card-footer">
+                    <div class="difficulty-badges">
+                        <span class="badge easy">Easy</span>
+                        <span class="badge medium">Medium</span>
+                        <span class="badge hard">Hard</span>
+                    </div>
+                    <div class="play-indicator">
+                        Play
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
                 </div>
             </a>
 
             <a href="pong/intro.html" class="game-card">
-                <h2>🎾 Pong</h2>
-                <p>Legendary paddle game. Master the ball rebounds and defeat your opponent!</p>
-                <div class="difficulty-badges">
-                    <span class="badge">Easy</span>
-                    <span class="badge">Medium</span>
-                    <span class="badge">Hard</span>
+                <div class="card-header">
+                    <span class="card-icon">🎾</span>
+                    <h2 class="card-title">Pong</h2>
+                    <p class="card-desc">The legendary paddle game. Master ball physics and outsmart the AI opponent across multiple difficulty levels.</p>
+                </div>
+                <div class="card-footer">
+                    <div class="difficulty-badges">
+                        <span class="badge easy">Easy</span>
+                        <span class="badge medium">Medium</span>
+                        <span class="badge hard">Hard</span>
+                    </div>
+                    <div class="play-indicator">
+                        Play
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
                 </div>
             </a>
 
             <a href="breakout/intro.html" class="game-card">
-                <h2>🔨 Breakout</h2>
-                <p>Smash bricks with your paddle. Clear the board and reach new heights!</p>
-                <div class="difficulty-badges">
-                    <span class="badge">Easy</span>
-                    <span class="badge">Medium</span>
-                    <span class="badge">Hard</span>
+                <div class="card-header">
+                    <span class="card-icon">🔨</span>
+                    <h2 class="card-title">Breakout</h2>
+                    <p class="card-desc">Smash colorful bricks with your bouncing ball. Clear levels as speed increases for maximum points!</p>
+                </div>
+                <div class="card-footer">
+                    <div class="difficulty-badges">
+                        <span class="badge easy">Easy</span>
+                        <span class="badge medium">Medium</span>
+                        <span class="badge hard">Hard</span>
+                    </div>
+                    <div class="play-indicator">
+                        Play
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
                 </div>
             </a>
 
             <a href="geometry_dash/intro.html" class="game-card">
-                <h2>⬜ Geometry Dash</h2>
-                <p>Jump through obstacles with perfect timing. Master the rhythm of the game!</p>
-                <div class="difficulty-badges">
-                    <span class="badge">Easy</span>
-                    <span class="badge">Medium</span>
-                    <span class="badge">Hard</span>
+                <div class="card-header">
+                    <span class="card-icon">⬜</span>
+                    <h2 class="card-title">Geometry Dash</h2>
+                    <p class="card-desc">Jump through procedurally generated obstacles. Perfect timing and rhythm are key to survival!</p>
+                </div>
+                <div class="card-footer">
+                    <div class="difficulty-badges">
+                        <span class="badge easy">Easy</span>
+                        <span class="badge medium">Medium</span>
+                        <span class="badge hard">Hard</span>
+                    </div>
+                    <div class="play-indicator">
+                        Play
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
                 </div>
             </a>
 
             <a href="minesweeper/intro.html" class="game-card">
-                <h2>💣 Minesweeper</h2>
-                <p>Reveal safe tiles and avoid hidden mines. Use logic to solve the puzzle!</p>
-                <div class="difficulty-badges">
-                    <span class="badge">Easy</span>
-                    <span class="badge">Medium</span>
-                    <span class="badge">Hard</span>
+                <div class="card-header">
+                    <span class="card-icon">💣</span>
+                    <h2 class="card-title">Minesweeper</h2>
+                    <p class="card-desc">The classic logic puzzle. Reveal safe tiles and flag mines using deduction and strategy.</p>
                 </div>
-            </a>
-
-            <a href="space_shooters/intro.html" class="game-card">
-                <h2>🚀 Space Shooters</h2>
-                <p>Defend against alien attacks! Fast-paced action and reflexes required!</p>
-                <div class="difficulty-badges">
-                    <span class="badge">Easy</span>
-                    <span class="badge">Medium</span>
-                    <span class="badge">Hard</span>
+                <div class="card-footer">
+                    <div class="difficulty-badges">
+                        <span class="badge easy">Easy</span>
+                        <span class="badge medium">Medium</span>
+                        <span class="badge hard">Hard</span>
+                    </div>
+                    <div class="play-indicator">
+                        Play
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
                 </div>
             </a>
         </div>
@@ -111,19 +732,7 @@
     <footer>
         <div class="brand">VANILLA</div>
         <p>Choose a game to begin your adventure</p>
-        <p>© 2025 Vanilla Arcade Hub</p>
+        <p>© 2025 Vanilla Collection</p>
     </footer>
-
-    <script>
-        // Detect scroll and show footer gradient
-        window.addEventListener('scroll', () => {
-            const scrollPosition = window.scrollY || document.documentElement.scrollTop;
-            if (scrollPosition > 100) {
-                document.body.classList.add('show-footer-gradient');
-            } else {
-                document.body.classList.remove('show-footer-gradient');
-            }
-        });
-    </script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-VANILLA Arcade Hub - Lightweight JSON API
+VANILLA Collection - Lightweight JSON API
 
 This module runs a minimal Flask server for storing and retrieving
 per-game leaderboards. It keeps data in a local JSON file and protects
@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List
 
-from backends import breakout, geometry_dash, minesweeper, pong as pong_backend, snake as snake_backend, space_shooters
+from backends import breakout, geometry_dash, minesweeper, pong as pong_backend, snake as snake_backend, space_shooters, tetris as tetris_backend
 
 from flask import Flask, jsonify, request, send_from_directory
 
@@ -34,9 +34,11 @@ DEFAULT_SCORES = {
     "geometry_dash": [],
     "minesweeper": [],
     "space_shooters": [],
+    "tetris": [],
 }
 
 MAX_ENTRIES = 15
+ASCENDING_GAMES = {"minesweeper"}
 
 
 class ScoreStore:
@@ -88,7 +90,8 @@ class ScoreStore:
             data = self._read()
             data.setdefault(game, [])
             data[game].append(entry)
-            data[game] = sorted(data[game], key=lambda item: item["score"], reverse=True)[:MAX_ENTRIES]
+            reverse = game not in ASCENDING_GAMES
+            data[game] = sorted(data[game], key=lambda item: item["score"], reverse=reverse)[:MAX_ENTRIES]
             self._write(data)
 
         return entry
@@ -251,6 +254,14 @@ class GameServer:
             safe_col = int(payload.get("safe_col") or 0)
             layout = minesweeper.generate_board(rows, cols, mines, (safe_row, safe_col))
             return jsonify(layout)
+
+        @app.route("/api/tetris/config", methods=["POST", "OPTIONS"])
+        def tetris_config():
+            if request.method == "OPTIONS":
+                return ("", 204)
+            payload = request.get_json(silent=True) or {}
+            difficulty = str(payload.get("difficulty") or "medium").lower()
+            return jsonify({"difficulty": difficulty, "config": tetris_backend.config(difficulty)})
 
     def run(self, host: str = "0.0.0.0", port: int = 5000, debug: bool = False) -> None:
         self.app.run(host=host, port=port, debug=debug)

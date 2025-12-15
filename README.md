@@ -1,15 +1,15 @@
 <p align="center">
-  <img src="vanilla-banner.svg" alt="VANILLA — Arcade Hub" />
+  <img src="vanilla-banner.svg" alt="VANILLA — Collection" />
 </p>
 
-# VANILLA - Arcade Hub
+# Vanilla Collection
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-2.0%2B-green.svg)](https://flask.palletsprojects.com/)
 [![HTML5](https://img.shields.io/badge/HTML5-Canvas-orange.svg)](https://developer.mozilla.org/en-US/docs/Web/HTML)
 [![JavaScript](https://img.shields.io/badge/JavaScript-Vanilla-yellow.svg)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 
-A modern web-based arcade hub featuring 6 classic games reimagined with HTML5 Canvas, vanilla JavaScript, and a small Python Flask backend.
+A modern web-based collection of simple games featuring 7 classic titles reimagined with HTML5 Canvas, vanilla JavaScript, and a small Python Flask backend.
 
 If you’ve never run a local web project before: you’ll run one Python command to start a local server, then open a link in your browser (Chrome/Firefox/Safari) to play. The backend is optional for gameplay, but enables leaderboards and “helper” endpoints (procedural levels, AI planning) that some games can use.
 
@@ -23,7 +23,7 @@ If you’ve never run a local web project before: you’ll run one Python comman
    source venv/bin/activate  # Windows: venv\Scripts\activate
    pip install -r requirements.txt
    ```
-3. **Run the arcade hub**
+3. **Run the collection**
    ```bash
    python3 app.py
    ```
@@ -67,9 +67,14 @@ Each game is a standalone HTML5 Canvas experience with its own intro page, diffi
    - Power-ups (“buds”) temporarily change your weapon (rapid fire / multi-shot).
    - Enemy waves can be generated locally or planned by the backend (`/api/space/wave`).
 
+7. **Tetris** 🧩 — Block-stacking puzzle
+   - Full gameplay with hold, ghost piece, scoring, and level speed ramp.
+   - Backend configuration endpoint (`/api/tetris/config`) for difficulty tuning.
+   - Supports personal bests + global leaderboard via the shared score API.
+
 ## ✨ Features
 
-- **Modern Web Interface**: Gradient backgrounds, glass-morphism cards, and consistent HUD styling across the hub and each game.
+- **Modern Web Interface**: Gradient backgrounds, glass-morphism cards, and consistent HUD styling across the collection and each game.
 - **Multiple Difficulty Levels**: Easy/Medium/Hard per game, usually adjusting speed, density, or AI forgiveness rather than just “more enemies”.
 - **Responsive Design**: Canvases scale with the viewport, keeping gameplay readable on desktop and smaller screens.
 - **Persistent Scores**:
@@ -99,7 +104,8 @@ vanilla/
 │   ├── breakout.py              # Breakout level generation
 │   ├── geometry_dash.py         # Geometry Dash pattern generation
 │   ├── minesweeper.py           # Minesweeper board generation
-│   └── space_shooters.py        # Space Shooters wave planning
+│   ├── space_shooters.py        # Space Shooters wave planning
+│   └── tetris.py                # Tetris difficulty configuration
 ├── snake/                       # Snake game files
 │   ├── intro.html               # Game introduction page
 │   └── game.html                # Main game page
@@ -115,7 +121,10 @@ vanilla/
 ├── minesweeper/                 # Minesweeper game files
 │   ├── intro.html
 │   └── game.html
-└── space_shooters/              # Space Shooters game files
+├── space_shooters/              # Space Shooters game files
+│   ├── intro.html
+│   └── game.html
+└── tetris/                      # Tetris files
     ├── intro.html
     └── game.html
 ```
@@ -167,7 +176,7 @@ pip install -r requirements.txt
 ```bash
 python3 app.py
 ```
-This will start the server and (by default) open the arcade hub in your default browser.
+This will start the server and (by default) open the collection in your default browser.
 
 - If the browser doesn’t open: visit `http://localhost:5000`
 - To stop the server: press `Ctrl+C` in the terminal
@@ -178,7 +187,7 @@ python3 server.py
 ```
 This starts just the server without auto-opening the browser.
 
-The server will start on `http://localhost:5000` by default. Open this URL in your web browser to access the arcade hub.
+The server will start on `http://localhost:5000` by default. Open this URL in your web browser to access the collection.
 
 ### Environment Variables (Optional)
 - `HOST` - Server host (server.py default: 0.0.0.0, app.py default: 127.0.0.1)
@@ -225,6 +234,140 @@ HOST=127.0.0.1 PORT=8080 DEBUG=1 python3 server.py
 - **P** - Pause/Resume
 
 ## 🏗️ Architecture
+
+### System Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                                  🌐 BROWSER                                         │
+│  ┌───────────────────────────────────────────────────────────────────────────────┐  │
+│  │                            Frontend Layer                                     │  │
+│  │                                                                               │  │
+│  │   ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐               │  │
+│  │   │  📄 HTML5 Pages │  │ 🎨 Canvas Games  │  │ ⚡ Vanilla JS    │               │  │
+│  │   │  index.html     │  │  (7 modules)    │  │  Game Logic     │               │  │
+│  │   │  games.html     │──│  snake/         │──│  UI Controls    │               │  │
+│  │   │  about.html     │  │  pong/          │  │  API Calls      │               │  │
+│  │   └─────────────────┘  │  breakout/      │  └─────────────────┘               │  │
+│  │                        │  geometry_dash/ │                                    │  │
+│  │   ┌─────────────────┐  │  minesweeper/   │  ┌─────────────────┐               │  │
+│  │   │ 🎨 CSS3 Styles  │  │  space_shooters/│  │ 💾 localStorage  │               │  │
+│  │   │  styles.css     │  │  tetris/        │  │  Personal Bests │               │  │
+│  │   │  Animations     │  └─────────────────┘  │  Per Game/Diff  │               │  │
+│  │   └─────────────────┘                       └─────────────────┘               │  │
+│  └───────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+                │                         │                         │
+                │ HTTP Request            │ Optional API Calls      │ Score Submission
+                │ (Static Files)          │ (Procedural Gen)        │ (Leaderboard)
+                ▼                         ▼                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                            🖥️ FLASK SERVER (Python)                                 │
+│  ┌───────────────────────────────────────────────────────────────────────────────┐  │
+│  │                              REST API Layer                                   │  │
+│  │                                                                               │  │
+│  │   ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐               │  │
+│  │   │ 📁 Static Files │  │ 🏆 Score API     │  │ 🎮 Game APIs    │               │  │
+│  │   │  Serve HTML/    │  │  POST /score    │  │  /api/snake     │               │  │
+│  │   │  CSS/JS files   │  │  GET /leaderb.  │  │  /api/pong      │               │  │
+│  │   └─────────────────┘  └────────┬────────┘  │  /api/breakout  │               │  │
+│  │                                 │           │  /api/geometry  │               │  │
+│  └─────────────────────────────────│───────────│  /api/minesweep │───────────────┘  │
+│                                    │           │  /api/space     │                  │
+│                                    │           │  /api/tetris    │                  │
+│                                    │           └────────┬────────┘                  │
+│                                    ▼                    ▼                           │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                           Backend Modules (backends/)                       │   │
+│  │                                                                             │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐ ┌──────────────┐   │   │
+│  │  │🐍 snake  │ │🎾 pong   │ │🔨 breakout│ │⬜ geometry   │ │💣 minesweeper │   │   │
+│  │  │  .py     │ │  .py     │ │   .py    │ │   _dash.py   │ │     .py      │   │   │
+│  │  │  Food    │ │  AI      │ │  Level   │ │  Pattern     │ │  Board Gen   │   │   │
+│  │  │ Placement│ │ Target   │ │ Layout   │ │  Generation  │ │  First-Safe  │   │   │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────────┘ └──────────────┘   │   │
+│  │                                                                             │   │
+│  │  ┌─────────────────┐  ┌─────────────────┐                                   │   │
+│  │  │🚀 space_shooters│  │🧩 tetris.py      │                                   │   │
+│  │  │     .py         │  │  Difficulty     │                                   │   │
+│  │  │  Wave Planning  │  │  Config         │                                   │   │
+│  │  └─────────────────┘  └─────────────────┘                                   │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                          │                                         │
+│                    ┌─────────────────────┴────────────────────┐                    │
+│                    │        📊 ScoreStore                     │                    │
+│                    │     Thread-safe JSON I/O                 │                    │
+│                    │     Read/Write Leaderboards              │                    │
+│                    └─────────────────────┬────────────────────┘                    │
+└──────────────────────────────────────────│─────────────────────────────────────────┘
+                                           │
+                                           ▼
+                          ┌────────────────────────────────┐
+                          │      📁 scores.json            │
+                          │    Persistent Leaderboards     │
+                          │    Per-game score storage      │
+                          └────────────────────────────────┘
+```
+
+### Data Flow
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                              REQUEST/RESPONSE FLOW                               │
+└──────────────────────────────────────────────────────────────────────────────────┘
+
+  USER                    BROWSER                   FLASK SERVER              STORAGE
+   │                         │                            │                      │
+   │  1. Open localhost:5000 │                            │                      │
+   │ ───────────────────────>│                            │                      │
+   │                         │  2. GET /index.html        │                      │
+   │                         │ ──────────────────────────>│                      │
+   │                         │                            │                      │
+   │                         │  3. Return HTML/CSS/JS     │                      │
+   │                         │ <──────────────────────────│                      │
+   │                         │                            │                      │
+   │  4. Select & Start Game │                            │                      │
+   │ ───────────────────────>│                            │                      │
+   │                         │                            │                      │
+   │                         │  5. Initialize Canvas      │                      │
+   │                         │     + Game Loop            │                      │
+   │                         │                            │                      │
+   │                         │  ┌─────────────────────────────────────────────┐  │
+   │                         │  │  IF Backend Available:                      │  │
+   │                         │  │                                             │  │
+   │                         │  │  6a. POST /api/snake/food (or other API)    │  │
+   │                         │  │  ────────────────────────>                  │  │
+   │                         │  │                          │                  │  │
+   │                         │  │  7a. Generated game data │                  │  │
+   │                         │  │  <────────────────────────                  │  │
+   │                         │  │                                             │  │
+   │                         │  │  ELSE (Backend Offline):                    │  │
+   │                         │  │  6b. Use fallback local logic               │  │
+   │                         │  └─────────────────────────────────────────────┘  │
+   │                         │                            │                      │
+   │  8. Play Game...        │                            │                      │
+   │ ───────────────────────>│                            │                      │
+   │                         │                            │                      │
+   │                         │  9. Save personal best     │                      │
+   │                         │     to localStorage        │                      │
+   │                         │                            │                      │
+   │  10. Game Over          │                            │                      │
+   │      Submit Score       │                            │                      │
+   │ ───────────────────────>│                            │                      │
+   │                         │  11. POST /score           │                      │
+   │                         │      {game, player, score} │                      │
+   │                         │ ──────────────────────────>│                      │
+   │                         │                            │  12. Write score     │
+   │                         │                            │ ────────────────────>│
+   │                         │                            │  (thread-safe)       │
+   │                         │                            │ <────────────────────│
+   │                         │  13. Updated leaderboard   │                      │
+   │                         │ <──────────────────────────│                      │
+   │                         │                            │                      │
+   │  14. Show leaderboard   │                            │                      │
+   │ <───────────────────────│                            │                      │
+   │                         │                            │                      │
+```
 
 ### Frontend
 - **HTML5 Canvas** - All game rendering using native Canvas API
@@ -383,7 +526,7 @@ Each game maintains a state machine:
 
 - [ ] Sound effects and background music
 - [ ] Global online leaderboards with user accounts
-- [ ] Additional games (Pac-Man, Asteroids, Tetris, etc.)
+- [ ] Additional games (Pac-Man, Asteroids, etc.)
 - [ ] Multiplayer network support
 - [ ] Achievement system and statistics
 - [ ] Customizable key bindings
@@ -406,7 +549,7 @@ Built with:
 
 ## 🙏 Acknowledgments
 
-VANILLA Arcade Hub is a modern reimplementation of classic arcade games, created to showcase web development with vanilla technologies and demonstrate how timeless game mechanics can be brought into the modern web era.
+Vanilla Collection is a modern reimplementation of classic games, created to showcase web development with vanilla technologies and demonstrate how timeless game mechanics can be brought into the modern web era.
 
 ---
 

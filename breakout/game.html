@@ -141,6 +141,7 @@
         </section>
 
         <aside class="glass-card sidebar">
+            <div id="scoreboardMount"></div>
             <div class="eyebrow">Aim smart</div>
             <h2>Ride the angles</h2>
             <ul class="tips">
@@ -225,6 +226,7 @@
     </div>
 
     <script src="../sounds.js"></script>
+    <script src="../scoreboard.js"></script>
     <script>
         const canvas = document.getElementById('board');
         const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
@@ -267,6 +269,7 @@
             hard: { rows: 6, speed: 8.5, paddle: 85, label: 'Hard' }
         };
 
+        const difficultyKey = CONFIG[requestedDifficulty] ? requestedDifficulty : 'medium';
         const settings = CONFIG[requestedDifficulty] || CONFIG.medium;
         difficultyLabel.textContent = `${settings.label} • ${settings.rows} rows`;
 
@@ -279,6 +282,18 @@
 
         const bestKey = `vanilla-breakout-${settings.label.toLowerCase()}-best`;
         let bestScore = Number(localStorage.getItem(bestKey)) || 0;
+
+        const scoreboard = window.VanillaScoreboard?.mount({
+            mount: document.getElementById('scoreboardMount'),
+            gameId: 'breakout',
+            difficulty: difficultyKey,
+            bestKey,
+            bestLabel: 'Personal best',
+            scoreLabel: 'Score',
+            formatScore: (value) => String(Math.floor(Number(value) || 0)),
+            getSubmitScore: () => bestScore,
+        });
+        scoreboard?.setBest(bestScore);
 
         let width = 800;
         let height = 600;
@@ -928,6 +943,7 @@
             if (isNewRecord) {
                 bestScore = score;
                 localStorage.setItem(bestKey, bestScore);
+                scoreboard?.setBest(bestScore);
             }
             
             // Configure overlay based on whether it's a new record

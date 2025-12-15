@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About - VANILLA Arcade Hub</title>
+    <title>About - Vanilla Collection</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <style>
         body {
@@ -17,8 +17,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid rgba(102, 126, 234, 0.25);
-            background: linear-gradient(90deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.06));
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+            background: transparent;
         }
 
         .brand-link {
@@ -69,169 +69,419 @@
             transform: translateY(-2px);
         }
 
+        /* Main Content */
         main {
             flex: 1;
-            width: min(900px, 100%);
+            width: min(780px, 100%);
             margin: 0 auto;
-            padding: 50px 30px 80px;
+            padding: 80px 30px 100px;
         }
 
-        .content-section {
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.02), rgba(102, 126, 234, 0.07));
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 18px;
-            padding: 40px;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35), 0 8px 20px rgba(102, 126, 234, 0.08);
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 30px;
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            margin-bottom: 100px;
         }
 
-        .content-section::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at 20% 20%, rgba(118, 75, 162, 0.18), transparent 40%),
-                        radial-gradient(circle at 80% 10%, rgba(102, 126, 234, 0.18), transparent 35%);
-            pointer-events: none;
-        }
-
-        .content-section > * {
-            position: relative;
-            z-index: 1;
-        }
-
-        .eyebrow {
-            letter-spacing: 1.8px;
+        .hero-eyebrow {
+            display: inline-block;
+            letter-spacing: 3px;
             text-transform: uppercase;
             color: #9fb0ff;
             font-size: 11px;
-            margin-bottom: 12px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            position: relative;
         }
 
-        h1 {
-            font-size: clamp(32px, 5vw, 48px);
-            line-height: 1.2;
-            margin-bottom: 20px;
-            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+        .hero-eyebrow::before,
+        .hero-eyebrow::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5));
+        }
+
+        .hero-eyebrow::before {
+            right: calc(100% + 15px);
+        }
+
+        .hero-eyebrow::after {
+            left: calc(100% + 15px);
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.5), transparent);
+        }
+
+        .hero h1 {
+            font-size: clamp(36px, 6vw, 56px);
+            line-height: 1.15;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #f2f4ff 0%, #c9d1ff 50%, #a8b5ff 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            font-weight: 800;
+            letter-spacing: -1px;
         }
 
-        h2 {
-            font-size: clamp(24px, 4vw, 32px);
-            margin: 30px 0 16px;
-            color: #f2f3ff;
+        .hero-subtitle {
+            color: rgba(201, 206, 232, 0.85);
+            line-height: 1.9;
+            font-size: 17px;
+            max-width: 580px;
+            margin: 0 auto;
+            font-weight: 400;
         }
 
-        h2:first-of-type {
-            margin-top: 0;
+        /* Section Styling */
+        .section {
+            margin-bottom: 80px;
         }
 
-        p {
-            color: #c9cee8;
-            line-height: 1.8;
-            margin-bottom: 16px;
-            font-size: 16px;
-        }
-
-        .game-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        .section-header {
+            display: flex;
+            align-items: center;
             gap: 16px;
-            margin: 20px 0;
+            margin-bottom: 28px;
         }
 
-        .game-item {
-            padding: 20px;
+        .section-icon {
+            font-size: 28px;
+            width: 52px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.1));
             border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.1));
-            transition: all 0.25s ease;
+            flex-shrink: 0;
         }
 
-        .game-item:hover {
-            transform: translateY(-2px);
-            border-color: rgba(118, 75, 162, 0.5);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-        }
-
-        .game-item h3 {
-            font-size: 18px;
-            margin-bottom: 8px;
-            color: #f4f6ff;
-        }
-
-        .game-item p {
-            font-size: 14px;
-            color: #dfe4ff;
+        .section-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #f2f3ff;
             margin: 0;
         }
 
-        .tech-stack {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin: 20px 0;
+        .section p {
+            color: rgba(201, 206, 232, 0.85);
+            line-height: 1.85;
+            font-size: 16px;
+            margin-bottom: 20px;
         }
 
-        .tech-tag {
-            padding: 10px 16px;
-            border-radius: 12px;
-            border: 1px solid rgba(102, 126, 234, 0.35);
-            background: rgba(102, 126, 234, 0.08);
-            color: #dfe4ff;
-            font-weight: 600;
-            font-size: 13px;
-            letter-spacing: 0.3px;
+        .section p:last-child {
+            margin-bottom: 0;
         }
 
-        .feature-list {
-            list-style: none;
-            padding: 0;
-            margin: 20px 0;
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent);
+            margin: 60px 0;
         }
 
-        .feature-list li {
-            padding: 12px 0;
-            color: #c9cee8;
-            line-height: 1.6;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        /* Games Showcase */
+        .games-showcase {
+            display: grid;
+            gap: 0;
+            margin: 30px 0;
         }
 
-        .feature-list li:last-child {
+        .game-row {
+            display: grid;
+            grid-template-columns: 60px 1fr;
+            gap: 20px;
+            padding: 22px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.2s ease;
+        }
+
+        .game-row:last-child {
             border-bottom: none;
         }
 
-        .feature-list li::before {
-            content: "▸";
-            color: #9de8c7;
-            font-weight: bold;
-            margin-right: 10px;
+        .game-row:hover {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.05), transparent);
+            margin: 0 -20px;
+            padding: 22px 20px;
         }
 
-        .cta-section {
+        .game-emoji {
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-info h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #f4f6ff;
+            margin: 0 0 6px;
+        }
+
+        .game-info p {
+            font-size: 14px;
+            color: rgba(201, 206, 232, 0.7);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        /* Tech Pills */
+        .tech-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 24px 0;
+        }
+
+        .tech-pill {
+            padding: 8px 16px;
+            border-radius: 100px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.08));
+            color: #c9d1ff;
+            font-weight: 500;
+            font-size: 13px;
+            letter-spacing: 0.3px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .tech-pill:hover {
+            border-color: rgba(102, 126, 234, 0.5);
+            transform: translateY(-1px);
+        }
+
+        /* Feature List */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px 0;
+        }
+
+        .feature-check {
+            color: #9de8c7;
+            font-size: 16px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .feature-text {
+            color: rgba(201, 206, 232, 0.85);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        /* Architecture List */
+        .arch-list {
+            margin: 24px 0;
+        }
+
+        .arch-item {
+            display: flex;
+            gap: 16px;
+            padding: 18px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .arch-item:last-child {
+            border-bottom: none;
+        }
+
+        .arch-label {
+            width: 100px;
+            flex-shrink: 0;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #9fb0ff;
+            padding-top: 3px;
+        }
+
+        .arch-desc {
+            color: rgba(201, 206, 232, 0.85);
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        /* Roadmap */
+        .roadmap {
+            margin: 24px 0;
+        }
+
+        .roadmap-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 0;
+            color: rgba(201, 206, 232, 0.75);
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .roadmap-item:hover {
+            color: rgba(201, 206, 232, 0.95);
+        }
+
+        .roadmap-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            flex-shrink: 0;
+        }
+
+        /* Quote */
+        .quote {
+            position: relative;
+            padding: 30px 0 30px 30px;
+            margin: 40px 0;
+            border-left: 3px solid;
+            border-image: linear-gradient(180deg, #667eea, #764ba2) 1;
+        }
+
+        .quote p {
+            font-size: 20px;
+            font-style: italic;
+            color: rgba(242, 244, 255, 0.9);
+            line-height: 1.7;
+            margin: 0;
+            font-weight: 400;
+        }
+
+        .quote cite {
+            display: block;
+            margin-top: 16px;
+            font-size: 13px;
+            font-style: normal;
+            color: rgba(159, 176, 255, 0.8);
+            letter-spacing: 0.5px;
+        }
+
+        /* CTA */
+        .cta {
             text-align: center;
-            margin-top: 40px;
+            margin-top: 100px;
+            padding-top: 60px;
+            border-top: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .cta h2 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #f2f3ff;
+            margin-bottom: 12px;
+        }
+
+        .cta p {
+            color: rgba(201, 206, 232, 0.7);
+            font-size: 16px;
+            margin-bottom: 32px;
         }
 
         .cta-button {
-            display: inline-block;
-            padding: 15px 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 36px;
             border-radius: 50px;
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             text-decoration: none;
             font-weight: 700;
-            letter-spacing: 1px;
+            font-size: 14px;
+            letter-spacing: 0.5px;
             transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.35);
         }
 
         .cta-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+            transform: translateY(-4px);
+            box-shadow: 0 18px 50px rgba(102, 126, 234, 0.5);
+        }
+
+        .cta-button svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Footer */
+        footer {
+            display: block;
+            text-align: center;
+            padding: 40px 30px 50px;
+            border-top: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        footer .brand {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+
+        footer p {
+            color: rgba(176, 176, 176, 0.7);
+            font-size: 12px;
+            margin: 6px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            main {
+                padding: 50px 20px 80px;
+            }
+
+            .hero {
+                margin-bottom: 70px;
+            }
+
+            .hero-eyebrow::before,
+            .hero-eyebrow::after {
+                display: none;
+            }
+
+            .section {
+                margin-bottom: 60px;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .game-row {
+                grid-template-columns: 50px 1fr;
+            }
+
+            .arch-item {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .arch-label {
+                width: auto;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -239,7 +489,7 @@
     <header>
         <a class="brand-link" href="index.html">
             <h1>VANILLA</h1>
-            <span>Arcade Hub</span>
+            <span>Collection</span>
         </a>
         <div class="nav-actions">
             <a class="pill-link" href="games.html">Play Games</a>
@@ -248,146 +498,255 @@
     </header>
 
     <main>
-        <div class="content-section">
-            <div class="eyebrow">About the Project</div>
+        <!-- Hero -->
+        <section class="hero">
+            <span class="hero-eyebrow">About the Project</span>
             <h1>Classic Arcade Games, Reimagined for the Web</h1>
-            <p>
-                VANILLA is a web-based arcade hub that brings timeless classic games into the modern era. 
-                Built with pure HTML5, CSS3, JavaScript, and a Python Flask backend, this project showcases 
-                how retro gaming experiences can be recreated with contemporary web technologies while 
-                maintaining the essence of what made these games legendary.
+            <p class="hero-subtitle">
+                VANILLA brings timeless classic games into the modern era. Built with pure web technologies 
+                and a Python Flask backend, showcasing how retro gaming experiences can be recreated 
+                while maintaining the essence of what made these games legendary.
             </p>
-        </div>
+        </section>
 
-        <div class="content-section">
-            <h2>🎮 The Games</h2>
+        <!-- Games Section -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon">🎮</div>
+                <h2 class="section-title">The Games</h2>
+            </div>
             <p>
                 Each game has been carefully crafted with attention to gameplay mechanics, visual polish, 
-                and responsive controls. All games include multiple difficulty levels, persistent high scores, 
-                and seamless integration with the Python backend for enhanced features.
+                and responsive controls. All games include multiple difficulty levels and persistent high scores.
             </p>
 
-            <div class="game-list">
-                <div class="game-item">
-                    <h3>🐍 Snake</h3>
-                    <p>Navigate a growing snake through a grid. Eat food without hitting yourself or walls.</p>
+            <div class="games-showcase">
+                <div class="game-row">
+                    <div class="game-emoji">🐍</div>
+                    <div class="game-info">
+                        <h3>Snake</h3>
+                        <p>Navigate a growing snake through a grid. Eat food without hitting yourself or walls.</p>
+                    </div>
                 </div>
-                <div class="game-item">
-                    <h3>🎾 Pong</h3>
-                    <p>Classic paddle game with adaptive AI. Master the ball physics and outsmart your opponent.</p>
+                <div class="game-row">
+                    <div class="game-emoji">🎾</div>
+                    <div class="game-info">
+                        <h3>Pong</h3>
+                        <p>Classic paddle game with adaptive AI. Master the ball physics and outsmart your opponent.</p>
+                    </div>
                 </div>
-                <div class="game-item">
-                    <h3>🔨 Breakout</h3>
-                    <p>Break colorful bricks with your paddle. Clear levels and watch the speed ramp up.</p>
+                <div class="game-row">
+                    <div class="game-emoji">🔨</div>
+                    <div class="game-info">
+                        <h3>Breakout</h3>
+                        <p>Break colorful bricks with your paddle. Clear levels and watch the speed ramp up.</p>
+                    </div>
                 </div>
-                <div class="game-item">
-                    <h3>⬜ Geometry Dash</h3>
-                    <p>Jump through procedural obstacles. Time your moves and use double-jumps wisely.</p>
+                <div class="game-row">
+                    <div class="game-emoji">⬜</div>
+                    <div class="game-info">
+                        <h3>Geometry Dash</h3>
+                        <p>Jump through procedural obstacles. Time your moves and use double-jumps wisely.</p>
+                    </div>
                 </div>
-                <div class="game-item">
-                    <h3>💣 Minesweeper</h3>
-                    <p>Logic puzzle classic. Reveal safe tiles and flag mines using deduction.</p>
+                <div class="game-row">
+                    <div class="game-emoji">💣</div>
+                    <div class="game-info">
+                        <h3>Minesweeper</h3>
+                        <p>Logic puzzle classic. Reveal safe tiles and flag mines using deduction.</p>
+                    </div>
                 </div>
-                <div class="game-item">
-                    <h3>🚀 Space Shooters</h3>
-                    <p>Defend against alien waves. Collect power-ups and survive progressively harder attacks.</p>
+                <div class="game-row">
+                    <div class="game-emoji">🚀</div>
+                    <div class="game-info">
+                        <h3>Space Shooters</h3>
+                        <p>Defend against alien waves. Collect power-ups and survive progressively harder attacks.</p>
+                    </div>
+                </div>
+                <div class="game-row">
+                    <div class="game-emoji">🧩</div>
+                    <div class="game-info">
+                        <h3>Tetris</h3>
+                        <p>Stack tetrominoes to clear lines. Includes hold, ghost piece, scoring, and a speed ramp.</p>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="content-section">
-            <h2>🛠️ Technology Stack</h2>
+        <div class="divider"></div>
+
+        <!-- Technology Section -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon">🛠️</div>
+                <h2 class="section-title">Technology Stack</h2>
+            </div>
             <p>
                 This project demonstrates modern web development practices while maintaining clean, 
                 readable code without heavy frameworks.
             </p>
 
-            <div class="tech-stack">
-                <span class="tech-tag">HTML5 Canvas</span>
-                <span class="tech-tag">CSS3</span>
-                <span class="tech-tag">Vanilla JavaScript</span>
-                <span class="tech-tag">Python 3.8+</span>
-                <span class="tech-tag">Flask</span>
-                <span class="tech-tag">JSON API</span>
+            <div class="tech-pills">
+                <span class="tech-pill">HTML5 Canvas</span>
+                <span class="tech-pill">CSS3</span>
+                <span class="tech-pill">Vanilla JavaScript</span>
+                <span class="tech-pill">Python 3.8+</span>
+                <span class="tech-pill">Flask</span>
+                <span class="tech-pill">JSON API</span>
             </div>
 
-            <ul class="feature-list">
-                <li><strong>Frontend:</strong> Pure HTML5 Canvas for game rendering, CSS3 for UI styling, and vanilla JavaScript for game logic</li>
-                <li><strong>Backend:</strong> Python Flask server providing REST API endpoints for game data, leaderboards, and procedural generation</li>
-                <li><strong>Persistence:</strong> LocalStorage for client-side high scores, JSON file store for global leaderboards</li>
-                <li><strong>Responsive Design:</strong> Adaptive canvas sizing and mobile-friendly controls</li>
-                <li><strong>Performance:</strong> 120 FPS target (display-dependent) with optimized rendering and efficient game loops</li>
-            </ul>
-        </div>
+            <div class="arch-list">
+                <div class="arch-item">
+                    <span class="arch-label">Frontend</span>
+                    <span class="arch-desc">Pure HTML5 Canvas for game rendering, CSS3 for UI styling, and vanilla JavaScript for game logic</span>
+                </div>
+                <div class="arch-item">
+                    <span class="arch-label">Backend</span>
+                    <span class="arch-desc">Python Flask server providing REST API endpoints for game data, leaderboards, and procedural generation</span>
+                </div>
+                <div class="arch-item">
+                    <span class="arch-label">Persistence</span>
+                    <span class="arch-desc">LocalStorage for client-side high scores, JSON file store for global leaderboards</span>
+                </div>
+                <div class="arch-item">
+                    <span class="arch-label">Performance</span>
+                    <span class="arch-desc">120 FPS target with optimized rendering and efficient game loops</span>
+                </div>
+            </div>
+        </section>
 
-        <div class="content-section">
-            <h2>✨ Key Features</h2>
-            <ul class="feature-list">
-                <li>Six fully-functional arcade games with polished gameplay</li>
-                <li>Multiple difficulty levels for each game</li>
-                <li>Persistent high scores and leaderboards</li>
-                <li>Smooth 120 FPS target gameplay with responsive controls</li>
-                <li>Clean, modern UI with gradient themes and glass-morphism effects</li>
-                <li>Python backend for procedural content generation and AI opponents</li>
-                <li>Keyboard and mouse/touch controls</li>
-                <li>Pause, restart, and navigation features</li>
-                <li>Cross-browser compatible</li>
-            </ul>
-        </div>
+        <div class="divider"></div>
 
-        <div class="content-section">
-            <h2>📖 Design Philosophy</h2>
+        <!-- Features Section -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon">✨</div>
+                <h2 class="section-title">Key Features</h2>
+            </div>
+
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <span class="feature-check">✓</span>
+                    <span class="feature-text">Seven games in the collection with consistent UI</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-check">✓</span>
+                    <span class="feature-text">Multiple difficulty levels for each game</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-check">✓</span>
+                    <span class="feature-text">Persistent high scores and leaderboards</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-check">✓</span>
+                    <span class="feature-text">Smooth 120 FPS target gameplay</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-check">✓</span>
+                    <span class="feature-text">Clean, modern UI with gradient themes</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-check">✓</span>
+                    <span class="feature-text">Python backend for procedural content</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-check">✓</span>
+                    <span class="feature-text">Keyboard and mouse/touch controls</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-check">✓</span>
+                    <span class="feature-text">Cross-browser compatible</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- Philosophy Section -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon">📖</div>
+                <h2 class="section-title">Design Philosophy</h2>
+            </div>
+
+            <div class="quote">
+                <p>"Pure, unadulterated web technologies without relying on heavy frameworks or libraries. Every line of code serves a purpose."</p>
+                <cite>— The VANILLA Approach</cite>
+            </div>
+
             <p>
-                VANILLA embraces simplicity and elegance. The name itself reflects the core approach: 
-                <strong>pure, unadulterated web technologies</strong> without relying on heavy frameworks 
-                or libraries. Every line of code serves a purpose, and every feature is carefully considered.
+                The name itself reflects the core approach: simplicity and elegance. The visual design 
+                combines retro arcade nostalgia with modern aesthetics—vibrant gradients, smooth animations, 
+                and a consistent purple-blue color scheme create an immersive experience that feels both 
+                classic and contemporary.
             </p>
-            <p>
-                The visual design combines retro arcade nostalgia with modern aesthetics—vibrant gradients, 
-                smooth animations, and a consistent purple-blue color scheme create an immersive experience 
-                that feels both classic and contemporary.
-            </p>
-        </div>
+        </section>
 
-        <div class="content-section">
-            <h2>🚀 Future Enhancements</h2>
+        <div class="divider"></div>
+
+        <!-- Future Section -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon">🚀</div>
+                <h2 class="section-title">Future Enhancements</h2>
+            </div>
             <p>
                 While VANILLA is fully functional, there are exciting possibilities for expansion:
             </p>
-            <ul class="feature-list">
-                <li>Additional games (Pac-Man, Asteroids, Tetris, etc.)</li>
-                <li>Sound effects and background music</li>
-                <li>Global online leaderboards with user accounts</li>
-                <li>Multiplayer support for compatible games</li>
-                <li>Achievement system and game statistics</li>
-                <li>Customizable themes and color schemes</li>
-                <li>Mobile app versions (PWA)</li>
-                <li>Tournament mode and daily challenges</li>
-            </ul>
-        </div>
 
-        <div class="cta-section">
+            <div class="roadmap">
+                <div class="roadmap-item">
+                    <span class="roadmap-dot"></span>
+                    Additional games (Pac-Man, Asteroids)
+                </div>
+                <div class="roadmap-item">
+                    <span class="roadmap-dot"></span>
+                    Sound effects and background music
+                </div>
+                <div class="roadmap-item">
+                    <span class="roadmap-dot"></span>
+                    Global online leaderboards with user accounts
+                </div>
+                <div class="roadmap-item">
+                    <span class="roadmap-dot"></span>
+                    Multiplayer support for compatible games
+                </div>
+                <div class="roadmap-item">
+                    <span class="roadmap-dot"></span>
+                    Achievement system and game statistics
+                </div>
+                <div class="roadmap-item">
+                    <span class="roadmap-dot"></span>
+                    Customizable themes and color schemes
+                </div>
+                <div class="roadmap-item">
+                    <span class="roadmap-dot"></span>
+                    Mobile app versions (PWA)
+                </div>
+                <div class="roadmap-item">
+                    <span class="roadmap-dot"></span>
+                    Tournament mode and daily challenges
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="cta">
             <h2>Ready to Play?</h2>
-            <p style="margin-bottom: 30px;">Experience classic arcade gaming in your browser, right now.</p>
-            <a href="games.html" class="cta-button">Play Games</a>
-        </div>
+            <p>Experience classic arcade gaming in your browser, right now.</p>
+            <a href="games.html" class="cta-button">
+                Play Games
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </section>
     </main>
 
     <footer>
         <div class="brand">VANILLA</div>
-        <p>Arcade Hub — Classic Games Reimagined for the Web</p>
+        <p>Vanilla Collection — Classic Games Reimagined for the Web</p>
         <p>© 2025 Built with HTML5, CSS3, JavaScript, and Python Flask</p>
     </footer>
-
-    <script>
-        window.addEventListener('scroll', () => {
-            const scrollPosition = window.scrollY || document.documentElement.scrollTop;
-            if (scrollPosition > 100) {
-                document.body.classList.add('show-footer-gradient');
-            } else {
-                document.body.classList.remove('show-footer-gradient');
-            }
-        });
-    </script>
 </body>
 </html>

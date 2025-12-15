@@ -111,6 +111,7 @@
         </section>
 
         <aside class="glass-card sidebar">
+            <div id="scoreboardMount"></div>
             <div class="eyebrow">Stay logical</div>
             <h2>Work the edges</h2>
             <ul class="tips">
@@ -195,6 +196,7 @@
     </div>
 
     <script src="../sounds.js"></script>
+    <script src="../scoreboard.js"></script>
     <script>
         const gridEl = document.getElementById('grid');
         const minesLeftEl = document.getElementById('minesLeft');
@@ -230,10 +232,29 @@
             hard: { rows: 16, cols: 20, mines: 60, label: 'Hard' }
         };
         const settings = CONFIG[requestedDifficulty] || CONFIG.medium;
+        const difficultyKey = CONFIG[requestedDifficulty] ? requestedDifficulty : 'medium';
         difficultyLabel.textContent = `${settings.label} • ${settings.rows}×${settings.cols}`;
-        const bestKey = `vanilla-sweeper-${settings.label.toLowerCase()}-best`;
+
+        const bestKey = `vanilla-minesweeper-${settings.label.toLowerCase()}-best`;
+        const legacyBestKey = `vanilla-sweeper-${settings.label.toLowerCase()}-best`;
+        window.VanillaScoreboard?.migrateLocalStorageKey(bestKey, [legacyBestKey]);
+
         let bestTime = Number(localStorage.getItem(bestKey)) || null;
         bestEl.textContent = bestTime ? `${bestTime}s` : '--';
+
+        const scoreboard = window.VanillaScoreboard?.mount({
+            mount: document.getElementById('scoreboardMount'),
+            gameId: 'minesweeper',
+            difficulty: difficultyKey,
+            bestKey,
+            bestKeyAliases: [legacyBestKey],
+            bestLabel: 'Personal best time',
+            scoreLabel: 'Time (s) • lower is better',
+            formatScore: (value) => `${Math.floor(Number(value) || 0)}s`,
+            getSubmitScore: () => (bestTime ? bestTime : null),
+            canSubmitScore: (value) => Number.isFinite(Number(value)) && Number(value) > 0,
+        });
+        scoreboard?.setBest(bestTime);
 
         let cells = [];
         let minesPlaced = 0;
@@ -518,6 +539,7 @@
                 bestTime = elapsed;
                 localStorage.setItem(bestKey, bestTime);
                 bestEl.textContent = `${bestTime}s`;
+                scoreboard?.setBest(bestTime);
             }
             
             // Configure overlay based on outcome

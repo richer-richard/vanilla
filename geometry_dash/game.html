@@ -402,17 +402,11 @@
                         <h1 id="overTitle">Crashed.</h1>
                         <p id="overSummary">Distance: 0</p>
 
-                        <div class="form-row">
-                            <input class="name-input" id="playerName" maxlength="18" placeholder="Name for leaderboard (optional)" autocomplete="nickname">
-                            <button class="primary-btn" id="submitScoreBtn" type="button">Submit</button>
-                        </div>
-
                         <div class="overlay-actions" style="margin-top: 12px;">
                             <button class="secondary-btn" id="playAgainBtn" type="button">Play Again</button>
                             <button class="secondary-btn" type="button" onclick="window.location.href='../games.html'">Menu</button>
                         </div>
-
-                        <div class="small-note" id="submitNote">Submitting saves your best run to the hub leaderboard.</div>
+                        <div class="small-note">Submit your personal best from the leaderboard panel.</div>
                     </div>
                 </div>
             </div>
@@ -425,11 +419,7 @@
         </section>
 
         <aside class="glass-card sidebar">
-            <div class="eyebrow">Top runs</div>
-            <h2>Leaderboard</h2>
-            <div class="leaderboard" id="leaderboard">
-                <div class="row"><div class="rank">—</div><div class="lb-main"><div class="lb-name">Loading…</div><div class="lb-meta">Fetching scores</div></div><div class="lb-score">—</div></div>
-            </div>
+            <div id="scoreboardMount"></div>
 
             <div class="eyebrow">How to win</div>
             <h2>Flow tips</h2>
@@ -448,6 +438,7 @@
     </main>
 
     <script src="../sounds.js"></script>
+    <script src="../scoreboard.js"></script>
     <script>
         (() => {
             const GAME_ID = 'geometry_dash';
@@ -470,7 +461,6 @@
             const overOverlay = document.getElementById('overOverlay');
             const overTitle = document.getElementById('overTitle');
             const overSummary = document.getElementById('overSummary');
-            const submitNote = document.getElementById('submitNote');
 
             const startBtn = document.getElementById('startBtn');
             const focusBtn = document.getElementById('focusBtn');
@@ -480,10 +470,6 @@
             const pauseBtn = document.getElementById('pauseBtn');
             const playAgainBtn = document.getElementById('playAgainBtn');
             const soundBtn = document.getElementById('soundBtn');
-            const submitScoreBtn = document.getElementById('submitScoreBtn');
-            const playerNameInput = document.getElementById('playerName');
-
-            const leaderboardEl = document.getElementById('leaderboard');
 
             const params = new URLSearchParams(window.location.search);
             const requestedDifficulty = (params.get('difficulty') || 'medium').toLowerCase();
@@ -527,15 +513,32 @@
                 }
             };
 
-            const settings = CONFIG[requestedDifficulty] || CONFIG.medium;
+            const difficultyKey = CONFIG[requestedDifficulty] ? requestedDifficulty : 'medium';
+            const settings = CONFIG[difficultyKey] || CONFIG.medium;
             difficultyLabel.textContent = settings.label;
 
-            const bestKey = `vanilla-${GAME_ID}-${requestedDifficulty}-best`;
-            const nameKey = `vanilla-${GAME_ID}-name`;
+            const bestKey = `vanilla-${GAME_ID}-${difficultyKey}-best`;
+            const legacyNameKey = `vanilla-${GAME_ID}-name`;
             let bestDistance = Number(localStorage.getItem(bestKey)) || 0;
             bestEl.textContent = Math.floor(bestDistance);
 
-            playerNameInput.value = (localStorage.getItem(nameKey) || '').slice(0, 18);
+            const globalNameKey = 'vanilla-player-name';
+            if (!localStorage.getItem(globalNameKey)) {
+                const legacyName = (localStorage.getItem(legacyNameKey) || '').trim();
+                if (legacyName) localStorage.setItem(globalNameKey, legacyName.slice(0, 18));
+            }
+
+            const scoreboard = window.VanillaScoreboard?.mount({
+                mount: document.getElementById('scoreboardMount'),
+                gameId: GAME_ID,
+                difficulty: difficultyKey,
+                bestKey,
+                bestLabel: 'Personal best',
+                scoreLabel: 'Distance (m)',
+                formatScore: (value) => String(Math.floor(Number(value) || 0)),
+                getSubmitScore: () => bestDistance,
+            });
+            scoreboard?.setBest(bestDistance);
 
             const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -827,12 +830,12 @@
                 const finalMeters = Math.floor(state.distance);
                 overTitle.textContent = 'Crashed.';
                 overSummary.textContent = `Distance: ${finalMeters}`;
-                submitNote.textContent = reason || 'Submit to save your run to the hub leaderboard.';
 
                 if (finalMeters > bestDistance) {
                     bestDistance = finalMeters;
                     localStorage.setItem(bestKey, String(bestDistance));
                     bestEl.textContent = String(bestDistance);
+                    scoreboard?.setBest(bestDistance);
                 }
 
                 if (!reducedMotion) spawnParticles(player.x + player.size / 2, player.y + player.size / 2, 28, 'death');
@@ -840,7 +843,7 @@
                 soundEngine.gameOver();
 
                 setMode('over');
-                loadLeaderboard();
+                scoreboard?.loadLeaderboard();
             }
 
             function normalizeObstacle(raw) {
@@ -1615,93 +1618,6 @@
                 draw();
             }
 
-            async function loadLeaderboard() {
-                try {
-                    const resp = await fetch(`/api/leaderboard/${GAME_ID}`);
-                    if (!resp.ok) throw new Error('leaderboard fetch failed');
-                    const data = await resp.json();
-                    const scores = Array.isArray(data.scores) ? data.scores : [];
-                    renderLeaderboard(scores);
-                } catch (err) {
-                    renderLeaderboard([]);
-                }
-            }
-
-            function renderLeaderboard(scores) {
-                leaderboardEl.innerHTML = '';
-                const items = scores.slice(0, 8);
-                if (!items.length) {
-                    const row = document.createElement('div');
-                    row.className = 'row';
-                    row.innerHTML = `<div class="rank">—</div><div class="lb-main"><div class="lb-name">No scores yet</div><div class="lb-meta">Be the first to submit a run.</div></div><div class="lb-score">—</div>`;
-                    leaderboardEl.appendChild(row);
-                    return;
-                }
-
-                items.forEach((entry, idx) => {
-                    const row = document.createElement('div');
-                    row.className = 'row';
-                    const name = String(entry.player || 'Player');
-                    const score = Number(entry.score || 0);
-                    const diff = String(entry.difficulty || '').toLowerCase();
-                    const meta = diff ? diff[0].toUpperCase() + diff.slice(1) : '—';
-                    row.innerHTML = `
-                        <div class="rank">${idx + 1}</div>
-                        <div class="lb-main">
-                            <div class="lb-name">${escapeHtml(name)}</div>
-                            <div class="lb-meta">${meta}</div>
-                        </div>
-                        <div class="lb-score">${Math.floor(score)}</div>
-                    `;
-                    leaderboardEl.appendChild(row);
-                });
-            }
-
-            function escapeHtml(text) {
-                return text
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
-            }
-
-            async function submitScore() {
-                const finalMeters = Math.floor(state.distance);
-                if (!finalMeters) return;
-                const name = (playerNameInput.value || '').trim();
-                if (!name) {
-                    submitNote.textContent = 'Add a name to submit your run.';
-                    return;
-                }
-                localStorage.setItem(nameKey, name);
-
-                submitScoreBtn.disabled = true;
-                submitNote.textContent = 'Submitting…';
-                try {
-                    const resp = await fetch('/api/score', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            game: GAME_ID,
-                            player: name,
-                            score: finalMeters,
-                            difficulty: requestedDifficulty
-                        })
-                    });
-                    const payload = await resp.json().catch(() => ({}));
-                    if (!resp.ok) {
-                        throw new Error(payload.error || 'Submit failed');
-                    }
-                    submitNote.textContent = 'Submitted! Your run is on the board.';
-                    loadLeaderboard();
-                } catch (err) {
-                    submitNote.textContent = 'Could not submit (server offline?).';
-                } finally {
-                    submitScoreBtn.disabled = false;
-                }
-            }
-
             const TARGET_FPS = 120;
             const STEP = 1 / TARGET_FPS;
             const MAX_FRAME_DT = 0.05;
@@ -1739,11 +1655,6 @@
                 soundEngine.click();
             });
 
-            submitScoreBtn.addEventListener('click', submitScore);
-            playerNameInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') submitScore();
-            });
-
             soundBtn.textContent = soundEngine.isEnabled() ? 'SND' : 'MUTE';
             soundBtn.addEventListener('click', () => {
                 soundEngine.init();
@@ -1771,7 +1682,7 @@
 
             setTheme(THEME_FALLBACK.name, THEME_FALLBACK.palette);
             resizeCanvas();
-            loadLeaderboard();
+            scoreboard?.loadLeaderboard();
             requestAnimationFrame(loop);
         })();
     </script>

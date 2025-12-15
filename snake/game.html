@@ -287,6 +287,7 @@
         </section>
 
         <aside class="glass-card sidebar">
+            <div id="scoreboardMount"></div>
             <div class="eyebrow">Plan your run</div>
             <h2>Stay smooth, stay alive</h2>
             <ul class="tips">
@@ -371,6 +372,7 @@
     </div>
 
     <script src="../sounds.js"></script>
+    <script src="../scoreboard.js"></script>
     <script>
         const canvas = document.getElementById('board');
         const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
@@ -405,11 +407,24 @@
             hard: { grid: 22, tick: 55, label: 'Hard' }
         };
 
+        const difficultyKey = DIFFICULTIES[requestedDifficulty] ? requestedDifficulty : 'medium';
         const settings = DIFFICULTIES[requestedDifficulty] || DIFFICULTIES.medium;
         difficultyLabel.textContent = `${settings.label} • ${settings.grid} × ${settings.grid}`;
 
         const bestKey = `vanilla-snake-${settings.label.toLowerCase()}-best`;
         let bestScore = Number(localStorage.getItem(bestKey)) || 0;
+
+        const scoreboard = window.VanillaScoreboard?.mount({
+            mount: document.getElementById('scoreboardMount'),
+            gameId: 'snake',
+            difficulty: difficultyKey,
+            bestKey,
+            bestLabel: 'Personal best',
+            scoreLabel: 'Score',
+            formatScore: (value) => String(Math.floor(Number(value) || 0)),
+            getSubmitScore: () => bestScore,
+        });
+        scoreboard?.setBest(bestScore);
 
         let snake = [];
         let food = null;
@@ -584,6 +599,7 @@
             if (isNewRecord) {
                 bestScore = score;
                 localStorage.setItem(bestKey, bestScore);
+                scoreboard?.setBest(bestScore);
             }
             
             // Configure overlay based on whether it's a new record

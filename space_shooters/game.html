@@ -64,7 +64,7 @@
 
         .hud {
             display: grid;
-            grid-template-columns: repeat(6, minmax(0, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 10px;
             margin-bottom: 12px;
         }
@@ -206,6 +206,7 @@
         <section class="glass-card stage">
             <div class="hud">
                 <div class="stat"><div class="label">Score</div><div class="value" id="score">0</div></div>
+                <div class="stat"><div class="label">Best</div><div class="value" id="best">0</div></div>
                 <div class="stat"><div class="label">Wave</div><div class="value" id="wave">1</div></div>
                 <div class="stat"><div class="label">Hull</div><div class="value" id="hull">100%</div></div>
                 <div class="stat"><div class="label">Shields</div><div class="value" id="shields">3</div></div>
@@ -243,6 +244,7 @@
         </section>
 
         <aside class="glass-card sidebar">
+            <div id="scoreboardMount"></div>
             <div class="eyebrow">Stay nimble</div>
             <h2>How to survive</h2>
             <ul class="tips">
@@ -273,6 +275,10 @@
                     <div class="game-over-stat highlight" id="scoreStatBox">
                         <div class="game-over-stat-value" id="finalScoreValue">0</div>
                         <div class="game-over-stat-label">Final Score</div>
+                    </div>
+                    <div class="game-over-stat" id="bestStatBox">
+                        <div class="game-over-stat-value" id="finalBestValue">0</div>
+                        <div class="game-over-stat-label">Best Score</div>
                     </div>
                     <div class="game-over-stat">
                         <div class="game-over-stat-value" id="finalWaveValue">1</div>
@@ -327,12 +333,14 @@
         </div>
     </div>
 
-        <script src="../sounds.js"></script>
+    <script src="../sounds.js"></script>
+    <script src="../scoreboard.js"></script>
     <script>
         const canvas = document.getElementById('board');
         const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
 
         const scoreEl = document.getElementById('score');
+        const bestEl = document.getElementById('best');
         const waveEl = document.getElementById('wave');
         const hullEl = document.getElementById('hull');
         const shieldsEl = document.getElementById('shields');
@@ -359,7 +367,24 @@
             hard:   { label: 'Hard',   lives: 3, playerSpeed: 430, playerFireCd: 0.26, enemySpeed: 175, enemyFireBase: 1.10, enemyBulletSpeed: 380, bulletDamage: 24 },
         };
         const settings = CONFIG[requestedDifficulty] || CONFIG.medium;
+        const difficultyKey = CONFIG[requestedDifficulty] ? requestedDifficulty : 'medium';
         difficultyLabel.textContent = `${settings.label} • ${settings.lives} shields`;
+
+        const bestKey = `vanilla-space_shooters-${difficultyKey}-best`;
+        let bestScore = Number(localStorage.getItem(bestKey)) || 0;
+        bestEl.textContent = String(bestScore);
+
+        const scoreboard = window.VanillaScoreboard?.mount({
+            mount: document.getElementById('scoreboardMount'),
+            gameId: 'space_shooters',
+            difficulty: difficultyKey,
+            bestKey,
+            bestLabel: 'Personal best',
+            scoreLabel: 'Score',
+            formatScore: (value) => String(Math.floor(Number(value) || 0)),
+            getSubmitScore: () => bestScore,
+        });
+        scoreboard?.setBest(bestScore);
 
         const TARGET_FPS = 120;
         const STEP = 1 / TARGET_FPS;
@@ -618,6 +643,7 @@
         const gameOverTitle = document.getElementById('gameOverTitle');
         const gameOverSubtitle = document.getElementById('gameOverSubtitle');
         const finalScoreValue = document.getElementById('finalScoreValue');
+        const finalBestValue = document.getElementById('finalBestValue');
         const finalWaveValue = document.getElementById('finalWaveValue');
         const finalKillsValue = document.getElementById('finalKillsValue');
         const finalShieldsValue = document.getElementById('finalShieldsValue');
@@ -646,6 +672,13 @@
 
         function endGame(reason) {
             game.state = 'over';
+
+            if (game.score > bestScore) {
+                bestScore = game.score;
+                localStorage.setItem(bestKey, String(bestScore));
+                bestEl.textContent = String(bestScore);
+                scoreboard?.setBest(bestScore);
+            }
             
             // Configure overlay
             gameOverIcon.textContent = '💥';
@@ -655,6 +688,7 @@
             
             // Populate stats
             finalScoreValue.textContent = game.score;
+            finalBestValue.textContent = bestScore;
             finalWaveValue.textContent = game.wave;
             finalKillsValue.textContent = totalKills;
             finalShieldsValue.textContent = totalShieldsUsed;

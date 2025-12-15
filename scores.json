@@ -1,8 +1,23 @@
 {
-    "snake": [],
-    "pong": [],
-    "breakout": [],
-    "geometry_dash": [],
-    "minesweeper": [],
-    "space_shooters": []
+  "snake": [],
+  "pong": [],
+  "breakout": [],
+  "geometry_dash": [],
+  "minesweeper": [],
+  "space_shooters": [
+    {
+      "player": "Richard",
+      "score": 2775,
+      "difficulty": "easy",
+      "timestamp": "2025-12-15T13:47:38.412100+00:00"
+    }
+  ],
+  "tetris": [
+    {
+      "player": "Richard",
+      "score": 599,
+      "difficulty": "easy",
+      "timestamp": "2025-12-15T13:47:55.660862+00:00"
+    }
+  ]
 }
