@@ -63,12 +63,12 @@ def _physics(difficulty: str, rng: random.Random) -> dict[str, float]:
 
 
 def ai_target(payload: dict[str, object]) -> dict[str, object]:
-    from typing import Any, cast
+    from typing import Any, Dict, cast
 
     difficulty = str(payload.get("difficulty") or "medium").lower()
-    ball = cast(dict[str, Any], payload.get("ball") or {})
-    court = cast(dict[str, Any], payload.get("court") or {})
-    ai_state = cast(dict[str, Any], payload.get("ai") or {})
+    ball = cast(Dict[str, Any], payload.get("ball") or {})
+    court = cast(Dict[str, Any], payload.get("court") or {})
+    ai_state = cast(Dict[str, Any], payload.get("ai") or {})
 
     height = float(court.get("height") or 600)
     width = float(court.get("width") or 800)

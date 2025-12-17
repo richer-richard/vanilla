@@ -465,12 +465,13 @@ class GameServer:
 
         @app.route("/health", methods=["GET"])
         def health() -> Response:
-            return jsonify(
+            result: Response = jsonify(
                 {
                     "status": "ok",
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
             )
+            return result
 
         @app.route("/api/health", methods=["GET"])
         def api_health() -> Response:
@@ -483,7 +484,8 @@ class GameServer:
         @app.route("/scores", methods=["GET"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
         def scores() -> Response:
-            return jsonify(store.games())
+            result: Response = jsonify(store.games())
+            return result
 
         @app.route("/leaderboard/<game>", methods=["GET"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
@@ -558,7 +560,8 @@ class GameServer:
             payload = request.get_json(silent=True) or {}
             grid = int(payload.get("grid") or 16)
             snake_body = payload.get("snake") or []
-            return jsonify(snake_backend.next_food(grid, snake_body))
+            result: Response = jsonify(snake_backend.next_food(grid, snake_body))
+            return result
 
         @app.route("/api/breakout/level", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
@@ -569,7 +572,8 @@ class GameServer:
             level = int(payload.get("level") or 1)
             width_val = float(payload.get("width") or 900)
             difficulty = str(payload.get("difficulty") or "medium").lower()
-            return jsonify(breakout.level_layout(level, width_val, difficulty))
+            result: Response = jsonify(breakout.level_layout(level, width_val, difficulty))
+            return result
 
         @app.route("/api/geometry/pattern", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
@@ -581,7 +585,10 @@ class GameServer:
             difficulty = str(payload.get("difficulty") or "medium").lower()
             ground_y = float(payload.get("ground_y") or 540)
             width_val = float(payload.get("width") or 960)
-            return jsonify(geometry_dash.pattern(distance, difficulty, ground_y, width_val))
+            result: Response = jsonify(
+                geometry_dash.pattern(distance, difficulty, ground_y, width_val)
+            )
+            return result
 
         @app.route("/api/minesweeper/board", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
@@ -595,7 +602,8 @@ class GameServer:
             safe_row = int(payload.get("safe_row") or 0)
             safe_col = int(payload.get("safe_col") or 0)
             layout = minesweeper.generate_board(rows, cols, mines, (safe_row, safe_col))
-            return jsonify({"board": layout, **layout})
+            result: Response = jsonify({"board": layout, **layout})
+            return result
 
         @app.route("/api/tetris/config", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
@@ -604,7 +612,10 @@ class GameServer:
                 return ("", 204)
             payload = request.get_json(silent=True) or {}
             difficulty = str(payload.get("difficulty") or "medium").lower()
-            return jsonify({"difficulty": difficulty, "config": tetris_backend.config(difficulty)})
+            result: Response = jsonify(
+                {"difficulty": difficulty, "config": tetris_backend.config(difficulty)}
+            )
+            return result
 
         # ====================================================================
         # V1 API ROUTES (with enhanced validation and rate limiting)
@@ -612,18 +623,20 @@ class GameServer:
 
         @app.route(f"/api/{API_VERSION}/health", methods=["GET"])
         def v1_health() -> Response:
-            return jsonify(
+            result: Response = jsonify(
                 {
                     "status": "ok",
                     "api_version": API_VERSION,
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
             )
+            return result
 
         @app.route(f"/api/{API_VERSION}/scores", methods=["GET"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
         def v1_scores() -> Response:
-            return jsonify({"api_version": API_VERSION, "games": store.games()})
+            result: Response = jsonify({"api_version": API_VERSION, "games": store.games()})
+            return result
 
         @app.route(f"/api/{API_VERSION}/leaderboard/<game>", methods=["GET"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)

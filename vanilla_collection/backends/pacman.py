@@ -193,13 +193,13 @@ def calculate_ghost_target(
     Returns:
         Target position dict with x and y
     """
-    from typing import cast
+    from typing import Dict, cast
 
     ghosts = {g["name"]: g for g in get_ghost_config()}
     ghost = ghosts.get(ghost_name, ghosts["blinky"])
 
     if mode == "scatter":
-        return cast(dict[str, float], ghost["scatter_target"])
+        return cast(Dict[str, float], ghost["scatter_target"])
 
     if mode == "frightened":
         # Random movement when frightened
@@ -227,7 +227,7 @@ def calculate_ghost_target(
         dist = ((pacman_x - ghost_x) ** 2 + (pacman_y - ghost_y) ** 2) ** 0.5
         if dist > 8:
             return {"x": pacman_x, "y": pacman_y}
-        return cast(dict[str, float], ghost["scatter_target"])
+        return cast(Dict[str, float], ghost["scatter_target"])
 
     # Default: chase Pac-Man directly
     return {"x": pacman_x, "y": pacman_y}
