@@ -10,6 +10,7 @@ from __future__ import annotations
 from vanilla_collection.server import (  # noqa: F401
     API_VERSION,
     ASCENDING_GAMES,
+    CORS_ALLOWED_ORIGINS,
     DEFAULT_SCORES,
     MAX_ENTRIES,
     MAX_PLAYER_NAME_LENGTH,
@@ -24,8 +25,12 @@ from vanilla_collection.server import (  # noqa: F401
     GameServer,
     RateLimiter,
     ScoreStore,
+    create_app,
+    logger,
     rate_limit,
+    rate_limiter,
     sanitize_string,
+    setup_logging,
     validate_difficulty,
     validate_game,
     validate_player_name,
@@ -35,6 +40,7 @@ from vanilla_collection.server import (  # noqa: F401
 __all__ = [
     "API_VERSION",
     "ASCENDING_GAMES",
+    "CORS_ALLOWED_ORIGINS",
     "DEFAULT_SCORES",
     "GameServer",
     "MAX_ENTRIES",
@@ -49,8 +55,12 @@ __all__ = [
     "ScoreStore",
     "VALID_DIFFICULTIES",
     "VALID_GAMES",
+    "create_app",
+    "logger",
     "rate_limit",
+    "rate_limiter",
     "sanitize_string",
+    "setup_logging",
     "validate_difficulty",
     "validate_game",
     "validate_player_name",
@@ -59,5 +69,5 @@ __all__ = [
 
 
 if __name__ == "__main__":
+    setup_logging()
     GameServer().run()
-

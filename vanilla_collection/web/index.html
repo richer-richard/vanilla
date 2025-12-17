@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="VANILLA">
-    <title>Vanilla Collection</title>
+    <title>Vanilla Collection - Classic Arcade Games</title>
     
     <!-- Favicon & PWA -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -104,30 +104,32 @@
     </style>
 </head>
 <body class="footer-enabled">
-    <div id="color-transition"></div>
+    <div id="color-transition" aria-hidden="true"></div>
 
-    <header>
-        <a href="index.html" style="display:flex;flex-direction:column;text-decoration:none;">
+    <a href="#main-content" class="skip-link" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;">Skip to main content</a>
+
+    <header role="banner">
+        <a href="index.html" style="display:flex;flex-direction:column;text-decoration:none;" aria-label="VANILLA Collection Home">
             <h1>VANILLA</h1>
             <p>Collection</p>
         </a>
     </header>
 
-    <main>
+    <main id="main-content" role="main">
         <h1>VANILLA</h1>
         <h2>Classic Games Reimagined</h2>
         <p>
             Experience timeless arcade games with modern design and smooth gameplay.
             Relive the joy of retro gaming or discover them for the first time.
         </p>
-        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
-            <a href="games.html" class="cta-button">Play Now</a>
-            <a href="about.html" class="cta-button" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.25)); border: 1px solid rgba(102, 126, 234, 0.5);">Learn More</a>
-        </div>
+        <nav aria-label="Main actions" style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+            <a href="games.html" class="cta-button" role="button" aria-label="Start playing games">Play Now</a>
+            <a href="about.html" class="cta-button" role="button" aria-label="Learn more about the collection" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.25)); border: 1px solid rgba(102, 126, 234, 0.5);">Learn More</a>
+        </nav>
     </main>
 
-    <footer>
-        <div class="brand">VANILLA</div>
+    <footer role="contentinfo">
+        <div class="brand" aria-hidden="true">VANILLA</div>
         <p>A Collection of Simple Games</p>
         <p>Built with HTML5, CSS3, JavaScript, and Python</p>
     </footer>

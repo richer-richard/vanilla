@@ -533,27 +533,29 @@
     </style>
 </head>
 <body>
-    <header>
-        <a class="brand-link" href="index.html">
+    <a href="#main-content" class="skip-link" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;">Skip to main content</a>
+
+    <header role="banner">
+        <a class="brand-link" href="index.html" aria-label="VANILLA Collection Home">
             <h1>VANILLA</h1>
             <span>Collection</span>
         </a>
-        <nav class="nav-actions">
+        <nav class="nav-actions" aria-label="Main navigation">
             <a href="index.html" class="nav-link">Home</a>
-            <a href="games.html" class="nav-link active">Games</a>
+            <a href="games.html" class="nav-link active" aria-current="page">Games</a>
             <a href="about.html" class="nav-link">About</a>
         </nav>
     </header>
 
-    <section class="hero">
+    <section class="hero" aria-labelledby="hero-title">
         <div class="hero-content">
-            <div class="hero-badge">10 Games Available</div>
-            <h1>Choose Your Game</h1>
+            <div class="hero-badge" aria-label="10 games available">10 Games Available</div>
+            <h1 id="hero-title">Choose Your Game</h1>
             <p>Ten classic games reimagined for the modern web. Pick a favorite and start playing instantly.</p>
         </div>
     </section>
 
-    <div class="stats-bar">
+    <div class="stats-bar" role="region" aria-label="Collection statistics">
         <div class="stat-item">
             <div class="stat-value">10</div>
             <div class="stat-label">Games</div>
@@ -572,16 +574,16 @@
         </div>
     </div>
 
-    <main>
+    <main id="main-content" role="main">
         <div class="section-header">
-            <span class="section-title">All Games</span>
-            <span class="game-count">10 titles</span>
+            <h2 class="section-title" id="games-section">All Games</h2>
+            <span class="game-count" aria-label="10 game titles available">10 titles</span>
         </div>
 
-        <div class="games-grid">
-            <a href="space_shooters/intro.html" class="game-card featured">
+        <div class="games-grid" role="list" aria-labelledby="games-section">
+            <a href="space_shooters/intro.html" class="game-card featured" role="listitem" aria-label="Space Shooters - Featured game. Defend Earth against waves of alien invaders!">
                 <div class="card-header">
-                    <span class="card-icon">🚀</span>
+                    <span class="card-icon" aria-hidden="true">🚀</span>
                     <h2 class="card-title">Space Shooters</h2>
                     <p class="card-desc">Defend Earth against waves of alien invaders! Fast-paced action with power-ups, multiple enemy types, and progressively intense challenges.</p>
                 </div>
@@ -601,9 +603,9 @@
                 </div>
             </a>
 
-            <a href="tetris/intro.html" class="game-card">
+            <a href="tetris/intro.html" class="game-card" role="listitem" aria-label="Tetris - The iconic block-stacking puzzle">
                 <div class="card-header">
-                    <span class="card-icon">🧩</span>
+                    <span class="card-icon" aria-hidden="true">🧩</span>
                     <h2 class="card-title">Tetris</h2>
                     <p class="card-desc">The iconic block-stacking puzzle. Rotate, place, and clear lines with hold + ghost piece support and a clean scoring ramp.</p>
                 </div>
@@ -622,9 +624,9 @@
                 </div>
             </a>
 
-            <a href="snake/intro.html" class="game-card">
+            <a href="snake/intro.html" class="game-card" role="listitem" aria-label="Snake - Guide your growing snake through the arena">
                 <div class="card-header">
-                    <span class="card-icon">🐍</span>
+                    <span class="card-icon" aria-hidden="true">🐍</span>
                     <h2 class="card-title">Snake</h2>
                     <p class="card-desc">Guide your growing snake through the arena. Eat food to grow longer, but avoid walls and your own tail!</p>
                 </div>
@@ -643,9 +645,9 @@
                 </div>
             </a>
 
-            <a href="pong/intro.html" class="game-card">
+            <a href="pong/intro.html" class="game-card" role="listitem" aria-label="Pong - The legendary paddle game">
                 <div class="card-header">
-                    <span class="card-icon">🎾</span>
+                    <span class="card-icon" aria-hidden="true">🎾</span>
                     <h2 class="card-title">Pong</h2>
                     <p class="card-desc">The legendary paddle game. Master ball physics and outsmart the AI opponent across multiple difficulty levels.</p>
                 </div>
@@ -664,9 +666,9 @@
                 </div>
             </a>
 
-            <a href="breakout/intro.html" class="game-card">
+            <a href="breakout/intro.html" class="game-card" role="listitem" aria-label="Breakout - Smash colorful bricks with your bouncing ball">
                 <div class="card-header">
-                    <span class="card-icon">🔨</span>
+                    <span class="card-icon" aria-hidden="true">🔨</span>
                     <h2 class="card-title">Breakout</h2>
                     <p class="card-desc">Smash colorful bricks with your bouncing ball. Clear levels as speed increases for maximum points!</p>
                 </div>
@@ -685,9 +687,9 @@
                 </div>
             </a>
 
-            <a href="geometry_dash/intro.html" class="game-card">
+            <a href="geometry_dash/intro.html" class="game-card" role="listitem" aria-label="Geometry Dash - Jump through procedurally generated obstacles">
                 <div class="card-header">
-                    <span class="card-icon">⬜</span>
+                    <span class="card-icon" aria-hidden="true">⬜</span>
                     <h2 class="card-title">Geometry Dash</h2>
                     <p class="card-desc">Jump through procedurally generated obstacles. Perfect timing and rhythm are key to survival!</p>
                 </div>
@@ -706,9 +708,9 @@
                 </div>
             </a>
 
-            <a href="minesweeper/intro.html" class="game-card">
+            <a href="minesweeper/intro.html" class="game-card" role="listitem" aria-label="Minesweeper - The classic logic puzzle">
                 <div class="card-header">
-                    <span class="card-icon">💣</span>
+                    <span class="card-icon" aria-hidden="true">💣</span>
                     <h2 class="card-title">Minesweeper</h2>
                     <p class="card-desc">The classic logic puzzle. Reveal safe tiles and flag mines using deduction and strategy.</p>
                 </div>
@@ -727,9 +729,9 @@
                 </div>
             </a>
 
-            <a href="flappy/intro.html" class="game-card">
+            <a href="flappy/intro.html" class="game-card" role="listitem" aria-label="Flappy Bird - Navigate through pipes by tapping to flap">
                 <div class="card-header">
-                    <span class="card-icon">🐦</span>
+                    <span class="card-icon" aria-hidden="true">🐦</span>
                     <h2 class="card-title">Flappy Bird</h2>
                     <p class="card-desc">Navigate through pipes by tapping to flap. Simple to learn, challenging to master!</p>
                 </div>
@@ -748,9 +750,9 @@
                 </div>
             </a>
 
-            <a href="pacman/intro.html" class="game-card">
+            <a href="pacman/intro.html" class="game-card" role="listitem" aria-label="Pac-Man - Gobble pellets and avoid ghosts">
                 <div class="card-header">
-                    <span class="card-icon">👻</span>
+                    <span class="card-icon" aria-hidden="true">👻</span>
                     <h2 class="card-title">Pac-Man</h2>
                     <p class="card-desc">Gobble pellets and avoid ghosts in this arcade legend. Eat power pellets to turn the tables!</p>
                 </div>
@@ -769,9 +771,9 @@
                 </div>
             </a>
 
-            <a href="asteroids/intro.html" class="game-card">
+            <a href="asteroids/intro.html" class="game-card" role="listitem" aria-label="Asteroids - Pilot your ship through an asteroid field">
                 <div class="card-header">
-                    <span class="card-icon">☄️</span>
+                    <span class="card-icon" aria-hidden="true">☄️</span>
                     <h2 class="card-title">Asteroids</h2>
                     <p class="card-desc">Pilot your ship through an asteroid field. Shoot, thrust, and use hyperspace to survive!</p>
                 </div>
@@ -792,8 +794,8 @@
         </div>
     </main>
 
-    <footer>
-        <div class="brand">VANILLA</div>
+    <footer role="contentinfo">
+        <div class="brand" aria-hidden="true">VANILLA</div>
         <p>Choose a game to begin your adventure</p>
         <p>© 2025 Vanilla Collection</p>
     </footer>

@@ -22,6 +22,9 @@ dev = [
     "black>=23.0",
     "ruff>=0.1.0",
     "mypy>=1.0",
+    "types-flask>=1.1.6",
+    "pre-commit>=3.6.0",
+    "bandit>=1.7.0",
 ]
 
 # ============================================================================
@@ -84,7 +87,7 @@ include = ["vanilla_collection*"]
 exclude = ["tests*", "venv*", "__pycache__*", ".pytest_cache*"]
 
 [tool.setuptools.package-data]
-vanilla_collection = ["web/**/*"]
+vanilla_collection = ["web/**/*", "py.typed"]
 
 # ============================================================================
 # MYPY (Type Checker)
@@ -117,8 +120,8 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["backends", "server"]
-omit = ["tests/*", "venv/*"]
+source = ["vanilla_collection"]
+omit = ["tests/*", "venv/*", "*/__pycache__/*"]
 
 [tool.coverage.report]
 exclude_lines = [
