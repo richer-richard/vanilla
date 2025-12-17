@@ -4,12 +4,11 @@ Tests for the VANILLA Collection CLI module.
 Run with: pytest tests/test_cli.py -v
 """
 
-import sys
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 
-from vanilla_collection.cli import main, _parse_args
+from vanilla_collection.cli import _parse_args, main
 
 
 class TestParseArgs:

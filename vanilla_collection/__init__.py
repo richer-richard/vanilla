@@ -12,9 +12,9 @@ __version__ = "1.0.0"
 __author__ = "VANILLA Collection Contributors"
 
 # Re-export main components for convenient access
-from .server import GameServer, ScoreStore, create_app
 from .app import run
 from .cli import main as cli_main
+from .server import GameServer, ScoreStore, create_app
 
 __all__ = [
     # Version info

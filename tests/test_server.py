@@ -7,26 +7,23 @@ Run with: pytest tests/ -v
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
 from vanilla_collection.server import (
-    GameServer,
-    ScoreStore,
-    RateLimiter,
-    sanitize_string,
-    validate_player_name,
-    validate_game,
-    validate_difficulty,
-    validate_score,
     MAX_PLAYER_NAME_LENGTH,
-    VALID_GAMES,
     VALID_DIFFICULTIES,
-    RATE_LIMIT_MAX_REQUESTS,
+    VALID_GAMES,
+    GameServer,
+    RateLimiter,
+    ScoreStore,
+    sanitize_string,
     setup_logging,
+    validate_difficulty,
+    validate_game,
+    validate_player_name,
+    validate_score,
 )
-
 
 # ============================================================================
 # FIXTURES

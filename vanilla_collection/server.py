@@ -28,20 +28,23 @@ import time
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable
 
-from flask import Flask, jsonify, request, send_from_directory, Response
+from flask import Flask, Response, jsonify, request, send_from_directory
 
 from .backends import (
-    asteroids as asteroids_backend,
     breakout,
-    flappy as flappy_backend,
     geometry_dash,
     minesweeper,
-    pacman as pacman_backend,
-    pong as pong_backend,
-    snake as snake_backend,
     space_shooters,
+)
+from .backends import (
+    pong as pong_backend,
+)
+from .backends import (
+    snake as snake_backend,
+)
+from .backends import (
     tetris as tetris_backend,
 )
 from .paths import default_scores_path, web_root
@@ -71,21 +74,21 @@ MIN_PLAYER_NAME_LENGTH = 1
 MAX_SCORE_VALUE = 999_999_999
 MIN_SCORE_VALUE = 0
 
-VALID_GAMES: Set[str] = {
+VALID_GAMES: set[str] = {
     "snake", "pong", "breakout", "geometry_dash", "minesweeper",
     "space_shooters", "tetris", "flappy", "pacman", "asteroids"
 }
-VALID_DIFFICULTIES: Set[str] = {"easy", "medium", "hard", "unknown"}
+VALID_DIFFICULTIES: set[str] = {"easy", "medium", "hard", "unknown"}
 
 # Rate limiting configuration
 RATE_LIMIT_WINDOW = 60  # seconds
 RATE_LIMIT_MAX_REQUESTS = 30  # max requests per window for score submission
 RATE_LIMIT_MAX_REQUESTS_READ = 100  # max requests per window for read operations
 
-DEFAULT_SCORES: Dict[str, List[dict]] = {game: [] for game in VALID_GAMES}
+DEFAULT_SCORES: dict[str, list[dict]] = {game: [] for game in VALID_GAMES}
 
 MAX_ENTRIES = 15
-ASCENDING_GAMES: Set[str] = {"minesweeper"}
+ASCENDING_GAMES: set[str] = {"minesweeper"}
 
 # CORS Configuration - can be overridden via environment variable
 # Use comma-separated list for multiple origins: "http://localhost:3000,https://example.com"
@@ -101,7 +104,7 @@ class RateLimiter:
     """Simple in-memory rate limiter using sliding window."""
 
     def __init__(self) -> None:
-        self._requests: Dict[str, List[float]] = defaultdict(list)
+        self._requests: dict[str, list[float]] = defaultdict(list)
         self._lock = threading.Lock()
 
     def _get_client_id(self) -> str:
@@ -123,7 +126,7 @@ class RateLimiter:
         self,
         max_requests: int = RATE_LIMIT_MAX_REQUESTS,
         window: int = RATE_LIMIT_WINDOW
-    ) -> Tuple[bool, int]:
+    ) -> tuple[bool, int]:
         """
         Check if request is allowed under rate limit.
         Returns (allowed, remaining_requests).
@@ -222,7 +225,7 @@ def sanitize_string(value: Any, max_length: int = 100) -> str:
     return s[:max_length]
 
 
-def validate_player_name(name: str) -> Tuple[bool, str]:
+def validate_player_name(name: str) -> tuple[bool, str]:
     """Validate player name."""
     if not name:
         return False, "Player name is required"
@@ -236,7 +239,7 @@ def validate_player_name(name: str) -> Tuple[bool, str]:
     return True, ""
 
 
-def validate_game(game: str) -> Tuple[bool, str]:
+def validate_game(game: str) -> tuple[bool, str]:
     """Validate game name."""
     if not game:
         return False, "Game name is required"
@@ -245,14 +248,14 @@ def validate_game(game: str) -> Tuple[bool, str]:
     return True, ""
 
 
-def validate_difficulty(difficulty: str) -> Tuple[bool, str]:
+def validate_difficulty(difficulty: str) -> tuple[bool, str]:
     """Validate difficulty level."""
     if difficulty and difficulty not in VALID_DIFFICULTIES:
         return False, f"Invalid difficulty. Must be one of: {', '.join(sorted(VALID_DIFFICULTIES))}"
     return True, ""
 
 
-def validate_score(score: Any) -> Tuple[bool, str, int]:
+def validate_score(score: Any) -> tuple[bool, str, int]:
     """Validate score value."""
     try:
         score_int = int(score)
@@ -274,7 +277,7 @@ def validate_score(score: Any) -> Tuple[bool, str, int]:
 class ScoreStore:
     """Handle reading and writing leaderboard data on disk."""
 
-    def __init__(self, scores_path: Union[str, Path, None] = None) -> None:
+    def __init__(self, scores_path: str | Path | None = None) -> None:
         default_path = default_scores_path()
         self.path = Path(scores_path or default_path).expanduser().resolve()
         self._lock = threading.Lock()
@@ -283,13 +286,13 @@ class ScoreStore:
             self._write(DEFAULT_SCORES)
         logger.info(f"ScoreStore initialized with path: {self.path}")
 
-    def _write(self, data: Dict[str, List[dict]]) -> None:
+    def _write(self, data: dict[str, list[dict]]) -> None:
         temp_path = self.path.with_suffix(".tmp")
         with temp_path.open("w", encoding="utf-8") as handle:
             json.dump(data, handle, indent=2)
         temp_path.replace(self.path)
 
-    def _read(self) -> Dict[str, List[dict]]:
+    def _read(self) -> dict[str, list[dict]]:
         try:
             with self.path.open("r", encoding="utf-8") as handle:
                 payload = json.load(handle)
@@ -301,7 +304,7 @@ class ScoreStore:
             self._write(DEFAULT_SCORES)
             return dict(DEFAULT_SCORES)
 
-    def leaderboard(self, game: str) -> List[dict]:
+    def leaderboard(self, game: str) -> list[dict]:
         with self._lock:
             return list(self._read().get(game, []))
 
@@ -309,7 +312,7 @@ class ScoreStore:
         self,
         game: str,
         player: str,
-        score: Union[int, float],
+        score: int | float,
         difficulty: str
     ) -> dict:
         if not player or not str(player).strip():
@@ -339,7 +342,7 @@ class ScoreStore:
         logger.info(f"Score added: {player} scored {score} in {game} ({difficulty})")
         return entry
 
-    def games(self) -> Dict[str, List[dict]]:
+    def games(self) -> dict[str, list[dict]]:
         with self._lock:
             return self._read()
 
@@ -351,7 +354,7 @@ class ScoreStore:
 class GameServer:
     """Flask wrapper exposing the JSON API."""
 
-    def __init__(self, scores_path: Union[str, Path, None] = None) -> None:
+    def __init__(self, scores_path: str | Path | None = None) -> None:
         self.store = ScoreStore(scores_path)
         self.root_dir = web_root()
         self.app = Flask(__name__, static_folder=str(self.root_dir), static_url_path='')
@@ -388,7 +391,7 @@ class GameServer:
         def handle_score_submission(
             payload: dict,
             include_api_version: bool = False
-        ) -> Tuple[Response, int]:
+        ) -> tuple[Response, int]:
             """Common handler for score submission."""
             # Sanitize and validate inputs
             game = sanitize_string(
@@ -440,7 +443,7 @@ class GameServer:
         def handle_leaderboard(
             game: str,
             include_api_version: bool = False
-        ) -> Tuple[Response, int]:
+        ) -> tuple[Response, int]:
             """Common handler for leaderboard retrieval."""
             game = sanitize_string(game, 50).lower()
             response_extra = {"api_version": API_VERSION} if include_api_version else {}
@@ -485,12 +488,12 @@ class GameServer:
 
         @app.route("/leaderboard/<game>", methods=["GET"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def leaderboard(game: str) -> Tuple[Response, int]:
+        def leaderboard(game: str) -> tuple[Response, int]:
             return handle_leaderboard(game, include_api_version=False)
 
         @app.route("/score", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS)
-        def score() -> Union[Tuple[str, int], Tuple[Response, int]]:
+        def score() -> tuple[str, int] | tuple[Response, int]:
             if request.method == "OPTIONS":
                 return ("", 204)
             payload = request.get_json(silent=True) or {}
@@ -498,7 +501,7 @@ class GameServer:
 
         @app.route("/api/score", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS)
-        def api_score() -> Union[Tuple[str, int], Tuple[Response, int]]:
+        def api_score() -> tuple[str, int] | tuple[Response, int]:
             return score()
 
         @app.route("/api/scores", methods=["GET"])
@@ -508,7 +511,7 @@ class GameServer:
 
         @app.route("/api/leaderboard/<game>", methods=["GET"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def api_leaderboard(game: str) -> Tuple[Response, int]:
+        def api_leaderboard(game: str) -> tuple[Response, int]:
             return handle_leaderboard(game, include_api_version=False)
 
         # ====================================================================
@@ -517,7 +520,7 @@ class GameServer:
 
         @app.route("/api/pong/ai-target", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def pong_ai_target() -> Union[Tuple[str, int], Response]:
+        def pong_ai_target() -> tuple[str, int] | Response:
             if request.method == "OPTIONS":
                 return ("", 204)
             payload = request.get_json(silent=True) or {}
@@ -525,7 +528,7 @@ class GameServer:
 
         @app.route("/api/space/wave", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def space_wave() -> Union[Tuple[str, int], Response]:
+        def space_wave() -> tuple[str, int] | Response:
             if request.method == "OPTIONS":
                 return ("", 204)
             payload = request.get_json(silent=True) or {}
@@ -542,7 +545,7 @@ class GameServer:
 
         @app.route("/api/snake/food", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def snake_food() -> Union[Tuple[str, int], Response]:
+        def snake_food() -> tuple[str, int] | Response:
             if request.method == "OPTIONS":
                 return ("", 204)
             payload = request.get_json(silent=True) or {}
@@ -552,7 +555,7 @@ class GameServer:
 
         @app.route("/api/breakout/level", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def breakout_level() -> Union[Tuple[str, int], Response]:
+        def breakout_level() -> tuple[str, int] | Response:
             if request.method == "OPTIONS":
                 return ("", 204)
             payload = request.get_json(silent=True) or {}
@@ -563,7 +566,7 @@ class GameServer:
 
         @app.route("/api/geometry/pattern", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def geometry_pattern() -> Union[Tuple[str, int], Response]:
+        def geometry_pattern() -> tuple[str, int] | Response:
             if request.method == "OPTIONS":
                 return ("", 204)
             payload = request.get_json(silent=True) or {}
@@ -575,7 +578,7 @@ class GameServer:
 
         @app.route("/api/minesweeper/board", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def minesweeper_board() -> Union[Tuple[str, int], Response]:
+        def minesweeper_board() -> tuple[str, int] | Response:
             if request.method == "OPTIONS":
                 return ("", 204)
             payload = request.get_json(silent=True) or {}
@@ -589,7 +592,7 @@ class GameServer:
 
         @app.route("/api/tetris/config", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def tetris_config() -> Union[Tuple[str, int], Response]:
+        def tetris_config() -> tuple[str, int] | Response:
             if request.method == "OPTIONS":
                 return ("", 204)
             payload = request.get_json(silent=True) or {}
@@ -618,12 +621,12 @@ class GameServer:
 
         @app.route(f"/api/{API_VERSION}/leaderboard/<game>", methods=["GET"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def v1_leaderboard(game: str) -> Tuple[Response, int]:
+        def v1_leaderboard(game: str) -> tuple[Response, int]:
             return handle_leaderboard(game, include_api_version=True)
 
         @app.route(f"/api/{API_VERSION}/score", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS)
-        def v1_score() -> Union[Tuple[str, int], Tuple[Response, int]]:
+        def v1_score() -> tuple[str, int] | tuple[Response, int]:
             if request.method == "OPTIONS":
                 return ("", 204)
             payload = request.get_json(silent=True) or {}
@@ -632,37 +635,37 @@ class GameServer:
         # V1 game-specific endpoints
         @app.route(f"/api/{API_VERSION}/pong/ai-target", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def v1_pong_ai_target() -> Union[Tuple[str, int], Response]:
+        def v1_pong_ai_target() -> tuple[str, int] | Response:
             return pong_ai_target()
 
         @app.route(f"/api/{API_VERSION}/snake/food", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def v1_snake_food() -> Union[Tuple[str, int], Response]:
+        def v1_snake_food() -> tuple[str, int] | Response:
             return snake_food()
 
         @app.route(f"/api/{API_VERSION}/breakout/level", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def v1_breakout_level() -> Union[Tuple[str, int], Response]:
+        def v1_breakout_level() -> tuple[str, int] | Response:
             return breakout_level()
 
         @app.route(f"/api/{API_VERSION}/geometry/pattern", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def v1_geometry_pattern() -> Union[Tuple[str, int], Response]:
+        def v1_geometry_pattern() -> tuple[str, int] | Response:
             return geometry_pattern()
 
         @app.route(f"/api/{API_VERSION}/minesweeper/board", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def v1_minesweeper_board() -> Union[Tuple[str, int], Response]:
+        def v1_minesweeper_board() -> tuple[str, int] | Response:
             return minesweeper_board()
 
         @app.route(f"/api/{API_VERSION}/space/wave", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def v1_space_wave() -> Union[Tuple[str, int], Response]:
+        def v1_space_wave() -> tuple[str, int] | Response:
             return space_wave()
 
         @app.route(f"/api/{API_VERSION}/tetris/config", methods=["POST", "OPTIONS"])
         @rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS_READ)
-        def v1_tetris_config() -> Union[Tuple[str, int], Response]:
+        def v1_tetris_config() -> tuple[str, int] | Response:
             return tetris_config()
 
     def run(self, host: str = "0.0.0.0", port: int = 5000, debug: bool = False) -> None:
@@ -670,7 +673,7 @@ class GameServer:
         self.app.run(host=host, port=port, debug=debug)
 
 
-def create_app(scores_path: Union[str, Path, None] = None) -> Flask:
+def create_app(scores_path: str | Path | None = None) -> Flask:
     """Flask entry point for WSGI servers."""
     setup_logging()
     return GameServer(scores_path).app

@@ -189,9 +189,11 @@
         /* Section Header */
         .section-header {
             display: flex;
-            align-items: center;
+            align-items: baseline;
             justify-content: flex-start;
+            flex-wrap: nowrap;
             gap: 16px;
+            width: 100%;
             margin-bottom: 30px;
             padding-bottom: 16px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -203,11 +205,14 @@
             letter-spacing: 2px;
             text-transform: uppercase;
             color: rgba(159, 176, 255, 0.9);
+            margin: 0;
         }
 
         .game-count {
             font-size: 12px;
             color: rgba(201, 206, 232, 0.5);
+            margin-left: auto;
+            white-space: nowrap;
         }
 
         /* Games Grid */

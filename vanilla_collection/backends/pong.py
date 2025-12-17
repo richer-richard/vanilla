@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import random
-from typing import Dict
 
 
-def _physics(difficulty: str, rng: random.Random) -> Dict[str, float]:
+def _physics(difficulty: str, rng: random.Random) -> dict[str, float]:
     diff = (difficulty or "medium").lower()
     base = {
         "easy": {
@@ -55,7 +54,7 @@ def _physics(difficulty: str, rng: random.Random) -> Dict[str, float]:
     }
 
 
-def ai_target(payload: Dict[str, object]) -> Dict[str, object]:
+def ai_target(payload: dict[str, object]) -> dict[str, object]:
     difficulty = str(payload.get("difficulty") or "medium").lower()
     ball = payload.get("ball") or {}
     court = payload.get("court") or {}

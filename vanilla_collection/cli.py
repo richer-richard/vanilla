@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Optional
 
 from .app import run
 
 
-def _parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="vanilla-collection", description="Run the VANILLA Collection server.")
 
     parser.add_argument("--host", default=None, help="Bind host (default: 127.0.0.1 or $HOST)")
@@ -31,10 +30,10 @@ def _parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
 
-    debug: Optional[bool]
+    debug: bool | None
     if getattr(args, "debug", False):
         debug = True
     elif getattr(args, "no_debug", False):

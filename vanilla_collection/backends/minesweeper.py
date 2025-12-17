@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import random
-from typing import Dict, List, Tuple
 
 
-def generate_board(rows: int, cols: int, mines: int, safe: Tuple[int, int]) -> Dict[str, object]:
+def generate_board(rows: int, cols: int, mines: int, safe: tuple[int, int]) -> dict[str, object]:
     rng = random.Random(f"mines-{rows}-{cols}-{mines}-{safe}")
     safe_r, safe_c = safe
     safe_zone = {(safe_r + dr, safe_c + dc) for dr in range(-1, 2) for dc in range(-1, 2)}

@@ -7,11 +7,11 @@ optionally opens the collection landing page in the browser.
 
 from __future__ import annotations
 
+import contextlib
 import os
 import threading
 import webbrowser
 from pathlib import Path
-from typing import Optional
 
 from .server import GameServer
 
@@ -20,10 +20,8 @@ def _open_browser(url: str, delay: float = 1.0) -> None:
     """Open the given URL after a short delay to let the server start."""
 
     def _launch() -> None:
-        try:
+        with contextlib.suppress(Exception):
             webbrowser.open(url)
-        except Exception:
-            pass
 
     timer = threading.Timer(delay, _launch)
     timer.daemon = True
@@ -31,11 +29,11 @@ def _open_browser(url: str, delay: float = 1.0) -> None:
 
 
 def run(
-    host: Optional[str] = None,
-    port: Optional[int] = None,
-    debug: Optional[bool] = None,
-    scores_path: Optional[Path] = None,
-    auto_open: Optional[bool] = None,
+    host: str | None = None,
+    port: int | None = None,
+    debug: bool | None = None,
+    scores_path: Path | None = None,
+    auto_open: bool | None = None,
 ) -> None:
     server = GameServer(scores_path=scores_path)
     resolved_host = host or os.environ.get("HOST", "127.0.0.1")

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import random
-from typing import Dict, List
 
 
-def wave_plan(wave: int, difficulty: str, width: float, height: float) -> Dict[str, object]:
+def wave_plan(wave: int, difficulty: str, width: float, height: float) -> dict[str, object]:
     rng = random.Random(f"{difficulty}-wave-{wave}")
     base_count = max(4, min(8, 3 + wave))
-    enemies: List[Dict[str, object]] = []
+    enemies: list[dict[str, object]] = []
     for _ in range(base_count):
         roll = rng.random()
         if roll > 0.8:
@@ -40,7 +39,7 @@ def wave_plan(wave: int, difficulty: str, width: float, height: float) -> Dict[s
             }
         )
 
-    powerups: List[Dict[str, object]] = []
+    powerups: list[dict[str, object]] = []
     if rng.random() < 0.55:
         drop_type = "shield" if wave % 4 == 0 else rng.choice(["rapid", "double"])
         powerups.append(

@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from typing import Dict
 
-
-def config(difficulty: str) -> Dict[str, int]:
+def config(difficulty: str) -> dict[str, int]:
     diff = (difficulty or "medium").lower().strip()
 
     presets = {

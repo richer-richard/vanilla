@@ -7,18 +7,17 @@ Run with: pytest tests/test_backends.py -v
 import pytest
 
 from vanilla_collection.backends import (
-    snake,
-    pong,
+    asteroids,
     breakout,
+    flappy,
     geometry_dash,
     minesweeper,
+    pacman,
+    pong,
+    snake,
     space_shooters,
     tetris,
-    flappy,
-    pacman,
-    asteroids,
 )
-
 
 # ============================================================================
 # SNAKE BACKEND TESTS

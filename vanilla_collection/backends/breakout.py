@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import random
-from typing import Dict, List
 
 PALETTE = [
     "#9de8c7",
@@ -12,7 +11,7 @@ PALETTE = [
 ]
 
 
-def _physics_for_level(level: int, difficulty: str, rng: random.Random) -> Dict[str, float]:
+def _physics_for_level(level: int, difficulty: str, rng: random.Random) -> dict[str, float]:
     difficulty_key = (difficulty or "medium").lower()
     base = {
         "easy": {
@@ -83,13 +82,13 @@ def _physics_for_level(level: int, difficulty: str, rng: random.Random) -> Dict[
     }
 
 
-def level_layout(level: int, width: float, difficulty: str) -> Dict[str, object]:
+def level_layout(level: int, width: float, difficulty: str) -> dict[str, object]:
     rng = random.Random(f"breakout-{difficulty}-{level}-{width}")
     cols = 10
     rows = 4 + min(4, level)
     brick_width = width / cols
     brick_height = 24
-    bricks: List[Dict[str, object]] = []
+    bricks: list[dict[str, object]] = []
     gap_col = rng.randint(0, cols - 1) if level > 1 else -1
 
     for row in range(rows):

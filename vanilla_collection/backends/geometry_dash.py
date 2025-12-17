@@ -15,10 +15,8 @@ and returns the dict as JSON.
 
 from __future__ import annotations
 
-import hashlib
 import random
 from dataclasses import asdict, dataclass
-from typing import Dict, List, Optional, Tuple
 
 
 @dataclass(frozen=True)
@@ -30,12 +28,12 @@ class Obstacle:
     h: float
     rotation: float = 0.0
     speed: float = 0.0
-    kind: Optional[str] = None
-    color: Optional[str] = None
-    id: Optional[int] = None
+    kind: str | None = None
+    color: str | None = None
+    id: int | None = None
 
 
-DIFFICULTY_CONFIG: Dict[str, Dict[str, float]] = {
+DIFFICULTY_CONFIG: dict[str, dict[str, float]] = {
     "easy": {
         "density": 0.65,
         "complexity": 0.60,
@@ -79,7 +77,7 @@ DIFFICULTY_CONFIG: Dict[str, Dict[str, float]] = {
 }
 
 
-THEMES: Dict[str, Dict[str, str]] = {
+THEMES: dict[str, dict[str, str]] = {
     "neon": {
         "bg0": "#070a18",
         "bg1": "#0b1230",
@@ -132,7 +130,7 @@ def _clamp(value: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, value))
 
 
-def _weighted_choice(rng: random.Random, weights: Dict[str, float]) -> str:
+def _weighted_choice(rng: random.Random, weights: dict[str, float]) -> str:
     items = [(k, max(0.0, float(w))) for k, w in weights.items()]
     total = sum(w for _, w in items)
     if total <= 0:
@@ -157,7 +155,7 @@ class DashGenerator:
         # Calculate usable ceiling - leave more room for player
         height_est = self.ground_y + 72.0
         self.ceiling_y = _clamp(height_est * 0.12, 50.0, 80.0)
-        
+
         # Safe zone bounds - player should have room to maneuver
         self.safe_top = self.ceiling_y + 100  # Don't put obstacles too high
         self.safe_bottom = self.ground_y - 60  # Ground level obstacles
@@ -173,27 +171,24 @@ class DashGenerator:
 
     def spike(self, x: float, variant: str = "up") -> Obstacle:
         w, h = 32.0, 48.0
-        if variant == "down":
-            y = self.ceiling_y + 30.0
-        else:
-            y = self.ground_y - h
+        y = self.ceiling_y + 30.0 if variant == "down" else self.ground_y - h
         return Obstacle("spike", x, y, w, h, kind=variant, id=self._id())
 
     def block(self, x: float, w: float = 72.0, h: float = 60.0) -> Obstacle:
         return Obstacle("block", x, self.ground_y - h, w, h, id=self._id())
 
-    def platform(self, x: float, w: float = 140.0, y: Optional[float] = None) -> Obstacle:
+    def platform(self, x: float, w: float = 140.0, y: float | None = None) -> Obstacle:
         # Platforms should be reachable with a single jump
         y_val = float(y) if y is not None else (self.ground_y - 140.0)
         y_val = _clamp(y_val, self.safe_top, self.ground_y - 100.0)
         return Obstacle("platform", x, y_val, w, 18.0, id=self._id())
 
-    def saw(self, x: float, y: Optional[float] = None, size: float = 48.0) -> Obstacle:
+    def saw(self, x: float, y: float | None = None, size: float = 48.0) -> Obstacle:
         y_val = float(y) if y is not None else (self.ground_y - 120.0)
         y_val = _clamp(y_val, self.safe_top + 20, self.ground_y - size - 40.0)
         return Obstacle("sawblade", x, y_val, size, size, speed=3.5 + self.rng.random() * 1.0, id=self._id())
 
-    def orb(self, x: float, y: Optional[float] = None) -> Obstacle:
+    def orb(self, x: float, y: float | None = None) -> Obstacle:
         # Orbs help player navigate - place them where jumps are needed
         y_val = float(y) if y is not None else (self.ground_y - 180.0)
         y_val = _clamp(y_val, self.safe_top + 30, self.ground_y - 100.0)
@@ -217,11 +212,11 @@ class DashGenerator:
     # PATTERN GENERATORS
     # ===================
 
-    def pattern_platform_run(self) -> Tuple[List[Obstacle], float]:
+    def pattern_platform_run(self) -> tuple[list[Obstacle], float]:
         """Easy pattern: platforms with gaps, orbs to help"""
-        obs: List[Obstacle] = []
+        obs: list[Obstacle] = []
         cursor = self.base_x
-        
+
         # Platform chain with orbs
         for i in range(3):
             y_offset = self.ground_y - 130.0 - (i * 30)
@@ -229,220 +224,220 @@ class DashGenerator:
             if self.rng.random() < 0.6:
                 obs.append(self.orb(cursor + 50, y_offset - 60))
             cursor += 180.0 + self.rng.random() * 40
-        
+
         return obs, cursor - self.width
 
-    def pattern_single_spike(self) -> Tuple[List[Obstacle], float]:
+    def pattern_single_spike(self) -> tuple[list[Obstacle], float]:
         """Simple: single spikes with gaps"""
-        obs: List[Obstacle] = []
+        obs: list[Obstacle] = []
         cursor = self.base_x
-        
+
         spike_count = self.rng.randint(1, int(self.config.get("spike_max", 2)))
         for _ in range(spike_count):
             obs.append(self.spike(cursor))
             cursor += 120.0 + self.rng.random() * 60  # Good gap between spikes
-        
+
         return obs, cursor - self.width
 
-    def pattern_spike_gap(self) -> Tuple[List[Obstacle], float]:
+    def pattern_spike_gap(self) -> tuple[list[Obstacle], float]:
         """Two spikes with a platform/orb to help"""
-        obs: List[Obstacle] = []
+        obs: list[Obstacle] = []
         cursor = self.base_x
-        
+
         obs.append(self.spike(cursor))
         cursor += 80
-        
+
         # Add orb to help with jump
         obs.append(self.orb(cursor + 30, self.ground_y - 170))
         cursor += 100
-        
+
         obs.append(self.spike(cursor))
         cursor += 140
-        
+
         return obs, cursor - self.width
 
-    def pattern_block_hop(self) -> Tuple[List[Obstacle], float]:
+    def pattern_block_hop(self) -> tuple[list[Obstacle], float]:
         """Blocks to jump over with safe landings"""
-        obs: List[Obstacle] = []
+        obs: list[Obstacle] = []
         cursor = self.base_x
-        
+
         obs.append(self.block(cursor, 70.0, 55.0))
         cursor += 160
-        
+
         # Safe gap
         cursor += 80
-        
+
         obs.append(self.block(cursor, 65.0, 50.0))
         cursor += 180
-        
+
         return obs, cursor - self.width
 
-    def pattern_orb_chain(self) -> Tuple[List[Obstacle], float]:
+    def pattern_orb_chain(self) -> tuple[list[Obstacle], float]:
         """Orbs guide the player through a section"""
-        obs: List[Obstacle] = []
+        obs: list[Obstacle] = []
         cursor = self.base_x
-        
+
         # Gap with orbs to navigate
         obs.append(self.spike(cursor))
         obs.append(self.orb(cursor + 60, self.ground_y - 180))
         cursor += 130
-        
+
         obs.append(self.platform(cursor, 120, self.ground_y - 160))
         obs.append(self.orb(cursor + 50, self.ground_y - 220))
         cursor += 180
-        
+
         obs.append(self.spike(cursor))
         cursor += 150
-        
+
         return obs, cursor - self.width
 
-    def pattern_platform_jump(self) -> Tuple[List[Obstacle], float]:
+    def pattern_platform_jump(self) -> tuple[list[Obstacle], float]:
         """Platform sequence - player must jump between platforms"""
-        obs: List[Obstacle] = []
+        obs: list[Obstacle] = []
         cursor = self.base_x
-        
+
         y1 = self.ground_y - 140.0
         y2 = self.ground_y - 180.0
-        
+
         obs.append(self.platform(cursor, 140.0, y1))
         cursor += 170
-        
+
         obs.append(self.platform(cursor, 120.0, y2))
         obs.append(self.orb(cursor + 50, y2 - 55))
         cursor += 160
-        
+
         obs.append(self.platform(cursor, 130.0, y1))
         cursor += 200
-        
+
         return obs, cursor - self.width
 
-    def pattern_saw_dodge(self) -> Tuple[List[Obstacle], float]:
+    def pattern_saw_dodge(self) -> tuple[list[Obstacle], float]:
         """Sawblades with safe paths"""
-        obs: List[Obstacle] = []
+        obs: list[Obstacle] = []
         cursor = self.base_x
-        
+
         # Saw with orb to help pass
         obs.append(self.saw(cursor, self.ground_y - 130.0, 44.0))
         obs.append(self.orb(cursor - 30, self.ground_y - 200))
         cursor += 180
-        
+
         # Safe gap
         cursor += 100
-        
+
         obs.append(self.saw(cursor, self.ground_y - 160.0, 44.0))
         cursor += 180
-        
+
         return obs, cursor - self.width
 
-    def pattern_gravity_portal(self) -> Tuple[List[Obstacle], float]:
+    def pattern_gravity_portal(self) -> tuple[list[Obstacle], float]:
         """Gravity flip section - designed to be passable"""
-        obs: List[Obstacle] = []
+        obs: list[Obstacle] = []
         cursor = self.base_x
-        
+
         # Gravity portal
         obs.append(self.portal(cursor, "gravity"))
         cursor += 200
-        
+
         # After flip, player is on ceiling - add platform to land on
         obs.append(self.platform(cursor, 150.0, self.ceiling_y + 100))
         cursor += 180
-        
+
         # Orb to help navigate back
         obs.append(self.orb(cursor, self.ceiling_y + 160))
         cursor += 120
-        
+
         # Another gravity flip to return to normal
         obs.append(self.portal(cursor, "gravity"))
         cursor += 220
-        
+
         return obs, cursor - self.width
 
-    def pattern_speed_portal(self) -> Tuple[List[Obstacle], float]:
+    def pattern_speed_portal(self) -> tuple[list[Obstacle], float]:
         """Speed boost section with simple obstacles"""
-        obs: List[Obstacle] = []
+        obs: list[Obstacle] = []
         cursor = self.base_x
-        
+
         obs.append(self.portal(cursor, "speed"))
         cursor += 180
-        
+
         # Simple spike - player has more speed so needs reaction time
         obs.append(self.spike(cursor))
         cursor += 150
-        
+
         # Orb for next jump
         obs.append(self.orb(cursor, self.ground_y - 180))
         cursor += 120
-        
+
         obs.append(self.spike(cursor))
         cursor += 200
-        
+
         return obs, cursor - self.width
 
-    def pattern_checkpoint(self) -> Tuple[List[Obstacle], float]:
+    def pattern_checkpoint(self) -> tuple[list[Obstacle], float]:
         """Rest/checkpoint area with finish line marker"""
-        obs: List[Obstacle] = []
+        obs: list[Obstacle] = []
         cursor = self.base_x
-        
+
         # Easy platform run
         obs.append(self.platform(cursor, 200.0, self.ground_y - 120))
         cursor += 240
-        
+
         # Coins/orbs as reward
         obs.append(self.orb(cursor, self.ground_y - 160))
         cursor += 80
         obs.append(self.orb(cursor, self.ground_y - 160))
         cursor += 120
-        
+
         # Finish line marker every ~1000m
         if self.distance > 0 and int(self.distance) % 800 < 150:
             obs.append(self.finish_line(cursor))
             cursor += 60
-        
+
         return obs, cursor - self.width
 
-    def pattern_pad_bounce(self) -> Tuple[List[Obstacle], float]:
+    def pattern_pad_bounce(self) -> tuple[list[Obstacle], float]:
         """Jump pad auto-bounces player over obstacles"""
-        obs: List[Obstacle] = []
+        obs: list[Obstacle] = []
         cursor = self.base_x
-        
+
         obs.append(self.pad(cursor))
         cursor += 100
-        
+
         # Block that pad helps jump over
         obs.append(self.block(cursor, 80, 70))
         cursor += 160
-        
+
         # Landing platform
         obs.append(self.platform(cursor, 130, self.ground_y - 140))
         cursor += 200
-        
+
         return obs, cursor - self.width
 
-    def pattern_mixed_easy(self) -> Tuple[List[Obstacle], float]:
+    def pattern_mixed_easy(self) -> tuple[list[Obstacle], float]:
         """Mixed elements, easy difficulty"""
-        obs: List[Obstacle] = []
+        obs: list[Obstacle] = []
         cursor = self.base_x
-        
+
         # Block
         obs.append(self.block(cursor, 60, 50))
         cursor += 140
-        
+
         # Orb mid-air
         obs.append(self.orb(cursor, self.ground_y - 170))
         cursor += 80
-        
+
         # Platform
         obs.append(self.platform(cursor, 120, self.ground_y - 150))
         cursor += 180
-        
+
         # Single spike at end
         obs.append(self.spike(cursor))
         cursor += 160
-        
+
         return obs, cursor - self.width
 
 
-def pattern(distance: float, difficulty: str, ground_y: float, width: float) -> Dict:
+def pattern(distance: float, difficulty: str, ground_y: float, width: float) -> dict:
     difficulty_key = (difficulty or "medium").strip().lower()
     config = DIFFICULTY_CONFIG.get(difficulty_key, DIFFICULTY_CONFIG["medium"])
 
@@ -472,8 +467,8 @@ def pattern(distance: float, difficulty: str, ground_y: float, width: float) -> 
     platform_rate = float(config.get("platform_rate", 0.40))
     orb_rate = float(config.get("orb_rate", 0.30))
     portal_rate = float(config.get("portal_rate", 0.10))
-    
-    pools: Dict[str, Dict[str, float]] = {
+
+    pools: dict[str, dict[str, float]] = {
         "intro": {
             "platform_run": 1.2,
             "single_spike": 0.8,
@@ -518,7 +513,7 @@ def pattern(distance: float, difficulty: str, ground_y: float, width: float) -> 
     }
 
     choice = _weighted_choice(gen.rng, pools.get(stage, pools["mid"]))
-    
+
     methods = {
         "platform_run": gen.pattern_platform_run,
         "single_spike": gen.pattern_single_spike,
@@ -533,7 +528,7 @@ def pattern(distance: float, difficulty: str, ground_y: float, width: float) -> 
         "pad_bounce": gen.pattern_pad_bounce,
         "mixed_easy": gen.pattern_mixed_easy,
     }
-    
+
     obstacles, pattern_width = methods.get(choice, gen.pattern_platform_run)()
 
     # Spawn spacing - ensure player has breathing room
@@ -555,6 +550,6 @@ def pattern(distance: float, difficulty: str, ground_y: float, width: float) -> 
     }
 
 
-def get_difficulty_config(difficulty: str) -> Dict[str, float]:
+def get_difficulty_config(difficulty: str) -> dict[str, float]:
     """Optional helper for clients that want difficulty metadata."""
     return dict(DIFFICULTY_CONFIG.get((difficulty or "medium").lower(), DIFFICULTY_CONFIG["medium"]))

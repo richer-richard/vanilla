@@ -8,8 +8,7 @@ including maze generation and ghost AI configuration.
 from __future__ import annotations
 
 import random
-from typing import Dict, Any, List, Tuple
-
+from typing import Any
 
 # Standard Pac-Man maze layout
 # 0=wall, 1=pellet, 2=empty, 3=power pellet, 4=ghost house
@@ -48,13 +47,13 @@ STANDARD_MAZE = [
 ]
 
 
-def config(difficulty: str = "medium") -> Dict[str, Any]:
+def config(difficulty: str = "medium") -> dict[str, Any]:
     """
     Return game configuration based on difficulty level.
-    
+
     Args:
         difficulty: One of "easy", "medium", or "hard"
-    
+
     Returns:
         Configuration dict with game parameters
     """
@@ -84,24 +83,24 @@ def config(difficulty: str = "medium") -> Dict[str, Any]:
             "ghost_release_interval": 2000
         }
     }
-    
+
     return configs.get(difficulty, configs["medium"])
 
 
-def get_maze() -> List[str]:
+def get_maze() -> list[str]:
     """
     Return the standard Pac-Man maze layout.
-    
+
     Returns:
         List of strings representing the maze
     """
     return STANDARD_MAZE.copy()
 
 
-def get_maze_as_grid() -> List[List[int]]:
+def get_maze_as_grid() -> list[list[int]]:
     """
     Return the maze as a 2D grid of integers.
-    
+
     Returns:
         2D list of integers representing the maze
     """
@@ -111,7 +110,7 @@ def get_maze_as_grid() -> List[List[int]]:
 def count_pellets() -> int:
     """
     Count the total number of pellets in the maze.
-    
+
     Returns:
         Total pellet count (including power pellets)
     """
@@ -123,10 +122,10 @@ def count_pellets() -> int:
     return count
 
 
-def get_ghost_config() -> List[Dict[str, Any]]:
+def get_ghost_config() -> list[dict[str, Any]]:
     """
     Return configuration for all four ghosts.
-    
+
     Returns:
         List of ghost configurations
     """
@@ -172,14 +171,14 @@ def calculate_ghost_target(
     ghost_y: float,
     pacman_x: float,
     pacman_y: float,
-    pacman_direction: Tuple[int, int],
+    pacman_direction: tuple[int, int],
     blinky_x: float = 0,
     blinky_y: float = 0,
     mode: str = "chase"
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Calculate the target position for a ghost based on its AI personality.
-    
+
     Args:
         ghost_name: Name of the ghost
         ghost_x: Ghost's current X position
@@ -190,37 +189,37 @@ def calculate_ghost_target(
         blinky_x: Blinky's X position (needed for Inky's AI)
         blinky_y: Blinky's Y position (needed for Inky's AI)
         mode: Current ghost mode ("chase", "scatter", "frightened")
-    
+
     Returns:
         Target position dict with x and y
     """
     ghosts = {g["name"]: g for g in get_ghost_config()}
     ghost = ghosts.get(ghost_name, ghosts["blinky"])
-    
+
     if mode == "scatter":
         return ghost["scatter_target"]
-    
+
     if mode == "frightened":
         # Random movement when frightened
         return {
             "x": random.randint(0, 27),
             "y": random.randint(0, 30)
         }
-    
+
     # Chase mode - each ghost has different targeting
     dx, dy = pacman_direction
-    
+
     if ghost_name == "blinky":
         # Directly targets Pac-Man
         return {"x": pacman_x, "y": pacman_y}
-    
+
     elif ghost_name == "pinky":
         # Targets 4 tiles ahead of Pac-Man
         return {
             "x": pacman_x + dx * 4,
             "y": pacman_y + dy * 4
         }
-    
+
     elif ghost_name == "inky":
         # Complex targeting: double the vector from Blinky to 2 tiles ahead of Pac-Man
         ahead_x = pacman_x + dx * 2
@@ -229,13 +228,13 @@ def calculate_ghost_target(
             "x": ahead_x + (ahead_x - blinky_x),
             "y": ahead_y + (ahead_y - blinky_y)
         }
-    
+
     elif ghost_name == "clyde":
         # Targets Pac-Man if far, scatter if close
         dist = ((pacman_x - ghost_x) ** 2 + (pacman_y - ghost_y) ** 2) ** 0.5
         if dist > 8:
             return {"x": pacman_x, "y": pacman_y}
         return ghost["scatter_target"]
-    
+
     # Default: chase Pac-Man directly
     return {"x": pacman_x, "y": pacman_y}
