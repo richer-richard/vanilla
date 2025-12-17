@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="vanilla-banner.svg" alt="VANILLA — Collection" />
+  <img src="vanilla_collection/web/vanilla-banner.svg" alt="VANILLA — Collection" />
 </p>
 
 # Vanilla Collection
