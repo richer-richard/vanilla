@@ -1,5 +1,12 @@
 {
-  "snake": [],
+  "snake": [
+    {
+      "player": "Richard",
+      "score": 30,
+      "difficulty": "hard",
+      "timestamp": "2025-12-16T13:41:52.967097+00:00"
+    }
+  ],
   "pong": [],
   "breakout": [],
   "geometry_dash": [],

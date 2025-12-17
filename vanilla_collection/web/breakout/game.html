@@ -476,8 +476,11 @@
         const keys = {};
         document.addEventListener('keydown', e => {
             keys[e.key.toLowerCase()] = true;
-            if (e.key === ' ') {
+            // Prevent default for game control keys to stop page scrolling
+            if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase()) || e.key === ' ') {
                 e.preventDefault();
+            }
+            if (e.key === ' ') {
                 startOrLaunch();
             } else if (e.key.toLowerCase() === 'p') {
                 togglePause();
@@ -485,7 +488,13 @@
                 resetGame();
             }
         });
-        document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+        document.addEventListener('keyup', e => {
+            keys[e.key.toLowerCase()] = false;
+            // Prevent default on keyup as well for consistency
+            if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase()) || e.key === ' ') {
+                e.preventDefault();
+            }
+        });
 
         function togglePause() {
             if (state === 'over') return;

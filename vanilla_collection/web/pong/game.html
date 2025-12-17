@@ -68,7 +68,7 @@
         .hud { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 12px; }
         .stat { padding: 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.03); }
         .stat .label { font-size: 11px; color: #adb6da; letter-spacing: 0.6px; text-transform: uppercase; }
-        .stat .value { font-size: 22px; font-weight: 800; margin-top: 4px; }
+        .stat .value { font-size: 22px; font-weight: 800; margin-top: 4px; white-space: nowrap; }
         .board-shell { margin-top: 8px; background: radial-gradient(circle at 20% 20%, rgba(102, 126, 234, 0.16), transparent 35%), radial-gradient(circle at 80% 10%, rgba(118, 75, 162, 0.16), transparent 30%), rgba(6, 9, 25, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 14px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03); }
         .board-shell { position: relative; overflow: hidden; --overlay-inset: 14px; --overlay-radius: 12px; }
         canvas { width: 100%; height: auto; aspect-ratio: 4 / 3; display: block; background: #050913; border-radius: 12px; }
@@ -240,7 +240,7 @@
         const requestedDifficulty = (params.get('difficulty') || 'medium').toLowerCase();
 
         const CONFIG = {
-            easy: { ball: 5.5, aiSpeed: 5.2, aiError: 70, target: 7, label: 'Easy', aiMissChance: 0.18, aiLag: 6 },
+            easy: { ball: 5.5, aiSpeed: 5.8, aiError: 55, target: 7, label: 'Easy', aiMissChance: 0.10, aiLag: 4 },
             medium: { ball: 7.0, aiSpeed: 6.5, aiError: 50, target: 9, label: 'Medium', aiMissChance: 0.12, aiLag: 4 },
             hard: { ball: 8.5, aiSpeed: 7.8, aiError: 35, target: 11, label: 'Hard', aiMissChance: 0.06, aiLag: 2 }
         };
@@ -390,8 +390,11 @@
 
         document.addEventListener('keydown', e => {
             keys[e.key.toLowerCase()] = true;
-            if (e.key === ' ') {
+            // Prevent default for game control keys to stop page scrolling
+            if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase()) || e.key === ' ') {
                 e.preventDefault();
+            }
+            if (e.key === ' ') {
                 startOrServe();
             } else if (e.key.toLowerCase() === 'p') {
                 togglePause();
@@ -399,7 +402,13 @@
                 resetMatch();
             }
         });
-        document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+        document.addEventListener('keyup', e => {
+            keys[e.key.toLowerCase()] = false;
+            // Prevent default on keyup as well for consistency
+            if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase()) || e.key === ' ') {
+                e.preventDefault();
+            }
+        });
 
         function togglePause() {
             if (state === 'over') return;

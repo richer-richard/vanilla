@@ -15,12 +15,21 @@ from __future__ import annotations
 
 import random
 from collections import deque
-from typing import Dict, Iterable, List, Set, Tuple
+from collections.abc import Mapping
+from typing import Any, Dict, Iterable, List, Set, Tuple
 
 
-def _occupied(snake: Iterable[Dict[str, int]]) -> Set[Tuple[int, int]]:
+def _segment_xy(seg: Any) -> Tuple[int, int]:
+    if isinstance(seg, Mapping):
+        return int(seg.get("x", 0)), int(seg.get("y", 0))
+    if isinstance(seg, (list, tuple)) and len(seg) >= 2:
+        return int(seg[0]), int(seg[1])
+    return 0, 0
+
+
+def _occupied(snake: Iterable[Any]) -> Set[Tuple[int, int]]:
     """Get set of cells occupied by snake body."""
-    return {(int(seg.get("x", 0)), int(seg.get("y", 0))) for seg in snake}
+    return {_segment_xy(seg) for seg in snake}
 
 
 def _flood_fill(start: Tuple[int, int], blocked: Set[Tuple[int, int]], grid: int) -> Set[Tuple[int, int]]:
@@ -78,7 +87,7 @@ def _get_safe_score(pos: Tuple[int, int], snake_set: Set[Tuple[int, int]], grid:
     return int(score * 10)
 
 
-def next_food(grid: int, snake: Iterable[Dict[str, int]]) -> Dict[str, int]:
+def next_food(grid: int, snake: Iterable[Any]) -> Dict[str, int]:
     """
     Generate smart food placement.
     
@@ -91,8 +100,7 @@ def next_food(grid: int, snake: Iterable[Dict[str, int]]) -> Dict[str, int]:
     taken = _occupied(snake_list)
     
     # Get snake head position
-    head = snake_list[0] if snake_list else {"x": grid // 2, "y": grid // 2}
-    head_pos = (int(head.get("x", 0)), int(head.get("y", 0)))
+    head_pos = _segment_xy(snake_list[0]) if snake_list else (grid // 2, grid // 2)
     
     # Find all open spaces
     open_spaces = [(x, y) for x in range(grid) for y in range(grid) if (x, y) not in taken]
@@ -136,7 +144,7 @@ def next_food(grid: int, snake: Iterable[Dict[str, int]]) -> Dict[str, int]:
     return {"x": x, "y": y}
 
 
-def get_game_stats(grid: int, snake: Iterable[Dict[str, int]]) -> Dict:
+def get_game_stats(grid: int, snake: Iterable[Any]) -> Dict:
     """
     Get game statistics that might be useful for analytics.
     This is additional backend functionality beyond basic food placement.
@@ -144,8 +152,7 @@ def get_game_stats(grid: int, snake: Iterable[Dict[str, int]]) -> Dict:
     snake_list = list(snake)
     taken = _occupied(snake_list)
     
-    head = snake_list[0] if snake_list else {"x": grid // 2, "y": grid // 2}
-    head_pos = (int(head.get("x", 0)), int(head.get("y", 0)))
+    head_pos = _segment_xy(snake_list[0]) if snake_list else (grid // 2, grid // 2)
     
     # Calculate reachable space percentage
     reachable = _flood_fill(head_pos, taken, grid)

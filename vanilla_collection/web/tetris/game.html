@@ -1047,6 +1047,7 @@
                 if (state.mode !== 'running') return;
 
                 if (keyMatches(e.key, ['arrowleft', 'a'])) {
+                    e.preventDefault();
                     input.left = true;
                     input.lastHorz = 'left';
                     input.activeDir = -1;
@@ -1056,6 +1057,7 @@
                     return;
                 }
                 if (keyMatches(e.key, ['arrowright', 'd'])) {
+                    e.preventDefault();
                     input.right = true;
                     input.lastHorz = 'right';
                     input.activeDir = 1;
@@ -1065,6 +1067,7 @@
                     return;
                 }
                 if (keyMatches(e.key, ['arrowdown', 's'])) {
+                    e.preventDefault();
                     input.down = true;
                     return;
                 }

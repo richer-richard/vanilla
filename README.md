@@ -75,11 +75,13 @@ Each game is a standalone HTML5 Canvas experience with its own intro page, diffi
 ## ✨ Features
 
 - **Modern Web Interface**: Gradient backgrounds, glass-morphism cards, and consistent HUD styling across the collection and each game.
-- **Multiple Difficulty Levels**: Easy/Medium/Hard per game, usually adjusting speed, density, or AI forgiveness rather than just “more enemies”.
+- **Multiple Difficulty Levels**: Easy/Medium/Hard per game, usually adjusting speed, density, or AI forgiveness rather than just "more enemies".
 - **Responsive Design**: Canvases scale with the viewport, keeping gameplay readable on desktop and smaller screens.
+- **Sound Effects**: Procedurally generated retro arcade sounds using Web Audio API (`sounds.js`). No audio files needed—all sounds are synthesized in real-time. Toggle sound on/off in-game with the 🔊/🔇 button.
 - **Persistent Scores**:
   - Local bests saved with `localStorage` (per game + difficulty).
   - Optional global leaderboards via the Flask server (`/api/leaderboard/<game>`, `/api/score`).
+  - Beautiful scoreboard UI component (`scoreboard.js`) with filtering by difficulty.
 - **Python Backend (Flask)**: Provides procedural generation helpers and lightweight JSON persistence (`scores.json`), but the frontend degrades gracefully when the server is offline.
 - **Smooth Gameplay (120 FPS Target)**:
   - Games run a fixed-step 120Hz simulation for consistent timing and input feel.
@@ -90,13 +92,18 @@ Each game is a standalone HTML5 Canvas experience with its own intro page, diffi
 
 ```
 vanilla/
-├── favicon.svg                  # Browser tab icon (linked via <link rel="icon">)
+├── app.py                       # Application bootstrapper (auto-opens browser)
+├── server.py                    # Flask backend server
+├── requirements.txt             # Python dependencies
+├── scores.json                  # Persistent score storage
 ├── index.html                   # Homepage
 ├── games.html                   # Game selection page
 ├── about.html                   # About/introduction page
 ├── styles.css                   # Global styles
-├── server.py                    # Flask backend server
-├── scores.json                  # Persistent score storage
+├── sounds.js                    # Sound engine (Web Audio API procedural sounds)
+├── scoreboard.js                # Scoreboard/leaderboard UI component
+├── favicon.svg                  # Browser tab icon (linked via <link rel="icon">)
+├── vanilla-banner.svg           # README banner image
 ├── backends/                    # Python backend modules
 │   ├── __init__.py
 │   ├── snake.py                 # Snake food placement logic
@@ -281,7 +288,7 @@ HOST=127.0.0.1 PORT=8080 DEBUG=1 python3 server.py
 │  │                           Backend Modules (backends/)                       │   │
 │  │                                                                             │   │
 │  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐ ┌──────────────┐   │   │
-│  │  │🐍 snake  │ │🎾 pong   │ │🔨 breakout│ │⬜ geometry   │ │💣 minesweeper │   │   │
+│  │  │🐍 snake  │ │🎾 pong    │ │🔨 breakout│ │⬜ geometry   │ │💣 minesweeper│   │   │
 │  │  │  .py     │ │  .py     │ │   .py    │ │   _dash.py   │ │     .py      │   │   │
 │  │  │  Food    │ │  AI      │ │  Level   │ │  Pattern     │ │  Board Gen   │   │   │
 │  │  │ Placement│ │ Target   │ │ Layout   │ │  Generation  │ │  First-Safe  │   │   │
@@ -384,18 +391,27 @@ HOST=127.0.0.1 PORT=8080 DEBUG=1 python3 server.py
 ### API Endpoints
 
 ```
+# Core Routes
 GET  /                           # Serve homepage
 GET  /health                     # Health check
 GET  /scores                     # Get all scores
 GET  /leaderboard/<game>         # Get leaderboard for specific game
 POST /score                      # Submit a new score
 
+# API-prefixed aliases (same functionality, alternative paths)
+GET  /api/health                 # Health check (alias)
+GET  /api/scores                 # Get all scores (alias)
+GET  /api/leaderboard/<game>     # Get leaderboard for specific game (alias)
+POST /api/score                  # Submit a new score (alias)
+
+# Game-specific procedural generation endpoints
 POST /api/snake/food             # Generate optimal food placement
 POST /api/pong/ai-target         # Calculate AI paddle target
 POST /api/breakout/level         # Generate breakout level layout
 POST /api/geometry/pattern       # Generate obstacle patterns
 POST /api/minesweeper/board      # Generate minesweeper board
 POST /api/space/wave             # Generate enemy wave configuration
+POST /api/tetris/config          # Get Tetris difficulty configuration
 ```
 
 ## 🎨 Design Highlights
@@ -524,7 +540,8 @@ Each game maintains a state machine:
 
 ## 🎯 Future Enhancements
 
-- [ ] Sound effects and background music
+- [x] Sound effects *(implemented via Web Audio API in `sounds.js` - procedurally generated retro sounds)*
+- [ ] Background music
 - [ ] Global online leaderboards with user accounts
 - [ ] Additional games (Pac-Man, Asteroids, etc.)
 - [ ] Multiplayer network support

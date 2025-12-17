@@ -12,6 +12,8 @@ class SoundEngine {
         this.enabled = true;
         this.volume = 0.3; // Default volume (0-1)
         this.initialized = false;
+        this.noiseBuffer = null;
+        this.noiseBufferKey = '';
         
         // Load sound preferences from localStorage
         const savedEnabled = localStorage.getItem('vanilla-sound-enabled');
@@ -40,6 +42,27 @@ class SoundEngine {
         } catch (e) {
             console.warn('Web Audio API not supported:', e);
         }
+    }
+
+    /**
+     * Get a cached noise buffer for procedural sounds
+     */
+    getNoiseBuffer(durationSeconds = 0.3) {
+        if (!this.context) return null;
+        const duration = Math.max(0.05, Number(durationSeconds) || 0.3);
+        const length = Math.floor(this.context.sampleRate * duration);
+        const key = `${this.context.sampleRate}:${length}`;
+        if (this.noiseBuffer && this.noiseBufferKey === key) return this.noiseBuffer;
+
+        const buffer = this.context.createBuffer(1, length, this.context.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        this.noiseBuffer = buffer;
+        this.noiseBufferKey = key;
+        return buffer;
     }
 
     /**
@@ -159,14 +182,11 @@ class SoundEngine {
         if (!this.enabled || !this.context) return;
         this.init();
 
+        const duration = 0.3;
+        const buffer = this.getNoiseBuffer(duration);
+        if (!buffer) return;
+
         const noise = this.context.createBufferSource();
-        const buffer = this.context.createBuffer(1, this.context.sampleRate * 0.3, this.context.sampleRate);
-        const data = buffer.getChannelData(0);
-        
-        for (let i = 0; i < data.length; i++) {
-            data[i] = Math.random() * 2 - 1;
-        }
-        
         noise.buffer = buffer;
         
         const filter = this.context.createBiquadFilter();
@@ -181,9 +201,16 @@ class SoundEngine {
         
         const now = this.now();
         filter.frequency.exponentialRampToValueAtTime(50, now + 0.25);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-        
+        gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+        noise.onended = () => {
+            try { noise.disconnect(); } catch (e) {}
+            try { filter.disconnect(); } catch (e) {}
+            try { gain.disconnect(); } catch (e) {}
+        };
+
         noise.start(now);
+        noise.stop(now + duration);
     }
 
     /**

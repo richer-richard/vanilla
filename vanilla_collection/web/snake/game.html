@@ -438,16 +438,30 @@
         let state = 'idle'; // idle | running | paused | over
         let animationId = null;
         let cellSize = 20;
+        let boardSize = 0;
+        let dpr = 1;
+        let prevSnake = [];
+        let renderTime = 0;
+        const foodPulsePhase = Math.random() * Math.PI * 2;
 
         function resizeCanvas() {
-            const container = canvas.parentElement;
-            const containerWidth = container.clientWidth || 640;
+            const shell = canvas.parentElement;
+            const shellStyles = window.getComputedStyle(shell);
+            const paddingX = (Number.parseFloat(shellStyles.paddingLeft) || 0) + (Number.parseFloat(shellStyles.paddingRight) || 0);
+            const availableWidth = Math.max(280, (shell.clientWidth || 640) - paddingX);
             const maxHeight = Math.max(320, window.innerHeight - 220);
-            const rawSize = Math.min(Math.min(containerWidth, maxHeight), 740);
-            const snapped = rawSize - (rawSize % settings.grid);
-            canvas.width = snapped;
-            canvas.height = snapped;
-            cellSize = snapped / settings.grid;
+            const rawSize = Math.min(Math.min(availableWidth, maxHeight), 740);
+            boardSize = rawSize - (rawSize % settings.grid);
+
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.style.width = `${boardSize}px`;
+            canvas.style.height = `${boardSize}px`;
+            canvas.width = Math.floor(boardSize * dpr);
+            canvas.height = Math.floor(boardSize * dpr);
+
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.imageSmoothingEnabled = true;
+            cellSize = boardSize / settings.grid;
         }
 
         async function requestBackendFood() {
@@ -500,6 +514,7 @@
                 { x: center - 2, y: center },
                 { x: center - 3, y: center }
             ];
+            prevSnake = snake.map(segment => ({ ...segment }));
             placeFood();
             requestBackendFood();
             state = 'running';
@@ -516,7 +531,7 @@
         }
 
         function setDirection(newDirection) {
-            const opposite = newDirection.x === -direction.x && newDirection.y === -direction.y;
+            const opposite = newDirection.x === -queuedDirection.x && newDirection.y === -queuedDirection.y;
             if (opposite) return;
             queuedDirection = newDirection;
         }
@@ -554,8 +569,14 @@
 
         function togglePause() {
             if (state === 'over') return;
-            state = state === 'paused' ? 'running' : 'paused';
+            const resuming = state === 'paused';
+            state = resuming ? 'running' : 'paused';
             pauseBtn.textContent = state === 'paused' ? 'Resume' : 'Pause';
+            accumulator = 0;
+            prevSnake = snake.map(segment => ({ ...segment }));
+            if (resuming) {
+                lastFrame = performance.now();
+            }
         }
 
         // Game over screen elements
@@ -680,6 +701,7 @@
         });
 
         function step() {
+            prevSnake = snake.map(segment => ({ ...segment }));
             direction = queuedDirection;
             const head = snake[0];
             const next = { x: head.x + direction.x, y: head.y + direction.y };
@@ -713,71 +735,218 @@
         }
 
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const width = boardSize || canvas.width / dpr;
+            const height = boardSize || canvas.height / dpr;
+            const tickProgress = state === 'running' ? Math.min(1, accumulator / Math.max(1, tickInterval)) : 1;
+            const lerp = (from, to, t) => from + (to - from) * t;
+            const getInterpolatedSegment = (segment, index) => {
+                if (!prevSnake || prevSnake.length === 0) return { x: segment.x, y: segment.y };
+                const fallback = prevSnake[Math.max(0, prevSnake.length - 1)] || segment;
+                const from = prevSnake[index] || fallback;
+                return {
+                    x: lerp(from.x, segment.x, tickProgress),
+                    y: lerp(from.y, segment.y, tickProgress),
+                };
+            };
 
-            const background = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            background.addColorStop(0, '#0c132b');
-            background.addColorStop(1, '#0a0f22');
+            ctx.clearRect(0, 0, width, height);
+
+            const background = ctx.createLinearGradient(0, 0, width, height);
+            background.addColorStop(0, '#0b1230');
+            background.addColorStop(1, '#070a18');
             ctx.fillStyle = background;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, width, height);
 
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+            const vignette = ctx.createRadialGradient(width * 0.5, height * 0.45, width * 0.2, width * 0.5, height * 0.5, width * 0.75);
+            vignette.addColorStop(0, 'rgba(16, 33, 84, 0.0)');
+            vignette.addColorStop(1, 'rgba(0, 0, 0, 0.55)');
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.045)';
             ctx.lineWidth = 1;
             for (let i = 0; i <= settings.grid; i++) {
                 const offset = i * cellSize;
                 ctx.beginPath();
                 ctx.moveTo(offset, 0);
-                ctx.lineTo(offset, canvas.height);
+                ctx.lineTo(offset, height);
                 ctx.stroke();
                 ctx.beginPath();
                 ctx.moveTo(0, offset);
-                ctx.lineTo(canvas.width, offset);
+                ctx.lineTo(width, offset);
                 ctx.stroke();
             }
 
             if (food) {
                 const fx = (food.x + 0.5) * cellSize;
                 const fy = (food.y + 0.5) * cellSize;
-                const radius = cellSize * 0.4;
-                const gradient = ctx.createRadialGradient(fx, fy, radius * 0.2, fx, fy, radius);
-                gradient.addColorStop(0, '#ffe29f');
-                gradient.addColorStop(1, '#ff6b6b');
+                const pulse = 1 + 0.08 * Math.sin(renderTime / 180 + foodPulsePhase);
+                const radius = cellSize * 0.34 * pulse;
+
+                ctx.save();
+                ctx.shadowColor = 'rgba(255, 107, 107, 0.6)';
+                ctx.shadowBlur = cellSize * 0.7;
+
+                const gradient = ctx.createRadialGradient(
+                    fx - radius * 0.25,
+                    fy - radius * 0.35,
+                    radius * 0.15,
+                    fx,
+                    fy,
+                    radius
+                );
+                gradient.addColorStop(0, '#fff3c4');
+                gradient.addColorStop(0.55, '#ff6b6b');
+                gradient.addColorStop(1, '#b43cff');
+
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
                 ctx.arc(fx, fy, radius, 0, Math.PI * 2);
                 ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+                ctx.lineWidth = Math.max(1.2, cellSize * 0.05);
+                ctx.beginPath();
+                ctx.arc(fx, fy, radius * 0.98, 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+                ctx.beginPath();
+                ctx.arc(fx - radius * 0.25, fy - radius * 0.25, radius * 0.22, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(157, 232, 199, 0.75)';
+                ctx.lineWidth = Math.max(1.2, cellSize * 0.055);
+                ctx.beginPath();
+                ctx.ellipse(
+                    fx + radius * 0.3,
+                    fy - radius * 0.7,
+                    radius * 0.28,
+                    radius * 0.16,
+                    -0.55,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.stroke();
+                ctx.restore();
             }
 
-            snake.forEach((segment, index) => {
-                const x = segment.x * cellSize;
-                const y = segment.y * cellSize;
-                const isHead = index === 0;
-                ctx.fillStyle = isHead ? '#9de8c7' : '#4ecdc4';
-                ctx.shadowColor = isHead ? 'rgba(157, 232, 199, 0.45)' : 'rgba(78, 205, 196, 0.35)';
-                ctx.shadowBlur = isHead ? 16 : 10;
+            if (snake.length > 0) {
+                const points = snake.map((segment, index) => {
+                    const interpolated = getInterpolatedSegment(segment, index);
+                    return {
+                        x: (interpolated.x + 0.5) * cellSize,
+                        y: (interpolated.y + 0.5) * cellSize,
+                    };
+                });
+
+                const head = points[0];
+                const tail = points[points.length - 1];
+                const bodyGradient = ctx.createLinearGradient(head.x, head.y, tail.x, tail.y);
+                bodyGradient.addColorStop(0, '#9de8c7');
+                bodyGradient.addColorStop(0.5, '#4ecdc4');
+                bodyGradient.addColorStop(1, '#1da5b8');
+
+                ctx.save();
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.strokeStyle = bodyGradient;
+                ctx.lineWidth = cellSize * 0.78;
+                ctx.shadowColor = 'rgba(78, 205, 196, 0.35)';
+                ctx.shadowBlur = cellSize * 0.55;
                 ctx.beginPath();
-                if (ctx.roundRect) {
-                    ctx.roundRect(
-                        x + 2,
-                        y + 2,
-                        cellSize - 4,
-                        cellSize - 4,
-                        Math.min(8, cellSize / 3)
-                    );
-                } else {
-                    ctx.rect(x + 2, y + 2, cellSize - 4, cellSize - 4);
+                ctx.moveTo(points[0].x, points[0].y);
+                for (let i = 1; i < points.length; i++) {
+                    ctx.lineTo(points[i].x, points[i].y);
                 }
+                ctx.stroke();
+
+                ctx.shadowBlur = 0;
+                ctx.globalAlpha = 0.55;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+                ctx.lineWidth = cellSize * 0.22;
+                ctx.beginPath();
+                ctx.moveTo(points[0].x, points[0].y);
+                for (let i = 1; i < points.length; i++) {
+                    ctx.lineTo(points[i].x, points[i].y);
+                }
+                ctx.stroke();
+                ctx.restore();
+
+                const headRadius = cellSize * 0.46;
+                const headGradient = ctx.createRadialGradient(
+                    head.x - headRadius * 0.35,
+                    head.y - headRadius * 0.35,
+                    headRadius * 0.2,
+                    head.x,
+                    head.y,
+                    headRadius
+                );
+                headGradient.addColorStop(0, '#d4fff0');
+                headGradient.addColorStop(0.5, '#6fe3cd');
+                headGradient.addColorStop(1, '#1fb6a8');
+
+                ctx.save();
+                ctx.shadowColor = 'rgba(157, 232, 199, 0.45)';
+                ctx.shadowBlur = cellSize * 0.65;
+                ctx.fillStyle = headGradient;
+                ctx.beginPath();
+                ctx.arc(head.x, head.y, headRadius, 0, Math.PI * 2);
                 ctx.fill();
-            });
-            ctx.shadowBlur = 0;
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+                ctx.lineWidth = Math.max(1.2, cellSize * 0.06);
+                ctx.stroke();
+
+                const dirLen = Math.hypot(direction.x, direction.y) || 1;
+                const forward = { x: direction.x / dirLen, y: direction.y / dirLen };
+                const side = { x: -forward.y, y: forward.x };
+                const eyeForward = headRadius * 0.22;
+                const eyeSide = headRadius * 0.28;
+                const eyeRadius = headRadius * 0.12;
+
+                const eyeA = {
+                    x: head.x + forward.x * eyeForward + side.x * eyeSide,
+                    y: head.y + forward.y * eyeForward + side.y * eyeSide,
+                };
+                const eyeB = {
+                    x: head.x + forward.x * eyeForward - side.x * eyeSide,
+                    y: head.y + forward.y * eyeForward - side.y * eyeSide,
+                };
+
+                ctx.fillStyle = 'rgba(8, 10, 22, 0.95)';
+                [eyeA, eyeB].forEach((eye) => {
+                    ctx.beginPath();
+                    ctx.arc(eye.x, eye.y, eyeRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                const pupilRadius = eyeRadius * 0.38;
+                const pupilOffset = eyeRadius * 0.35;
+                [eyeA, eyeB].forEach((eye) => {
+                    ctx.beginPath();
+                    ctx.arc(
+                        eye.x + forward.x * pupilOffset,
+                        eye.y + forward.y * pupilOffset,
+                        pupilRadius,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.fill();
+                });
+
+                ctx.restore();
+            }
 
             if (state === 'paused') {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillRect(0, 0, width, height);
                 ctx.fillStyle = '#f1f3ff';
                 ctx.font = `bold ${Math.max(20, cellSize)}px Poppins`;
                 ctx.textAlign = 'center';
-                ctx.fillText('Paused', canvas.width / 2, canvas.height / 2);
+                ctx.fillText('Paused', width / 2, height / 2);
             }
         }
 
@@ -788,12 +957,14 @@
             }
             const delta = timestamp - lastFrame;
             lastFrame = timestamp;
+            renderTime = timestamp;
 
             if (state === 'running') {
                 accumulator += delta;
                 while (accumulator >= tickInterval) {
+                    const interval = tickInterval;
                     step();
-                    accumulator -= tickInterval;
+                    accumulator -= interval;
                     if (state === 'over') break;
                 }
             }
@@ -835,28 +1006,6 @@
         }
         
         startBtn.addEventListener('click', startGame);
-        
-        // Override resetGame to not auto-start
-        const originalResetGame = resetGame;
-        resetGame = function() {
-            overlay.classList.remove('active');
-            score = 0;
-            tickInterval = settings.tick;
-            direction = { x: 1, y: 0 };
-            queuedDirection = { x: 1, y: 0 };
-            const center = Math.floor(settings.grid / 2);
-            snake = [
-                { x: center - 1, y: center },
-                { x: center - 2, y: center },
-                { x: center - 3, y: center }
-            ];
-            placeFood();
-            requestBackendFood();
-            state = 'running';
-            accumulator = 0;
-            lastFrame = performance.now();
-            updateHud();
-        };
 
         resizeCanvas();
         // Don't auto-start - show overlay instead
@@ -868,6 +1017,7 @@
             { x: center - 2, y: center },
             { x: center - 3, y: center }
         ];
+        prevSnake = snake.map(segment => ({ ...segment }));
         placeFood();
         updateHud();
         state = 'idle';

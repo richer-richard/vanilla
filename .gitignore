@@ -46,3 +46,26 @@ htmlcov/
 # Environment files
 .env
 .env.local
+
+# Node modules (if using npm for linting)
+node_modules/
+package-lock.json
+
+# Mypy cache
+.mypy_cache/
+
+# Ruff cache
+.ruff_cache/
+
+# Generated icons (PWA) - keep placeholder
+vanilla_collection/web/icons/*.png
+!vanilla_collection/web/icons/.gitkeep
+vanilla_collection/web/screenshots/*.png
+!vanilla_collection/web/screenshots/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp
+
+# User data (generated at runtime)
+scores.json

@@ -1,0 +1,531 @@
+/**
+ * VANILLA Game Common Styles
+ * 
+ * Shared styles for all game pages. Include this after styles.css
+ * to get consistent game page styling across the collection.
+ */
+
+/* ===== Game Page Body ===== */
+.game-page {
+    min-height: 100vh;
+}
+
+/* ===== Game Header ===== */
+.game-page header {
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.1));
+    border-bottom: 1px solid var(--border-primary, rgba(102, 126, 234, 0.3));
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* ===== Breadcrumb / Navigation ===== */
+.crumb {
+    color: #cdd2f1;
+    letter-spacing: 0.6px;
+    font-size: 12px;
+}
+
+.pill {
+    padding: 10px 14px;
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid rgba(102, 126, 234, 0.4);
+    background: rgba(102, 126, 234, 0.12);
+    color: #dfe4ff;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.4px;
+}
+
+.pill-link {
+    text-decoration: none;
+    color: #dfe4ff;
+    border: 1px solid rgba(102, 126, 234, 0.4);
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    font-family: var(--font-mono, 'Press Start 2P', monospace);
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    transition: all var(--transition-fast, 0.2s ease);
+}
+
+.pill-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+    border-color: rgba(118, 75, 162, 0.75);
+}
+
+/* ===== Action Buttons ===== */
+.action-btn {
+    padding: 10px 14px;
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.24), rgba(118, 75, 162, 0.2));
+    color: var(--text-light, #f2f4ff);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all var(--transition-fast, 0.2s ease);
+}
+
+.action-btn.ghost {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* ===== Main Game Layout ===== */
+.game-page main {
+    width: min(1100px, 100%);
+    margin: 0 auto;
+    padding: 26px 24px 60px;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 18px;
+    align-items: start;
+    text-align: left;
+    justify-content: initial;
+}
+
+@media (max-width: 960px) {
+    .game-page main {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== Glass Card ===== */
+.glass-card {
+    background: linear-gradient(150deg, rgba(255, 255, 255, 0.02), rgba(102, 126, 234, 0.08));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+    border-radius: var(--radius-lg, 16px);
+    box-shadow: var(--shadow-xl, 0 25px 70px rgba(0, 0, 0, 0.35)), 0 10px 22px rgba(102, 126, 234, 0.1);
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 12% 18%, rgba(118, 75, 162, 0.14), transparent 32%),
+                radial-gradient(circle at 82% 8%, rgba(102, 126, 234, 0.12), transparent 30%);
+    pointer-events: none;
+}
+
+.glass-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* ===== HUD / Stats Display ===== */
+.hud {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.stat {
+    padding: 12px;
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+    background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+}
+
+.stat .label {
+    font-size: 11px;
+    color: #adb6da;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+
+.stat .value {
+    font-size: 22px;
+    font-weight: 800;
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+/* ===== Game Board Shell ===== */
+.board-shell {
+    margin-top: 8px;
+    background: radial-gradient(circle at 20% 20%, rgba(102, 126, 234, 0.16), transparent 35%),
+                radial-gradient(circle at 80% 10%, rgba(118, 75, 162, 0.16), transparent 30%),
+                rgba(6, 9, 25, 0.9);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+    border-radius: var(--radius-lg, 16px);
+    padding: 14px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    position: relative;
+    overflow: hidden;
+    --overlay-inset: 14px;
+    --overlay-radius: 12px;
+}
+
+/* ===== Game Canvas ===== */
+.game-page canvas {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    display: block;
+    background: var(--bg-darker, #050913);
+    border-radius: var(--radius-md, 12px);
+    max-width: none;
+    max-height: none;
+    border: none;
+}
+
+/* ===== Sidebar ===== */
+.sidebar h2 {
+    margin: 6px 0 12px;
+    font-size: 20px;
+}
+
+.sidebar .eyebrow {
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #9fb0ff;
+    font-size: 11px;
+}
+
+/* ===== Tips List ===== */
+.tips {
+    list-style: none;
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    color: #cbd0ea;
+}
+
+.tips li {
+    padding: 10px 12px;
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+    background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+}
+
+/* ===== Chip Tags ===== */
+.chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.chip {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(102, 126, 234, 0.35);
+    background: rgba(102, 126, 234, 0.08);
+    color: #dfe4ff;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+/* ===== Eyebrow Text ===== */
+.eyebrow {
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: rgba(159, 176, 255, 0.9);
+    font-size: 11px;
+}
+
+/* ===== Game Controls Help ===== */
+.controls-hint {
+    margin-top: 10px;
+    color: #aeb7db;
+    font-size: 13px;
+}
+
+/* ===== Score Colors ===== */
+.score-highlight {
+    color: var(--color-cyan, #6ee7ff);
+}
+
+.score-warning {
+    color: var(--color-warning, #fcd34d);
+}
+
+.score-danger {
+    color: var(--color-danger, #fb7185);
+}
+
+.score-success {
+    color: var(--color-success, #9de8c7);
+}
+
+/* ===== Lives / Health Display ===== */
+.lives-display {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.life {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-success, #9de8c7);
+    transition: all var(--transition-fast, 0.2s ease);
+}
+
+.life.lost {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* ===== Progress Bar ===== */
+.progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--gradient-primary, linear-gradient(90deg, #667eea, #764ba2));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* ===== Level Indicator ===== */
+.level-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm, 8px);
+    background: rgba(102, 126, 234, 0.15);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.level-indicator .level-num {
+    font-family: var(--font-mono, 'Press Start 2P', monospace);
+    font-size: 14px;
+    color: var(--color-cyan, #6ee7ff);
+}
+
+/* ===== Combo Display ===== */
+.combo-display {
+    font-family: var(--font-mono, 'Press Start 2P', monospace);
+    font-size: 16px;
+    color: var(--color-warning, #fcd34d);
+    text-shadow: 0 0 20px rgba(252, 211, 77, 0.5);
+    animation: comboPulse 0.3s ease;
+}
+
+@keyframes comboPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+/* ===== Game Messages ===== */
+.game-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px 40px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg, 16px);
+    text-align: center;
+    backdrop-filter: blur(8px);
+    z-index: 20;
+}
+
+.game-message h2 {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: var(--text-light, #f2f4ff);
+}
+
+.game-message p {
+    color: var(--text-secondary, #b0b0b0);
+    font-size: 14px;
+    margin: 0;
+}
+
+/* ===== Countdown Display ===== */
+.countdown {
+    font-family: var(--font-mono, 'Press Start 2P', monospace);
+    font-size: 64px;
+    color: var(--text-light, #f2f4ff);
+    text-shadow: 0 0 30px rgba(102, 126, 234, 0.8);
+    animation: countdownPulse 1s ease infinite;
+}
+
+@keyframes countdownPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* ===== Power-up Indicators ===== */
+.powerup-active {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.powerup-badge {
+    padding: 6px 10px;
+    border-radius: var(--radius-full, 999px);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: powerupGlow 1.5s ease infinite;
+}
+
+.powerup-badge.speed {
+    background: rgba(110, 231, 255, 0.2);
+    border: 1px solid rgba(110, 231, 255, 0.5);
+    color: #6ee7ff;
+}
+
+.powerup-badge.shield {
+    background: rgba(157, 232, 199, 0.2);
+    border: 1px solid rgba(157, 232, 199, 0.5);
+    color: #9de8c7;
+}
+
+.powerup-badge.weapon {
+    background: rgba(251, 113, 133, 0.2);
+    border: 1px solid rgba(251, 113, 133, 0.5);
+    color: #fb7185;
+}
+
+@keyframes powerupGlow {
+    0%, 100% { box-shadow: 0 0 10px rgba(102, 126, 234, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.6); }
+}
+
+/* ===== Mobile Responsive Adjustments ===== */
+@media (max-width: 600px) {
+    .game-page header {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .header-left {
+        flex: 1;
+        min-width: 100%;
+    }
+    
+    .header-actions {
+        flex: 1;
+        justify-content: flex-end;
+    }
+    
+    .game-page main {
+        padding: 16px 12px 40px;
+    }
+    
+    .glass-card {
+        padding: 12px;
+    }
+    
+    .hud {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    
+    .stat {
+        padding: 10px;
+    }
+    
+    .stat .value {
+        font-size: 18px;
+    }
+    
+    .board-shell {
+        padding: 10px;
+    }
+    
+    .pill-link {
+        font-size: 8px;
+        padding: 8px 10px;
+    }
+}
+
+/* ===== Landscape Mobile ===== */
+@media (max-height: 500px) and (orientation: landscape) {
+    .game-page header {
+        padding: 8px 16px;
+    }
+    
+    .game-page main {
+        padding: 12px;
+        grid-template-columns: 1fr;
+    }
+    
+    .sidebar {
+        display: none;
+    }
+    
+    .hud {
+        margin-bottom: 8px;
+    }
+    
+    .board-shell {
+        padding: 8px;
+    }
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+    .combo-display,
+    .countdown,
+    .powerup-badge {
+        animation: none;
+    }
+    
+    .game-over-overlay.active {
+        animation: none;
+    }
+    
+    .game-over-content {
+        animation: none;
+    }
+}
+
+/* ===== High Contrast Mode ===== */
+@media (prefers-contrast: high) {
+    .glass-card {
+        border-width: 2px;
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .stat {
+        border-width: 2px;
+    }
+    
+    .board-shell {
+        border-width: 2px;
+    }
+}
