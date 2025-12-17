@@ -18,6 +18,7 @@
         </div>
         <div class="header-actions">
             <button class="action-btn ghost" id="soundBtn">🔊</button>
+            <button class="action-btn ghost fullscreen-btn" id="fullscreenBtn" title="Toggle Fullscreen">⛶</button>
             <button class="action-btn ghost" id="pauseBtn">Pause</button>
             <button class="action-btn" id="restartBtn">Restart</button>
         </div>
@@ -31,7 +32,7 @@
                 <div class="stat"><div class="label">Lives</div><div class="value" id="livesVal">3</div></div>
                 <div class="stat"><div class="label">Level</div><div class="value" id="levelVal">1</div></div>
             </div>
-            <div class="board-shell canvas-shell">
+            <div class="board-shell canvas-shell" id="boardShell" style="--canvas-aspect-ratio: 4 / 3;">
                 <canvas id="board"></canvas>
                 <div class="canvas-overlay" id="startOverlay">
                     <div class="overlay-card">
@@ -805,6 +806,43 @@
                 soundBtn.textContent = soundEngine.enabled ? '🔊' : '🔇';
             }
         };
+        
+        // Fullscreen toggle
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const boardShell = document.getElementById('boardShell');
+        
+        function toggleFullscreen() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (boardShell.requestFullscreen) {
+                    boardShell.requestFullscreen();
+                } else if (boardShell.webkitRequestFullscreen) {
+                    boardShell.webkitRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
+        }
+        
+        fullscreenBtn.onclick = toggleFullscreen;
+        
+        document.addEventListener('fullscreenchange', () => {
+            resizeCanvas();
+        });
+        document.addEventListener('webkitfullscreenchange', () => {
+            resizeCanvas();
+        });
+        
+        // F key for fullscreen
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'f' && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                toggleFullscreen();
+            }
+        });
         
         // Initialize
         resizeCanvas();

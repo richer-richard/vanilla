@@ -18,6 +18,7 @@
         </div>
         <div class="header-actions">
             <button class="action-btn ghost" id="soundBtn">🔊</button>
+            <button class="action-btn ghost fullscreen-btn" id="fullscreenBtn" title="Toggle Fullscreen">⛶</button>
             <button class="action-btn ghost" id="pauseBtn">Pause</button>
             <button class="action-btn" id="restartBtn">Restart</button>
         </div>
@@ -31,7 +32,7 @@
                 <div class="stat"><div class="label">Lives</div><div class="value" id="livesVal">3</div></div>
                 <div class="stat"><div class="label">Level</div><div class="value" id="levelVal">1</div></div>
             </div>
-            <div class="board-shell canvas-shell">
+            <div class="board-shell canvas-shell" id="boardShell" style="--canvas-aspect-ratio: 28 / 31;">
                 <canvas id="board"></canvas>
                 <div class="canvas-overlay" id="startOverlay">
                     <div class="overlay-card">
@@ -161,19 +162,24 @@
         const difficultyKey = CONFIG[requestedDifficulty] ? requestedDifficulty : 'medium';
         const settings = CONFIG[difficultyKey];
         
-        // Game constants
-        const CELL_SIZE = 20;
-        const MAZE_WIDTH = 28;
-        const MAZE_HEIGHT = 31;
+	        // Game constants
+	        const CELL_SIZE = 20;
+	        const MAZE_WIDTH = 28;
+	        const MAZE_HEIGHT = 31;
+	        const BASE_FRAME_MS = 1000 / 60;
+	        const TURN_TOLERANCE = CELL_SIZE * 0.2;
+	        const PACMAN_COLLISION_RADIUS = CELL_SIZE * 0.42;
+	        const GHOST_COLLISION_RADIUS = CELL_SIZE * 0.38;
         
         // Maze layout (0=wall, 1=pellet, 2=empty, 3=power pellet, 4=ghost house)
-        const MAZE_TEMPLATE = [
+        // Redesigned maze with wrap-around tunnels on multiple rows for circling
+        const MAZE_CLASSIC = [
             "0000000000000000000000000000",
-            "0111111111111001111111111110",
+            "0111111111111111111111111110",
             "0100001000010010100010000010",
             "0300001000010010100010000030",
             "0100001000010010100010000010",
-            "0111111111111111111111111110",
+            "2111111111111111111111111112",
             "0100001001000000010010000010",
             "0100001001000000010010000010",
             "0111111001111001111001111110",
@@ -187,19 +193,123 @@
             "0000001002222222220010000000",
             "0000001000000000000010000000",
             "0000001001111111110010000000",
-            "0111111111110010111111111110",
+            "0111111111111111111111111110",
             "0100001000010010100010000010",
             "0100001000010010100010000010",
-            "0311001111112222111111001130",
+            "0311001111111111111111001130",
             "0001001001000000010010010000",
-            "0001001001000000010010010000",
-            "0111111001111001111001111110",
-            "0100000000010010100000000010",
-            "0100000000010010100000000010",
+            "2111111001000000010011111112",
+            "0100001001111001110010000010",
+            "0100001000010010100010000010",
+            "0100001000010010100010000010",
             "0111111111111111111111111110",
             "0000000000000000000000000000",
             "0000000000000000000000000000"
         ];
+
+	        function mulberry32(seed) {
+	            let a = seed >>> 0;
+	            return function rng() {
+	                a |= 0;
+	                a = (a + 0x6D2B79F5) | 0;
+	                let t = Math.imul(a ^ (a >>> 15), 1 | a);
+	                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+	                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	            };
+	        }
+
+	        function mazeGhostHouseBounds(grid) {
+	            let minX = Infinity;
+	            let minY = Infinity;
+	            let maxX = -Infinity;
+	            let maxY = -Infinity;
+
+	            for (let y = 0; y < MAZE_HEIGHT; y++) {
+	                for (let x = 0; x < MAZE_WIDTH; x++) {
+	                    if (grid[y][x] === 4) {
+	                        minX = Math.min(minX, x);
+	                        minY = Math.min(minY, y);
+	                        maxX = Math.max(maxX, x);
+	                        maxY = Math.max(maxY, y);
+	                    }
+	                }
+	            }
+
+	            if (!Number.isFinite(minX)) {
+	                return null;
+	            }
+
+	            return {
+	                minX: Math.max(0, minX - 1),
+	                minY: Math.max(0, minY - 1),
+	                maxX: Math.min(MAZE_WIDTH - 1, maxX + 1),
+	                maxY: Math.min(MAZE_HEIGHT - 1, maxY + 1),
+	            };
+	        }
+
+	        function inBoundsRect(bounds, x, y) {
+	            if (!bounds) return false;
+	            return x >= bounds.minX && x <= bounds.maxX && y >= bounds.minY && y <= bounds.maxY;
+	        }
+
+	        function hasAdjacentCorridor(grid, x, y) {
+	            const dirs = [
+	                [0, -1],
+	                [0, 1],
+	                [-1, 0],
+	                [1, 0],
+	            ];
+	            for (const [dx, dy] of dirs) {
+	                const nx = x + dx;
+	                const ny = y + dy;
+	                if (nx < 0 || nx >= MAZE_WIDTH || ny < 0 || ny >= MAZE_HEIGHT) continue;
+	                const cell = grid[ny][nx];
+	                if (cell !== 0) return true;
+	            }
+	            return false;
+	        }
+
+	        function buildMazeVariant(baseTemplate, seed, level, difficulty) {
+	            // Level 1 uses the classic layout; later levels carve small, symmetric openings
+	            // to keep the maze fresh while preserving the overall look.
+	            if (level <= 1) return baseTemplate;
+
+	            const grid = baseTemplate.map((row) => row.split('').map((c) => parseInt(c, 10)));
+	            const bounds = mazeGhostHouseBounds(grid);
+
+	            const rng = mulberry32((seed + level * 1013 + difficulty.length * 7919) >>> 0);
+	            const basePairs = difficulty === 'easy' ? 14 : difficulty === 'hard' ? 8 : 11;
+	            const extraPairs = Math.min(10, Math.max(0, level - 2) * 2);
+	            const carvePairs = basePairs + extraPairs;
+
+	            const candidates = [];
+	            const half = Math.floor(MAZE_WIDTH / 2);
+	            for (let y = 1; y < MAZE_HEIGHT - 1; y++) {
+	                for (let x = 1; x < half; x++) {
+	                    const mx = MAZE_WIDTH - 1 - x;
+	                    if (grid[y][x] !== 0 || grid[y][mx] !== 0) continue;
+	                    if (inBoundsRect(bounds, x, y) || inBoundsRect(bounds, mx, y)) continue;
+	                    if (!hasAdjacentCorridor(grid, x, y) || !hasAdjacentCorridor(grid, mx, y)) continue;
+	                    candidates.push({ x, y, mx });
+	                }
+	            }
+
+	            // Shuffle candidates deterministically
+	            for (let i = candidates.length - 1; i > 0; i--) {
+	                const j = Math.floor(rng() * (i + 1));
+	                const tmp = candidates[i];
+	                candidates[i] = candidates[j];
+	                candidates[j] = tmp;
+	            }
+
+	            for (let i = 0; i < Math.min(carvePairs, candidates.length); i++) {
+	                const { x, y, mx } = candidates[i];
+	                grid[y][x] = 1;
+	                grid[y][mx] = 1;
+	            }
+
+	            return grid.map((row) => row.join(''));
+	        }
         
         // Game state
         let maze = [];
@@ -209,14 +319,17 @@
         let lives = 3;
         let level = 1;
         let pelletsRemaining = 0;
-        const bestKey = `vanilla-pacman-${difficultyKey}-best`;
-        let bestScore = parseInt(localStorage.getItem(bestKey) || '0');
-        let gameState = 'ready'; // ready, running, paused, over
-        let ghostMode = 'scatter'; // scatter, chase, frightened
-        let modeTimer = 0;
-        let frightenedTimer = 0;
-        let lastTime = 0;
-        let animationId = null;
+	        const bestKey = `vanilla-pacman-${difficultyKey}-best`;
+	        let bestScore = parseInt(localStorage.getItem(bestKey) || '0');
+	        let gameState = 'ready'; // ready, running, paused, over
+	        let ghostsEatenThisPower = 0;
+		        let ghostMode = 'scatter'; // scatter, chase, frightened
+	        let modeTimer = 0;
+	        let frightenedTimer = 0;
+	        let lastTime = 0;
+	        let animationId = null;
+	        let runSeed = Math.floor(Math.random() * 2 ** 31);
+	        let tunnelRows = new Set();
         
         // DOM elements
         const difficultyLabel = document.getElementById('difficultyLabel');
@@ -266,27 +379,64 @@
         }
         
         // Initialize maze
-        function initMaze() {
-            maze = [];
-            pelletsRemaining = 0;
-            
-            for (let y = 0; y < MAZE_HEIGHT; y++) {
-                maze[y] = [];
-                for (let x = 0; x < MAZE_WIDTH; x++) {
-                    const cell = parseInt(MAZE_TEMPLATE[y][x]);
-                    maze[y][x] = cell;
-                    if (cell === 1 || cell === 3) {
-                        pelletsRemaining++;
-                    }
-                }
-            }
-        }
+	        function initMaze(template = MAZE_CLASSIC) {
+	            const activeTemplate = template;
+	            maze = [];
+	            pelletsRemaining = 0;
+	            
+	            for (let y = 0; y < MAZE_HEIGHT; y++) {
+	                maze[y] = [];
+	                for (let x = 0; x < MAZE_WIDTH; x++) {
+	                    const cell = parseInt(activeTemplate[y][x]);
+	                    maze[y][x] = cell;
+	                    if (cell === 1 || cell === 3) {
+	                        pelletsRemaining++;
+	                    }
+	                }
+	            }
+
+	            // Detect tunnel rows for safe wrap-around (both edges walkable).
+	            tunnelRows = new Set();
+	            for (let y = 0; y < MAZE_HEIGHT; y++) {
+	                if (maze[y][0] !== 0 && maze[y][MAZE_WIDTH - 1] !== 0) {
+	                    tunnelRows.add(y);
+	                }
+	            }
+	        }
         
         // Initialize Pac-Man
         function initPacman() {
+            // Find a safe spawn position - scan the maze for a valid corridor
+            let spawnX = 14 * CELL_SIZE; // Default center
+            let spawnY = 23 * CELL_SIZE;
+            
+            // Try to find a clear spawn spot in row 23 (below ghost house)
+            for (let x = 10; x < 18; x++) {
+                if (maze[23] && maze[23][x] === 1) {
+                    spawnX = (x + 0.5) * CELL_SIZE;
+                    spawnY = 23.5 * CELL_SIZE;
+                    break;
+                }
+            }
+            
+            // Fallback: try row 19 which should have a clear corridor
+            if (!isValidPosition(spawnX, spawnY, PACMAN_COLLISION_RADIUS, false)) {
+                for (let x = 5; x < 23; x++) {
+                    if (maze[19] && maze[19][x] !== 0) {
+                        const testX = (x + 0.5) * CELL_SIZE;
+                        const testY = 19.5 * CELL_SIZE;
+                        if (isValidPosition(testX, testY, PACMAN_COLLISION_RADIUS, false)) {
+                            spawnX = testX;
+                            spawnY = testY;
+                            break;
+                        }
+                    }
+                }
+            }
+            
             pacman = {
-                x: 14 * CELL_SIZE,
-                y: 23.5 * CELL_SIZE,
+                x: spawnX,
+                y: spawnY,
                 direction: { x: 0, y: 0 },
                 nextDirection: { x: 0, y: 0 },
                 mouthAngle: 0,
@@ -322,82 +472,150 @@
                 this.inHouse = true;
             }
             
-            getTarget() {
-                if (this.eaten) {
-                    return { x: 13.5, y: 14 }; // Return to ghost house
-                }
-                
-                if (this.frightened) {
-                    // Random movement when frightened
-                    return { 
-                        x: Math.floor(Math.random() * MAZE_WIDTH), 
-                        y: Math.floor(Math.random() * MAZE_HEIGHT) 
-                    };
-                }
-                
-                if (ghostMode === 'scatter') {
-                    return this.scatterTarget;
-                }
+	            getTarget() {
+	                if (this.eaten) {
+	                    return { x: 13.5, y: 14.5 }; // Return to ghost house
+	                }
+	                
+	                if (ghostMode === 'scatter') {
+	                    return this.scatterTarget;
+	                }
                 
                 // Chase mode - each ghost has different targeting
-                const px = Math.floor(pacman.x / CELL_SIZE);
-                const py = Math.floor(pacman.y / CELL_SIZE);
-                
-                switch (this.name) {
-                    case 'blinky': // Directly targets Pac-Man
-                        return { x: px, y: py };
-                    case 'pinky': // Targets 4 tiles ahead of Pac-Man
-                        return { 
-                            x: px + pacman.direction.x * 4, 
-                            y: py + pacman.direction.y * 4 
-                        };
-                    case 'inky': // Complex targeting based on Blinky's position
-                        const blinky = ghosts[0];
-                        const bx = Math.floor(blinky.x / CELL_SIZE);
-                        const by = Math.floor(blinky.y / CELL_SIZE);
-                        return { 
-                            x: px + (px - bx), 
-                            y: py + (py - by) 
-                        };
-                    case 'clyde': // Targets Pac-Man if far, scatter if close
-                        const dist = Math.hypot(px - this.x / CELL_SIZE, py - this.y / CELL_SIZE);
-                        if (dist > 8) {
-                            return { x: px, y: py };
-                        }
-                        return this.scatterTarget;
-                    default:
-                        return { x: px, y: py };
-                }
-            }
+	                const px = Math.floor(pacman.x / CELL_SIZE);
+	                const py = Math.floor(pacman.y / CELL_SIZE);
+	                const pdx = pacman.direction.x;
+	                const pdy = pacman.direction.y;
+	                
+	                switch (this.name) {
+	                    case 'blinky': // Directly targets Pac-Man
+	                        return { x: px, y: py };
+	                    case 'pinky': // Targets 4 tiles ahead of Pac-Man
+	                        return { 
+	                            x: px + pdx * 4, 
+	                            y: py + pdy * 4 
+	                        };
+	                    case 'inky': { // Complex targeting based on Blinky's position
+	                        const ahead = { x: px + pdx * 2, y: py + pdy * 2 };
+	                        const blinky = ghosts[0];
+	                        const bx = Math.floor(blinky.x / CELL_SIZE);
+	                        const by = Math.floor(blinky.y / CELL_SIZE);
+	                        return { 
+	                            x: ahead.x * 2 - bx, 
+	                            y: ahead.y * 2 - by 
+	                        };
+	                    }
+	                    case 'clyde': // Targets Pac-Man if far, scatter if close
+	                        const gx = Math.floor(this.x / CELL_SIZE);
+	                        const gy = Math.floor(this.y / CELL_SIZE);
+	                        const dist = Math.hypot(px - gx, py - gy);
+	                        if (dist > 8) {
+	                            return { x: px, y: py };
+	                        }
+	                        return this.scatterTarget;
+	                    default:
+	                        return { x: px, y: py };
+	                }
+	            }
         }
         
-        // Initialize ghosts
+        // Initialize ghosts with level-based difficulty scaling
         function initGhosts() {
+            // Level-based speed multiplier (ghosts get faster each level)
+            const levelSpeedBonus = Math.min(0.5, (level - 1) * 0.08);
+            const adjustedGhostSpeed = settings.ghostSpeed * (1 + levelSpeedBonus);
+            
             ghosts = [
-                new Ghost('blinky', '#ff0000', 13.5, 11, { x: 25, y: -3 }),
-                new Ghost('pinky', '#ffb8ff', 13.5, 14, { x: 2, y: -3 }),
-                new Ghost('inky', '#00ffff', 11.5, 14, { x: 27, y: 31 }),
-                new Ghost('clyde', '#ffb852', 15.5, 14, { x: 0, y: 31 })
+                new Ghost('blinky', '#ff0000', 13.5, 11.5, { x: 25, y: -3 }),
+                new Ghost('pinky', '#ffb8ff', 13.5, 14.5, { x: 2, y: -3 }),
+                new Ghost('inky', '#00ffff', 11.5, 14.5, { x: 27, y: 31 }),
+                new Ghost('clyde', '#ffb852', 15.5, 14.5, { x: 0, y: 31 })
             ];
             
-            // Set release timers
+            // Apply level-based speed to all ghosts
+            for (const ghost of ghosts) {
+                ghost.speed = adjustedGhostSpeed;
+            }
+            
+            // Set release timers - faster release at higher levels
+            const releaseSpeedup = Math.max(0.3, 1 - (level - 1) * 0.15);
             ghosts[0].inHouse = false; // Blinky starts outside
             ghosts[1].releaseTimer = 0;
-            ghosts[2].releaseTimer = 3000;
-            ghosts[3].releaseTimer = 6000;
+            ghosts[2].releaseTimer = Math.floor(2500 * releaseSpeedup);
+            ghosts[3].releaseTimer = Math.floor(5000 * releaseSpeedup);
         }
         
-        // Check if position is valid (not a wall)
-        function isValidPosition(x, y) {
-            const cellX = Math.floor(x / CELL_SIZE);
-            const cellY = Math.floor(y / CELL_SIZE);
-            
-            // Handle tunnel wrapping
-            if (cellX < 0 || cellX >= MAZE_WIDTH) return true;
-            if (cellY < 0 || cellY >= MAZE_HEIGHT) return false;
-            
-            return maze[cellY][cellX] !== 0;
-        }
+	        function tileCenter(pos) {
+	            return (Math.floor(pos / CELL_SIZE) + 0.5) * CELL_SIZE;
+	        }
+
+	        function isWalkableTile(tileX, tileY, allowHouse) {
+	            if (tileY < 0 || tileY >= MAZE_HEIGHT) return false;
+	            // Allow horizontal wrap through open tunnel rows.
+	            if (tileX < 0 || tileX >= MAZE_WIDTH) return tunnelRows.has(tileY);
+	            const cell = maze[tileY][tileX];
+	            if (cell === 0) return false;
+	            if (!allowHouse && cell === 4) return false;
+	            return true;
+	        }
+
+	        // Check if position is valid (with radius, prevents wall-sticking/clipping)
+	        function isValidPosition(x, y, radius = PACMAN_COLLISION_RADIUS, allowHouse = false) {
+	            const left = x - radius;
+	            const right = x + radius;
+	            const top = y - radius;
+	            const bottom = y + radius;
+
+	            const minX = Math.floor(left / CELL_SIZE);
+	            const maxX = Math.floor(right / CELL_SIZE);
+	            const minY = Math.floor(top / CELL_SIZE);
+	            const maxY = Math.floor(bottom / CELL_SIZE);
+
+	            for (let ty = minY; ty <= maxY; ty++) {
+	                for (let tx = minX; tx <= maxX; tx++) {
+	                    if (!isWalkableTile(tx, ty, allowHouse)) return false;
+	                }
+	            }
+	            return true;
+	        }
+
+	        function tryTurn(entity, desiredDir, step, radius, allowHouse) {
+	            if (!desiredDir || (desiredDir.x === 0 && desiredDir.y === 0)) return;
+	            if (desiredDir.x === entity.direction.x && desiredDir.y === entity.direction.y) return;
+
+	            const wantsHorizontal = desiredDir.x !== 0;
+	            const wantsVertical = desiredDir.y !== 0;
+
+	            // Turning across axes needs grid alignment; reversing doesn't.
+	            const axisChange =
+	                (wantsHorizontal && entity.direction.y !== 0) ||
+	                (wantsVertical && entity.direction.x !== 0) ||
+	                (entity.direction.x === 0 && entity.direction.y === 0);
+
+	            const snapTol = TURN_TOLERANCE + step;
+	            let testX = entity.x;
+	            let testY = entity.y;
+
+	            if (axisChange) {
+	                if (wantsHorizontal) {
+	                    const cy = tileCenter(entity.y);
+	                    if (Math.abs(entity.y - cy) > snapTol) return;
+	                    testY = cy;
+	                } else if (wantsVertical) {
+	                    const cx = tileCenter(entity.x);
+	                    if (Math.abs(entity.x - cx) > snapTol) return;
+	                    testX = cx;
+	                }
+	            }
+
+	            const nx = testX + desiredDir.x * step;
+	            const ny = testY + desiredDir.y * step;
+	            if (!isValidPosition(nx, ny, radius, allowHouse)) return;
+
+	            entity.x = testX;
+	            entity.y = testY;
+	            entity.direction = { ...desiredDir };
+	        }
         
         // Check collision between Pac-Man and ghosts
         function checkGhostCollision() {
@@ -419,35 +637,54 @@
             return false;
         }
         
-        // Update Pac-Man
-        function updatePacman(delta) {
-            // Try to change direction
-            if (pacman.nextDirection.x !== 0 || pacman.nextDirection.y !== 0) {
-                const nextX = pacman.x + pacman.nextDirection.x * pacman.speed;
-                const nextY = pacman.y + pacman.nextDirection.y * pacman.speed;
-                
-                if (isValidPosition(nextX, nextY)) {
-                    pacman.direction = { ...pacman.nextDirection };
-                }
-            }
-            
-            // Move Pac-Man
-            if (pacman.direction.x !== 0 || pacman.direction.y !== 0) {
-                const nextX = pacman.x + pacman.direction.x * pacman.speed;
-                const nextY = pacman.y + pacman.direction.y * pacman.speed;
-                
-                if (isValidPosition(nextX, nextY)) {
-                    pacman.x = nextX;
-                    pacman.y = nextY;
-                }
-            }
-            
-            // Handle tunnel wrapping
-            if (pacman.x < -CELL_SIZE) pacman.x = MAZE_WIDTH * CELL_SIZE;
-            if (pacman.x > MAZE_WIDTH * CELL_SIZE) pacman.x = -CELL_SIZE;
-            
-            // Animate mouth
-            pacman.mouthAngle += 0.3;
+	        // Update Pac-Man
+	        function updatePacman(delta) {
+	            const tickScale = delta / BASE_FRAME_MS;
+	            const step = pacman.speed * tickScale;
+
+	            // Try to change direction
+	            if (pacman.nextDirection.x !== 0 || pacman.nextDirection.y !== 0) {
+	                tryTurn(pacman, pacman.nextDirection, step, PACMAN_COLLISION_RADIUS, false);
+	            }
+	            
+	            // Move Pac-Man
+	            if (pacman.direction.x !== 0 || pacman.direction.y !== 0) {
+	                let nextX = pacman.x + pacman.direction.x * step;
+	                let nextY = pacman.y + pacman.direction.y * step;
+
+	                if (!isValidPosition(nextX, nextY, PACMAN_COLLISION_RADIUS, false)) {
+	                    // If we're slightly misaligned, snap to the lane and retry.
+	                    if (pacman.direction.x !== 0) {
+	                        const cy = tileCenter(pacman.y);
+	                        if (Math.abs(pacman.y - cy) <= TURN_TOLERANCE + step) {
+	                            pacman.y = cy;
+	                        }
+	                    } else if (pacman.direction.y !== 0) {
+	                        const cx = tileCenter(pacman.x);
+	                        if (Math.abs(pacman.x - cx) <= TURN_TOLERANCE + step) {
+	                            pacman.x = cx;
+	                        }
+	                    }
+
+	                    nextX = pacman.x + pacman.direction.x * step;
+	                    nextY = pacman.y + pacman.direction.y * step;
+	                }
+
+	                if (isValidPosition(nextX, nextY, PACMAN_COLLISION_RADIUS, false)) {
+	                    pacman.x = nextX;
+	                    pacman.y = nextY;
+	                }
+	            }
+	            
+	            // Handle tunnel wrapping
+	            const pacRow = Math.floor(pacman.y / CELL_SIZE);
+	            if (tunnelRows.has(pacRow)) {
+	                if (pacman.x < -PACMAN_COLLISION_RADIUS) pacman.x = MAZE_WIDTH * CELL_SIZE + PACMAN_COLLISION_RADIUS;
+	                if (pacman.x > MAZE_WIDTH * CELL_SIZE + PACMAN_COLLISION_RADIUS) pacman.x = -PACMAN_COLLISION_RADIUS;
+	            }
+	            
+	            // Animate mouth
+	            pacman.mouthAngle += 0.3 * tickScale;
             
             // Check for pellet eating
             const cellX = Math.floor(pacman.x / CELL_SIZE);
@@ -468,94 +705,221 @@
                     pelletsRemaining--;
                     updateHUD();
                     
-                    // Frighten ghosts
-                    frightenedTimer = settings.frightenedTime;
-                    for (const ghost of ghosts) {
-                        if (!ghost.eaten) {
-                            ghost.frightened = true;
-                        }
-                    }
-                    if (window.soundEngine) soundEngine.play('powerup');
-                }
+	                    // Frighten ghosts
+		                    frightenedTimer = settings.frightenedTime;
+		                    ghostsEatenThisPower = 0;
+		                    for (const ghost of ghosts) {
+		                        if (!ghost.eaten) {
+		                            ghost.frightened = true;
+		                            ghost.direction = { x: -ghost.direction.x, y: -ghost.direction.y };
+		                        }
+	                    }
+	                    if (window.soundEngine) soundEngine.play('powerup');
+	                }
             }
         }
-        
-        // Update ghosts
-        function updateGhosts(delta) {
-            for (const ghost of ghosts) {
-                // Handle ghost house release
-                if (ghost.inHouse) {
-                    ghost.releaseTimer -= delta;
-                    if (ghost.releaseTimer <= 0) {
-                        ghost.inHouse = false;
-                        ghost.y = 11 * CELL_SIZE;
-                    }
-                    continue;
-                }
-                
-                // Get target and move
-                const target = ghost.getTarget();
-                const speed = ghost.eaten ? settings.ghostSpeed * 2 : 
-                              ghost.frightened ? settings.ghostSpeed * 0.5 : 
-                              settings.ghostSpeed;
-                
-                // Simple pathfinding - move towards target
-                const dx = target.x * CELL_SIZE - ghost.x;
-                const dy = target.y * CELL_SIZE - ghost.y;
-                
-                // Choose best direction
-                const possibleDirs = [
-                    { x: 0, y: -1 }, // up
-                    { x: 0, y: 1 },  // down
-                    { x: -1, y: 0 }, // left
-                    { x: 1, y: 0 }   // right
-                ].filter(dir => {
-                    // Can't reverse direction
-                    if (dir.x === -ghost.direction.x && dir.y === -ghost.direction.y) return false;
-                    
-                    const nextX = ghost.x + dir.x * speed;
-                    const nextY = ghost.y + dir.y * speed;
-                    return isValidPosition(nextX, nextY);
-                });
-                
-                if (possibleDirs.length > 0) {
-                    // Choose direction closest to target
-                    let bestDir = possibleDirs[0];
-                    let bestDist = Infinity;
-                    
-                    for (const dir of possibleDirs) {
-                        const nextX = ghost.x + dir.x * CELL_SIZE;
-                        const nextY = ghost.y + dir.y * CELL_SIZE;
-                        const dist = Math.hypot(target.x * CELL_SIZE - nextX, target.y * CELL_SIZE - nextY);
-                        
-                        if (dist < bestDist) {
-                            bestDist = dist;
-                            bestDir = dir;
-                        }
-                    }
-                    
-                    ghost.direction = bestDir;
-                }
-                
-                // Move ghost
-                ghost.x += ghost.direction.x * speed;
-                ghost.y += ghost.direction.y * speed;
-                
-                // Handle tunnel wrapping
-                if (ghost.x < -CELL_SIZE) ghost.x = MAZE_WIDTH * CELL_SIZE;
-                if (ghost.x > MAZE_WIDTH * CELL_SIZE) ghost.x = -CELL_SIZE;
-                
-                // Check if eaten ghost reached house
-                if (ghost.eaten) {
-                    const houseX = 13.5 * CELL_SIZE;
-                    const houseY = 14 * CELL_SIZE;
-                    if (Math.hypot(ghost.x - houseX, ghost.y - houseY) < CELL_SIZE) {
-                        ghost.eaten = false;
-                        ghost.frightened = false;
-                    }
-                }
-            }
-        }
+
+	        // Ghost pathfinding helpers (tile-based decisions at intersections)
+	        const GHOST_DIRS = [
+	            { x: 0, y: -1 }, // up
+	            { x: -1, y: 0 }, // left
+	            { x: 0, y: 1 },  // down
+	            { x: 1, y: 0 }   // right
+	        ];
+
+	        function clampInt(value, min, max) {
+	            return Math.max(min, Math.min(max, value));
+	        }
+
+	        function targetToTile(target, allowHouse) {
+	            const tx = clampInt(Math.floor(target.x), 0, MAZE_WIDTH - 1);
+	            const ty = clampInt(Math.floor(target.y), 0, MAZE_HEIGHT - 1);
+	            return closestWalkableTile(tx, ty, allowHouse);
+	        }
+
+	        function closestWalkableTile(startX, startY, allowHouse) {
+	            if (isWalkableTile(startX, startY, allowHouse)) return { x: startX, y: startY };
+
+	            const visited = Array.from({ length: MAZE_HEIGHT }, () => Array(MAZE_WIDTH).fill(false));
+	            const q = [{ x: startX, y: startY }];
+	            visited[startY][startX] = true;
+	            let head = 0;
+
+	            while (head < q.length) {
+	                const { x, y } = q[head++];
+	                for (const dir of GHOST_DIRS) {
+	                    const nx = x + dir.x;
+	                    const ny = y + dir.y;
+	                    if (nx < 0 || nx >= MAZE_WIDTH || ny < 0 || ny >= MAZE_HEIGHT) continue;
+	                    if (visited[ny][nx]) continue;
+	                    if (isWalkableTile(nx, ny, allowHouse)) return { x: nx, y: ny };
+	                    visited[ny][nx] = true;
+	                    q.push({ x: nx, y: ny });
+	                }
+	            }
+
+	            return { x: startX, y: startY };
+	        }
+
+	        function nextTileFrom(tileX, tileY, dir, allowHouse) {
+	            let nx = tileX + dir.x;
+	            const ny = tileY + dir.y;
+
+	            if (ny < 0 || ny >= MAZE_HEIGHT) return null;
+	            if (nx < 0) {
+	                if (!tunnelRows.has(tileY)) return null;
+	                nx = MAZE_WIDTH - 1;
+	            } else if (nx >= MAZE_WIDTH) {
+	                if (!tunnelRows.has(tileY)) return null;
+	                nx = 0;
+	            }
+
+	            if (!isWalkableTile(nx, ny, allowHouse)) return null;
+	            return { x: nx, y: ny };
+	        }
+
+	        function buildDistanceMap(targetX, targetY, allowHouse) {
+	            const dist = Array.from({ length: MAZE_HEIGHT }, () => Array(MAZE_WIDTH).fill(Infinity));
+	            const q = [{ x: targetX, y: targetY }];
+	            dist[targetY][targetX] = 0;
+	            let head = 0;
+
+	            while (head < q.length) {
+	                const { x, y } = q[head++];
+	                const nd = dist[y][x] + 1;
+	                for (const dir of GHOST_DIRS) {
+	                    const n = nextTileFrom(x, y, dir, allowHouse);
+	                    if (!n) continue;
+	                    if (dist[n.y][n.x] <= nd) continue;
+	                    dist[n.y][n.x] = nd;
+	                    q.push(n);
+	                }
+	            }
+
+	            return dist;
+	        }
+
+	        function chooseGhostDirection(ghost, tileX, tileY, allowHouse) {
+	            const reverse = { x: -ghost.direction.x, y: -ghost.direction.y };
+	            const options = [];
+
+	            for (const dir of GHOST_DIRS) {
+	                const n = nextTileFrom(tileX, tileY, dir, allowHouse);
+	                if (!n) continue;
+	                const isReverse = dir.x === reverse.x && dir.y === reverse.y;
+	                options.push({ dir, n, isReverse });
+	            }
+
+	            const nonReverse = options.filter((o) => !o.isReverse);
+	            const candidates = nonReverse.length > 0 ? nonReverse : options;
+	            if (candidates.length === 0) return ghost.direction;
+
+	            if (ghost.frightened && !ghost.eaten) {
+	                const idx = Math.floor(Math.random() * candidates.length);
+	                return { ...candidates[idx].dir };
+	            }
+
+	            const targetTile = targetToTile(ghost.getTarget(), allowHouse);
+	            const dist = buildDistanceMap(targetTile.x, targetTile.y, allowHouse);
+
+	            let best = candidates[0];
+	            let bestDist = dist[best.n.y][best.n.x];
+	            for (const c of candidates) {
+	                const d = dist[c.n.y][c.n.x];
+	                if (d < bestDist) {
+	                    bestDist = d;
+	                    best = c;
+	                }
+	            }
+
+	            if (!Number.isFinite(bestDist)) {
+	                const idx = Math.floor(Math.random() * candidates.length);
+	                return { ...candidates[idx].dir };
+	            }
+
+	            return { ...best.dir };
+	        }
+
+	        // Update ghosts
+	        function updateGhosts(delta) {
+	            const tickScale = delta / BASE_FRAME_MS;
+
+	            for (const ghost of ghosts) {
+	                // Handle ghost house release
+	                if (ghost.inHouse) {
+	                    ghost.releaseTimer -= delta;
+	                    if (ghost.releaseTimer <= 0) {
+	                        ghost.inHouse = false;
+	                        ghost.y = 11.5 * CELL_SIZE;
+	                        ghost.x = tileCenter(ghost.x);
+	                        ghost.direction = { x: 0, y: -1 };
+	                    }
+	                    continue;
+	                }
+
+	                const allowHouse = ghost.eaten;
+	                const speed = ghost.eaten ? settings.ghostSpeed * 2 :
+	                              ghost.frightened ? settings.ghostSpeed * 0.6 :
+	                              settings.ghostSpeed;
+	                const step = speed * tickScale;
+
+	                const cx = tileCenter(ghost.x);
+	                const cy = tileCenter(ghost.y);
+	                const atCenter = Math.abs(ghost.x - cx) <= TURN_TOLERANCE + step &&
+	                                 Math.abs(ghost.y - cy) <= TURN_TOLERANCE + step;
+
+	                if (atCenter) {
+	                    ghost.x = cx;
+	                    ghost.y = cy;
+	                    const tileX = Math.floor(ghost.x / CELL_SIZE);
+	                    const tileY = Math.floor(ghost.y / CELL_SIZE);
+	                    ghost.direction = chooseGhostDirection(ghost, tileX, tileY, allowHouse);
+	                }
+
+	                let nextX = ghost.x + ghost.direction.x * step;
+	                let nextY = ghost.y + ghost.direction.y * step;
+
+	                if (!isValidPosition(nextX, nextY, GHOST_COLLISION_RADIUS, allowHouse)) {
+	                    // Snap to lane and retry (prevents corner clipping).
+	                    if (ghost.direction.x !== 0 && Math.abs(ghost.y - cy) <= TURN_TOLERANCE + step) {
+	                        ghost.y = cy;
+	                    } else if (ghost.direction.y !== 0 && Math.abs(ghost.x - cx) <= TURN_TOLERANCE + step) {
+	                        ghost.x = cx;
+	                    }
+	                    nextX = ghost.x + ghost.direction.x * step;
+	                    nextY = ghost.y + ghost.direction.y * step;
+	                }
+
+	                if (isValidPosition(nextX, nextY, GHOST_COLLISION_RADIUS, allowHouse)) {
+	                    ghost.x = nextX;
+	                    ghost.y = nextY;
+	                } else if (atCenter) {
+	                    ghost.direction = { x: -ghost.direction.x, y: -ghost.direction.y };
+	                }
+
+	                // Handle tunnel wrapping
+	                const ghostRow = Math.floor(ghost.y / CELL_SIZE);
+	                if (tunnelRows.has(ghostRow)) {
+	                    if (ghost.x < -GHOST_COLLISION_RADIUS) ghost.x = MAZE_WIDTH * CELL_SIZE + GHOST_COLLISION_RADIUS;
+	                    if (ghost.x > MAZE_WIDTH * CELL_SIZE + GHOST_COLLISION_RADIUS) ghost.x = -GHOST_COLLISION_RADIUS;
+	                }
+
+	                // Check if eaten ghost reached house
+	                if (ghost.eaten) {
+	                    const houseX = 13.5 * CELL_SIZE;
+	                    const houseY = 14.5 * CELL_SIZE;
+	                    if (Math.hypot(ghost.x - houseX, ghost.y - houseY) < CELL_SIZE * 0.55) {
+	                        ghost.eaten = false;
+	                        ghost.frightened = false;
+	                        ghost.inHouse = true;
+	                        ghost.releaseTimer = 800;
+	                        ghost.x = ghost.startX * CELL_SIZE;
+	                        ghost.y = ghost.startY * CELL_SIZE;
+	                        ghost.direction = { x: 0, y: -1 };
+	                    }
+	                }
+	            }
+	        }
         
         // Update mode timers
         function updateModeTimer(delta) {
@@ -569,15 +933,23 @@
             } else {
                 modeTimer += delta;
                 
-                if (ghostMode === 'scatter' && modeTimer >= settings.scatterTime) {
-                    ghostMode = 'chase';
-                    modeTimer = 0;
-                } else if (ghostMode === 'chase' && modeTimer >= settings.chaseTime) {
-                    ghostMode = 'scatter';
-                    modeTimer = 0;
-                }
-            }
-        }
+	                if (ghostMode === 'scatter' && modeTimer >= settings.scatterTime) {
+	                    ghostMode = 'chase';
+	                    modeTimer = 0;
+	                    for (const ghost of ghosts) {
+	                        if (ghost.inHouse || ghost.eaten || ghost.frightened) continue;
+	                        ghost.direction = { x: -ghost.direction.x, y: -ghost.direction.y };
+	                    }
+	                } else if (ghostMode === 'chase' && modeTimer >= settings.chaseTime) {
+	                    ghostMode = 'scatter';
+	                    modeTimer = 0;
+	                    for (const ghost of ghosts) {
+	                        if (ghost.inHouse || ghost.eaten || ghost.frightened) continue;
+	                        ghost.direction = { x: -ghost.direction.x, y: -ghost.direction.y };
+	                    }
+	                }
+	            }
+	        }
         
         // Draw maze
         function drawMaze() {
@@ -759,14 +1131,14 @@
                 }
             }
             
-            // Check win condition
-            if (pelletsRemaining <= 0) {
-                level++;
-                initMaze();
-                initPacman();
-                initGhosts();
-                updateHUD();
-            }
+	            // Check win condition
+	            if (pelletsRemaining <= 0) {
+	                level++;
+	                initMaze(buildMazeVariant(MAZE_CLASSIC, runSeed, level, difficultyKey));
+	                initPacman();
+	                initGhosts();
+	                updateHUD();
+	            }
             
             // Render
             ctx.fillStyle = '#000';
@@ -806,20 +1178,21 @@
             if (window.soundEngine) soundEngine.play('die');
         }
         
-        // Start game
-        function startGame() {
-            initMaze();
-            initPacman();
-            initGhosts();
-            
-            score = 0;
-            lives = 3;
-            level = 1;
-            ghostMode = 'scatter';
-            modeTimer = 0;
-            frightenedTimer = 0;
-            
-            updateHUD();
+	        // Start game
+	        function startGame() {
+	            score = 0;
+	            lives = 3;
+	            level = 1;
+	            runSeed = Math.floor(Math.random() * 2 ** 31);
+	            ghostMode = 'scatter';
+	            modeTimer = 0;
+	            frightenedTimer = 0;
+
+	            initMaze(buildMazeVariant(MAZE_CLASSIC, runSeed, level, difficultyKey));
+	            initPacman();
+	            initGhosts();
+	            
+	            updateHUD();
             
             gameState = 'running';
             lastTime = performance.now();
@@ -899,6 +1272,45 @@
             }
         };
         
+        // Fullscreen toggle
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const boardShell = document.getElementById('boardShell');
+        
+        function toggleFullscreen() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (boardShell.requestFullscreen) {
+                    boardShell.requestFullscreen();
+                } else if (boardShell.webkitRequestFullscreen) {
+                    boardShell.webkitRequestFullscreen();
+                }
+                fullscreenBtn.textContent = '⛶';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+                fullscreenBtn.textContent = '⛶';
+            }
+        }
+        
+        fullscreenBtn.onclick = toggleFullscreen;
+        
+        document.addEventListener('fullscreenchange', () => {
+            resizeCanvas();
+        });
+        document.addEventListener('webkitfullscreenchange', () => {
+            resizeCanvas();
+        });
+        
+        // F key for fullscreen
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'f' && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                toggleFullscreen();
+            }
+        });
+        
         // Initialize
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
@@ -907,13 +1319,13 @@
         startOverlay.classList.add('active');
         
         // Initial draw
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        initMaze();
-        initPacman();
-        initGhosts();
-        drawMaze();
-        drawPacman();
+	        ctx.fillStyle = '#000';
+	        ctx.fillRect(0, 0, canvas.width, canvas.height);
+	        initMaze(buildMazeVariant(MAZE_CLASSIC, runSeed, level, difficultyKey));
+	        initPacman();
+	        initGhosts();
+	        drawMaze();
+	        drawPacman();
         drawGhosts();
     </script>
 </body>

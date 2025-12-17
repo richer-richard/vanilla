@@ -18,6 +18,7 @@
         </div>
         <div class="header-actions">
             <button class="action-btn ghost" id="soundBtn">🔊</button>
+            <button class="action-btn ghost fullscreen-btn" id="fullscreenBtn" title="Toggle Fullscreen">⛶</button>
             <button class="action-btn ghost" id="pauseBtn">Pause</button>
             <button class="action-btn" id="restartBtn">Restart</button>
         </div>
@@ -29,7 +30,7 @@
                 <div class="stat"><div class="label">Score</div><div class="value" id="scoreVal">0</div></div>
                 <div class="stat"><div class="label">Best</div><div class="value" id="bestVal">0</div></div>
             </div>
-            <div class="board-shell canvas-shell">
+            <div class="board-shell canvas-shell" id="boardShell" style="--canvas-aspect-ratio: 9 / 16;">
                 <canvas id="board"></canvas>
                 <div class="canvas-overlay" id="startOverlay">
                     <div class="overlay-card">
@@ -124,7 +125,10 @@
         // Use VanillaEngine utilities
         const engine_createGameEngine = VanillaEngine.createGameEngine;
         const engine_createInputManager = VanillaEngine.createInputManager;
-        const { CanvasUtils, Collision, MathUtils, Storage } = VanillaEngine;
+        const FlappyCanvasUtils = VanillaEngine.CanvasUtils;
+        const FlappyCollision = VanillaEngine.Collision;
+        const FlappyMathUtils = VanillaEngine.MathUtils;
+        const FlappyStorage = VanillaEngine.Storage;
         
         // Configuration
         const CONFIG = {
@@ -167,7 +171,7 @@
         let bird = null;
         let pipes = [];
         let score = 0;
-        let bestScore = Storage.getHighScore('flappy', difficultyKey);
+        let bestScore = FlappyStorage.getHighScore('flappy', difficultyKey);
         let gameStarted = false;
         let groundY = 0;
         let skyGradient = null;
@@ -251,16 +255,28 @@
             skyGradient.addColorStop(0.5, '#2a3a5a');
             skyGradient.addColorStop(1, '#1a3040');
         }
+
+        // Difficulty ramps slightly with score for a more "alive" endless run.
+        function getTuning() {
+            const pace = Math.min(1, score / 50);
+            return {
+                pipeSpeed: settings.pipeSpeed * (1 + pace * 0.35),
+                pipeGap: Math.max(95, settings.pipeGap * (1 - pace * 0.22)),
+                pipeSpacing: settings.pipeSpacing * (1 - pace * 0.12),
+            };
+        }
         
         // Spawn a new pipe
         function spawnPipe() {
+            const tuning = getTuning();
             const minGapY = 100;
-            const maxGapY = groundY - settings.pipeGap - 100;
-            const gapY = MathUtils.random(minGapY, maxGapY);
+            const maxGapY = Math.max(minGapY, groundY - tuning.pipeGap - 100);
+            const gapY = FlappyMathUtils.random(minGapY, maxGapY);
             
             pipes.push({
                 x: engine.width + settings.pipeWidth,
                 gapY: gapY,
+                gapSize: tuning.pipeGap,
                 scored: false
             });
         }
@@ -271,6 +287,7 @@
             
             if (!gameStarted) {
                 gameStarted = true;
+                if (pipes.length === 0) spawnPipe();
             }
             
             bird.velocity = settings.flapStrength;
@@ -284,13 +301,15 @@
         // Update game state
         function update(tickScale) {
             if (!bird || !gameStarted) return;
+
+            const tuning = getTuning();
             
             // Apply gravity
             bird.velocity += settings.gravity * tickScale;
             bird.y += bird.velocity * tickScale;
             
             // Update rotation based on velocity
-            bird.rotation = MathUtils.clamp(bird.velocity * 3, -30, 90);
+            bird.rotation = FlappyMathUtils.clamp(bird.velocity * 3, -30, 90);
             
             // Update flap animation
             if (bird.flapFrame > 0) {
@@ -313,7 +332,7 @@
             // Update pipes
             for (let i = pipes.length - 1; i >= 0; i--) {
                 const pipe = pipes[i];
-                pipe.x -= settings.pipeSpeed * tickScale;
+                pipe.x -= tuning.pipeSpeed * tickScale;
                 
                 // Remove off-screen pipes
                 if (pipe.x + settings.pipeWidth < 0) {
@@ -340,12 +359,12 @@
                 // Bottom pipe
                 const bottomPipe = {
                     x: pipe.x,
-                    y: pipe.gapY + settings.pipeGap,
+                    y: pipe.gapY + pipe.gapSize,
                     width: settings.pipeWidth,
-                    height: engine.height - pipe.gapY - settings.pipeGap
+                    height: engine.height - pipe.gapY - pipe.gapSize
                 };
                 
-                if (Collision.rectRect(birdRect, topPipe) || Collision.rectRect(birdRect, bottomPipe)) {
+                if (FlappyCollision.rectRect(birdRect, topPipe) || FlappyCollision.rectRect(birdRect, bottomPipe)) {
                     gameOver();
                     return;
                 }
@@ -367,7 +386,7 @@
             
             // Spawn new pipes
             const lastPipe = pipes[pipes.length - 1];
-            if (!lastPipe || lastPipe.x < engine.width - settings.pipeSpacing) {
+            if (!lastPipe || lastPipe.x < engine.width - tuning.pipeSpacing) {
                 spawnPipe();
             }
         }
@@ -495,7 +514,7 @@
             ctx.fillRect(x - capOverhang + 3, gapY - capHeight + 3, 10, capHeight - 6);
             
             // Bottom pipe body
-            const bottomY = gapY + settings.pipeGap;
+            const bottomY = gapY + pipe.gapSize;
             ctx.fillStyle = pipeColor;
             ctx.fillRect(x, bottomY + capHeight, pipeWidth, engine.height - bottomY - capHeight);
             
@@ -600,7 +619,7 @@
             }
             
             // Check for new best
-            const isNewBest = Storage.setHighScore('flappy', difficultyKey, score);
+            const isNewBest = FlappyStorage.setHighScore('flappy', difficultyKey, score);
             if (isNewBest) {
                 bestScore = score;
                 updateHUD();
@@ -650,26 +669,41 @@
         }
         
         // Restart game
-        function restart() {
+        function restart({ autoplay = true } = {}) {
             gameOverOverlay.classList.remove('active');
             initGame();
             engine.setState('running');
+            if (autoplay) {
+                flap();
+            }
+        }
+
+        function startRun() {
+            const state = engine.getState();
+            if (state === 'ready') {
+                engine.setState('running');
+            }
+            if (engine.getState() !== 'running') return;
+            flap();
         }
         
         // Event listeners
-        startBtn.onclick = () => engine.setState('running');
+        startBtn.onclick = startRun;
         resumeBtn.onclick = () => engine.setState('running');
         pauseBtn.onclick = () => engine.togglePause();
-        restartBtn.onclick = restart;
-        playAgainBtn.onclick = restart;
+        restartBtn.onclick = () => restart({ autoplay: true });
+        playAgainBtn.onclick = () => restart({ autoplay: true });
         
-        // Canvas click to flap
-        canvas.onclick = flap;
+        // Canvas pointer to start/flap (works for mouse + touch)
+        canvas.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            startRun();
+        }, { passive: false });
         
         // Keyboard controls
-        input.onKey(' ', flap);
-        input.onKey('w', flap);
-        input.onKey('arrowup', flap);
+        input.onKey(' ', startRun);
+        input.onKey('w', startRun);
+        input.onKey('arrowup', startRun);
         
         input.onKey('p', () => {
             if (engine.getState() === 'running') {
@@ -687,9 +721,9 @@
         
         input.onKey('enter', () => {
             if (engine.getState() === 'over') {
-                restart();
+                restart({ autoplay: true });
             } else if (engine.getState() === 'ready') {
-                engine.setState('running');
+                startRun();
             }
         });
         
@@ -710,6 +744,40 @@
                 }
             }
         };
+        
+        // Fullscreen toggle
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const boardShell = document.getElementById('boardShell');
+        
+        function toggleFullscreen() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (boardShell.requestFullscreen) {
+                    boardShell.requestFullscreen();
+                } else if (boardShell.webkitRequestFullscreen) {
+                    boardShell.webkitRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
+        }
+        
+        fullscreenBtn.onclick = toggleFullscreen;
+        
+        document.addEventListener('fullscreenchange', () => {
+            engine.resize({ aspectRatio: 9/16, maxWidth: 400, maxHeight: 700 });
+        });
+        document.addEventListener('webkitfullscreenchange', () => {
+            engine.resize({ aspectRatio: 9/16, maxWidth: 400, maxHeight: 700 });
+        });
+        
+        // F key for fullscreen
+        input.onKey('f', () => {
+            toggleFullscreen();
+        });
         
         // Start engine
         engine.resize({ aspectRatio: 9/16, maxWidth: 400, maxHeight: 700 });
