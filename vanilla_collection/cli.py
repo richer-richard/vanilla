@@ -7,7 +7,9 @@ from .app import run
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="vanilla-collection", description="Run the VANILLA Collection server.")
+    parser = argparse.ArgumentParser(
+        prog="vanilla-collection", description="Run the VANILLA Collection server."
+    )
 
     parser.add_argument("--host", default=None, help="Bind host (default: 127.0.0.1 or $HOST)")
     parser.add_argument("--port", type=int, default=None, help="Bind port (default: 5000 or $PORT)")
@@ -17,8 +19,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     debug_group.add_argument("--no-debug", action="store_true", help="Disable Flask debug mode")
 
     open_group = parser.add_mutually_exclusive_group()
-    open_group.add_argument("--open", dest="auto_open", action="store_true", help="Open browser on start")
-    open_group.add_argument("--no-open", dest="auto_open", action="store_false", help="Do not open browser on start")
+    open_group.add_argument(
+        "--open", dest="auto_open", action="store_true", help="Open browser on start"
+    )
+    open_group.add_argument(
+        "--no-open", dest="auto_open", action="store_false", help="Do not open browser on start"
+    )
     parser.set_defaults(auto_open=None)
 
     parser.add_argument(
@@ -51,4 +57,3 @@ def main(argv: list[str] | None = None) -> int:
         auto_open=args.auto_open,
     )
     return 0
-

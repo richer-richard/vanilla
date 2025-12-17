@@ -51,4 +51,3 @@ def wave_plan(wave: int, difficulty: str, width: float, height: float) -> dict[s
         )
 
     return {"wave": wave, "enemies": enemies, "powerups": powerups}
-

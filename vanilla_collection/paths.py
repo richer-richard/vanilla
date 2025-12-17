@@ -32,4 +32,3 @@ def default_scores_path() -> Path:
     if override:
         return Path(override).expanduser().resolve()
     return default_data_dir() / "scores.json"
-

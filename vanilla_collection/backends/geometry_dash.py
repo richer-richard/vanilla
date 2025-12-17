@@ -186,7 +186,9 @@ class DashGenerator:
     def saw(self, x: float, y: float | None = None, size: float = 48.0) -> Obstacle:
         y_val = float(y) if y is not None else (self.ground_y - 120.0)
         y_val = _clamp(y_val, self.safe_top + 20, self.ground_y - size - 40.0)
-        return Obstacle("sawblade", x, y_val, size, size, speed=3.5 + self.rng.random() * 1.0, id=self._id())
+        return Obstacle(
+            "sawblade", x, y_val, size, size, speed=3.5 + self.rng.random() * 1.0, id=self._id()
+        )
 
     def orb(self, x: float, y: float | None = None) -> Obstacle:
         # Orbs help player navigate - place them where jumps are needed
@@ -206,7 +208,15 @@ class DashGenerator:
 
     def finish_line(self, x: float) -> Obstacle:
         # Finish line marker at end of level sections
-        return Obstacle("finish", x, self.ceiling_y, 20.0, self.ground_y - self.ceiling_y, kind="finish", id=self._id())
+        return Obstacle(
+            "finish",
+            x,
+            self.ceiling_y,
+            20.0,
+            self.ground_y - self.ceiling_y,
+            kind="finish",
+            id=self._id(),
+        )
 
     # ===================
     # PATTERN GENERATORS
@@ -552,4 +562,6 @@ def pattern(distance: float, difficulty: str, ground_y: float, width: float) -> 
 
 def get_difficulty_config(difficulty: str) -> dict[str, float]:
     """Optional helper for clients that want difficulty metadata."""
-    return dict(DIFFICULTY_CONFIG.get((difficulty or "medium").lower(), DIFFICULTY_CONFIG["medium"]))
+    return dict(
+        DIFFICULTY_CONFIG.get((difficulty or "medium").lower(), DIFFICULTY_CONFIG["medium"])
+    )

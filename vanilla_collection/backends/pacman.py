@@ -43,7 +43,7 @@ STANDARD_MAZE = [
     "0100000000010010100000000010",
     "0111111111111111111111111110",
     "0000000000000000000000000000",
-    "0000000000000000000000000000"
+    "0000000000000000000000000000",
 ]
 
 
@@ -64,7 +64,7 @@ def config(difficulty: str = "medium") -> dict[str, Any]:
             "frightened_time": 10000,
             "scatter_time": 7000,
             "chase_time": 20000,
-            "ghost_release_interval": 5000
+            "ghost_release_interval": 5000,
         },
         "medium": {
             "ghost_speed": 2.0,
@@ -72,7 +72,7 @@ def config(difficulty: str = "medium") -> dict[str, Any]:
             "frightened_time": 7000,
             "scatter_time": 5000,
             "chase_time": 20000,
-            "ghost_release_interval": 3000
+            "ghost_release_interval": 3000,
         },
         "hard": {
             "ghost_speed": 2.5,
@@ -80,8 +80,8 @@ def config(difficulty: str = "medium") -> dict[str, Any]:
             "frightened_time": 5000,
             "scatter_time": 3000,
             "chase_time": 25000,
-            "ghost_release_interval": 2000
-        }
+            "ghost_release_interval": 2000,
+        },
     }
 
     return configs.get(difficulty, configs["medium"])
@@ -117,7 +117,7 @@ def count_pellets() -> int:
     count = 0
     for row in STANDARD_MAZE:
         for cell in row:
-            if cell in ('1', '3'):
+            if cell in ("1", "3"):
                 count += 1
     return count
 
@@ -136,7 +136,7 @@ def get_ghost_config() -> list[dict[str, Any]]:
             "start_x": 13.5,
             "start_y": 11,
             "scatter_target": {"x": 25, "y": -3},
-            "personality": "chaser"  # Directly targets Pac-Man
+            "personality": "chaser",  # Directly targets Pac-Man
         },
         {
             "name": "pinky",
@@ -144,7 +144,7 @@ def get_ghost_config() -> list[dict[str, Any]]:
             "start_x": 13.5,
             "start_y": 14,
             "scatter_target": {"x": 2, "y": -3},
-            "personality": "ambusher"  # Targets ahead of Pac-Man
+            "personality": "ambusher",  # Targets ahead of Pac-Man
         },
         {
             "name": "inky",
@@ -152,7 +152,7 @@ def get_ghost_config() -> list[dict[str, Any]]:
             "start_x": 11.5,
             "start_y": 14,
             "scatter_target": {"x": 27, "y": 31},
-            "personality": "fickle"  # Complex targeting
+            "personality": "fickle",  # Complex targeting
         },
         {
             "name": "clyde",
@@ -160,8 +160,8 @@ def get_ghost_config() -> list[dict[str, Any]]:
             "start_x": 15.5,
             "start_y": 14,
             "scatter_target": {"x": 0, "y": 31},
-            "personality": "random"  # Random/shy behavior
-        }
+            "personality": "random",  # Random/shy behavior
+        },
     ]
 
 
@@ -174,7 +174,7 @@ def calculate_ghost_target(
     pacman_direction: tuple[int, int],
     blinky_x: float = 0,
     blinky_y: float = 0,
-    mode: str = "chase"
+    mode: str = "chase",
 ) -> dict[str, float]:
     """
     Calculate the target position for a ghost based on its AI personality.
@@ -193,18 +193,17 @@ def calculate_ghost_target(
     Returns:
         Target position dict with x and y
     """
+    from typing import cast
+
     ghosts = {g["name"]: g for g in get_ghost_config()}
     ghost = ghosts.get(ghost_name, ghosts["blinky"])
 
     if mode == "scatter":
-        return ghost["scatter_target"]
+        return cast(dict[str, float], ghost["scatter_target"])
 
     if mode == "frightened":
         # Random movement when frightened
-        return {
-            "x": random.randint(0, 27),
-            "y": random.randint(0, 30)
-        }
+        return {"x": random.randint(0, 27), "y": random.randint(0, 30)}
 
     # Chase mode - each ghost has different targeting
     dx, dy = pacman_direction
@@ -215,26 +214,20 @@ def calculate_ghost_target(
 
     elif ghost_name == "pinky":
         # Targets 4 tiles ahead of Pac-Man
-        return {
-            "x": pacman_x + dx * 4,
-            "y": pacman_y + dy * 4
-        }
+        return {"x": pacman_x + dx * 4, "y": pacman_y + dy * 4}
 
     elif ghost_name == "inky":
         # Complex targeting: double the vector from Blinky to 2 tiles ahead of Pac-Man
         ahead_x = pacman_x + dx * 2
         ahead_y = pacman_y + dy * 2
-        return {
-            "x": ahead_x + (ahead_x - blinky_x),
-            "y": ahead_y + (ahead_y - blinky_y)
-        }
+        return {"x": ahead_x + (ahead_x - blinky_x), "y": ahead_y + (ahead_y - blinky_y)}
 
     elif ghost_name == "clyde":
         # Targets Pac-Man if far, scatter if close
         dist = ((pacman_x - ghost_x) ** 2 + (pacman_y - ghost_y) ** 2) ** 0.5
         if dist > 8:
             return {"x": pacman_x, "y": pacman_y}
-        return ghost["scatter_target"]
+        return cast(dict[str, float], ghost["scatter_target"])
 
     # Default: chase Pac-Man directly
     return {"x": pacman_x, "y": pacman_y}

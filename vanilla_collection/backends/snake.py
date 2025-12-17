@@ -32,7 +32,9 @@ def _occupied(snake: Iterable[Any]) -> set[tuple[int, int]]:
     return {_segment_xy(seg) for seg in snake}
 
 
-def _flood_fill(start: tuple[int, int], blocked: set[tuple[int, int]], grid: int) -> set[tuple[int, int]]:
+def _flood_fill(
+    start: tuple[int, int], blocked: set[tuple[int, int]], grid: int
+) -> set[tuple[int, int]]:
     """
     Returns all reachable cells from start position using flood fill.
     This helps identify if a food position might trap the snake.
@@ -66,7 +68,7 @@ def _get_safe_score(pos: tuple[int, int], snake_set: set[tuple[int, int]], grid:
     Higher score = better position (more escape routes for player).
     """
     x, y = pos
-    score = 0
+    score: float = 0
 
     # Count open neighbors
     for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:

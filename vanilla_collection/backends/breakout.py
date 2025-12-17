@@ -64,7 +64,9 @@ def _physics_for_level(level: int, difficulty: str, rng: random.Random) -> dict[
     # Gentle per-level tuning (deterministic via seed).
     max_speed = base.get("maxSpeed", 8.7) + progress * 0.55 + rng.uniform(-0.05, 0.05)
     speed_up_brick = base.get("speedUpBrick", 0.06) + progress * 0.015 + rng.uniform(-0.004, 0.004)
-    paddle_influence = base.get("paddleInfluence", 0.24) + progress * 0.02 + rng.uniform(-0.01, 0.01)
+    paddle_influence = (
+        base.get("paddleInfluence", 0.24) + progress * 0.02 + rng.uniform(-0.01, 0.01)
+    )
 
     return {
         "maxBounceDeg": base.get("maxBounceDeg", 62.0) + rng.uniform(-2.0, 2.0) * 0.35,
@@ -72,13 +74,17 @@ def _physics_for_level(level: int, difficulty: str, rng: random.Random) -> dict[
         "spinFromPaddle": max(0.0, base.get("spinFromPaddle", 0.02) + rng.uniform(-0.002, 0.002)),
         "spinFromEdge": max(0.0, base.get("spinFromEdge", 0.18) + rng.uniform(-0.02, 0.02)),
         "spinMagnus": max(0.0, base.get("spinMagnus", 0.075) + rng.uniform(-0.01, 0.01)),
-        "spinDecay": min(0.999, max(0.95, base.get("spinDecay", 0.991) + rng.uniform(-0.002, 0.002))),
+        "spinDecay": min(
+            0.999, max(0.95, base.get("spinDecay", 0.991) + rng.uniform(-0.002, 0.002))
+        ),
         "maxSpin": max(0.0, base.get("maxSpin", 0.55) + rng.uniform(-0.04, 0.04)),
         "speedUpBrick": max(0.0, speed_up_brick),
         "speedUpLevel": max(0.0, base.get("speedUpLevel", 0.26) + rng.uniform(-0.03, 0.03) * 0.35),
         "maxSpeed": max(1.0, max_speed),
         "minSpeed": max(0.5, base.get("minSpeed", 3.2) + rng.uniform(-0.1, 0.1) * 0.2),
-        "paddleSpeed": max(1.0, base.get("paddleSpeed", 8.6) + progress * 0.25 + rng.uniform(-0.1, 0.1)),
+        "paddleSpeed": max(
+            1.0, base.get("paddleSpeed", 8.6) + progress * 0.25 + rng.uniform(-0.1, 0.1)
+        ),
     }
 
 

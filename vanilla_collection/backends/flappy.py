@@ -28,7 +28,7 @@ def config(difficulty: str = "medium") -> dict[str, Any]:
             "pipe_speed": 2.5,
             "pipe_gap": 180,
             "pipe_spacing": 280,
-            "pipe_width": 70
+            "pipe_width": 70,
         },
         "medium": {
             "gravity": 0.45,
@@ -36,7 +36,7 @@ def config(difficulty: str = "medium") -> dict[str, Any]:
             "pipe_speed": 3.5,
             "pipe_gap": 150,
             "pipe_spacing": 250,
-            "pipe_width": 65
+            "pipe_width": 65,
         },
         "hard": {
             "gravity": 0.55,
@@ -44,8 +44,8 @@ def config(difficulty: str = "medium") -> dict[str, Any]:
             "pipe_speed": 4.5,
             "pipe_gap": 120,
             "pipe_spacing": 220,
-            "pipe_width": 60
-        }
+            "pipe_width": 60,
+        },
     }
 
     return configs.get(difficulty, configs["medium"])
@@ -55,7 +55,7 @@ def generate_pipes(
     count: int = 5,
     difficulty: str = "medium",
     canvas_height: float = 600,
-    canvas_width: float = 400
+    canvas_width: float = 400,
 ) -> list[dict[str, Any]]:
     """
     Generate a sequence of pipe positions.
@@ -79,19 +79,13 @@ def generate_pipes(
 
     for i in range(count):
         gap_y = random.randint(int(min_gap_y), int(max_gap_y))
-        pipes.append({
-            "x": canvas_width + (i * spacing),
-            "gap_y": gap_y,
-            "gap_size": gap_size
-        })
+        pipes.append({"x": canvas_width + (i * spacing), "gap_y": gap_y, "gap_size": gap_size})
 
     return pipes
 
 
 def next_pipe(
-    current_distance: float,
-    difficulty: str = "medium",
-    canvas_height: float = 600
+    current_distance: float, difficulty: str = "medium", canvas_height: float = 600
 ) -> dict[str, Any]:
     """
     Generate the next pipe based on current game state.
@@ -107,8 +101,8 @@ def next_pipe(
     cfg = config(difficulty)
     gap_size = cfg["pipe_gap"]
 
-    min_gap_y = 100
-    max_gap_y = canvas_height - gap_size - 100
+    min_gap_y: float = 100
+    max_gap_y: float = canvas_height - gap_size - 100
 
     # Add some variation based on distance for increasing difficulty
     variation = min(50, current_distance / 1000)
@@ -117,7 +111,4 @@ def next_pipe(
 
     gap_y = random.randint(int(min_gap_y), int(max_gap_y))
 
-    return {
-        "gap_y": gap_y,
-        "gap_size": gap_size
-    }
+    return {"gap_y": gap_y, "gap_size": gap_size}

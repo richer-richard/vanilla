@@ -29,10 +29,11 @@ from vanilla_collection.server import (
 # FIXTURES
 # ============================================================================
 
+
 @pytest.fixture
 def temp_scores_file():
     """Create a temporary scores file for testing."""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump({}, f)
         return Path(f.name)
 
@@ -47,7 +48,7 @@ def score_store(temp_scores_file):
 def app(temp_scores_file):
     """Create a Flask test client."""
     server = GameServer(temp_scores_file)
-    server.app.config['TESTING'] = True
+    server.app.config["TESTING"] = True
     return server.app
 
 
@@ -61,6 +62,7 @@ def client(app):
 # LOGGING TESTS
 # ============================================================================
 
+
 class TestLogging:
     """Tests for logging setup."""
 
@@ -73,6 +75,7 @@ class TestLogging:
 # ============================================================================
 # VALIDATION TESTS
 # ============================================================================
+
 
 class TestSanitizeString:
     """Tests for the sanitize_string function."""
@@ -238,13 +241,14 @@ class TestValidateScore:
 # RATE LIMITER TESTS
 # ============================================================================
 
+
 class TestRateLimiter:
     """Tests for the RateLimiter class."""
 
     def test_allows_first_request(self, app):
         """First request should always be allowed."""
         limiter = RateLimiter()
-        with app.test_request_context('/'):
+        with app.test_request_context("/"):
             allowed, remaining = limiter.is_allowed(max_requests=5, window=60)
             assert allowed is True
             assert remaining == 4
@@ -252,7 +256,7 @@ class TestRateLimiter:
     def test_tracks_remaining(self, app):
         """Remaining count should decrease with each request."""
         limiter = RateLimiter()
-        with app.test_request_context('/'):
+        with app.test_request_context("/"):
             limiter.is_allowed(max_requests=5, window=60)
             allowed, remaining = limiter.is_allowed(max_requests=5, window=60)
             assert allowed is True
@@ -261,7 +265,7 @@ class TestRateLimiter:
     def test_blocks_after_limit(self, app):
         """Should block requests after limit is reached."""
         limiter = RateLimiter()
-        with app.test_request_context('/'):
+        with app.test_request_context("/"):
             for _ in range(5):
                 limiter.is_allowed(max_requests=5, window=60)
             allowed, remaining = limiter.is_allowed(max_requests=5, window=60)
@@ -271,7 +275,7 @@ class TestRateLimiter:
     def test_retry_after(self, app):
         """Should return retry-after time when blocked."""
         limiter = RateLimiter()
-        with app.test_request_context('/'):
+        with app.test_request_context("/"):
             for _ in range(5):
                 limiter.is_allowed(max_requests=5, window=60)
             retry_after = limiter.get_retry_after(window=60)
@@ -282,6 +286,7 @@ class TestRateLimiter:
 # ============================================================================
 # SCORE STORE TESTS
 # ============================================================================
+
 
 class TestScoreStore:
     """Tests for the ScoreStore class."""
@@ -354,21 +359,22 @@ class TestScoreStore:
 # API ENDPOINT TESTS
 # ============================================================================
 
+
 class TestHealthEndpoint:
     """Tests for health check endpoints."""
 
     def test_health(self, client):
-        response = client.get('/health')
+        response = client.get("/health")
         assert response.status_code == 200
         data = json.loads(response.data)
         assert data["status"] == "ok"
 
     def test_api_health(self, client):
-        response = client.get('/api/health')
+        response = client.get("/api/health")
         assert response.status_code == 200
 
     def test_v1_health(self, client):
-        response = client.get('/api/v1/health')
+        response = client.get("/api/v1/health")
         assert response.status_code == 200
         data = json.loads(response.data)
         assert data["api_version"] == "v1"
@@ -378,72 +384,60 @@ class TestScoreEndpoints:
     """Tests for score-related endpoints."""
 
     def test_get_scores(self, client):
-        response = client.get('/scores')
+        response = client.get("/scores")
         assert response.status_code == 200
 
     def test_get_leaderboard(self, client):
-        response = client.get('/leaderboard/snake')
+        response = client.get("/leaderboard/snake")
         assert response.status_code == 200
         data = json.loads(response.data)
         assert data["game"] == "snake"
 
     def test_get_leaderboard_invalid_game(self, client):
-        response = client.get('/leaderboard/invalid_game')
+        response = client.get("/leaderboard/invalid_game")
         assert response.status_code == 400
 
     def test_post_score(self, client):
-        response = client.post('/score',
-            data=json.dumps({
-                "game": "snake",
-                "player": "TestPlayer",
-                "score": 100,
-                "difficulty": "medium"
-            }),
-            content_type='application/json'
+        response = client.post(
+            "/score",
+            data=json.dumps(
+                {"game": "snake", "player": "TestPlayer", "score": 100, "difficulty": "medium"}
+            ),
+            content_type="application/json",
         )
         assert response.status_code == 201
         data = json.loads(response.data)
         assert data["ok"] is True
 
     def test_post_score_missing_game(self, client):
-        response = client.post('/score',
-            data=json.dumps({
-                "player": "TestPlayer",
-                "score": 100
-            }),
-            content_type='application/json'
+        response = client.post(
+            "/score",
+            data=json.dumps({"player": "TestPlayer", "score": 100}),
+            content_type="application/json",
         )
         assert response.status_code == 400
 
     def test_post_score_missing_player(self, client):
-        response = client.post('/score',
-            data=json.dumps({
-                "game": "snake",
-                "score": 100
-            }),
-            content_type='application/json'
+        response = client.post(
+            "/score",
+            data=json.dumps({"game": "snake", "score": 100}),
+            content_type="application/json",
         )
         assert response.status_code == 400
 
     def test_post_score_invalid_game(self, client):
-        response = client.post('/score',
-            data=json.dumps({
-                "game": "invalid_game",
-                "player": "TestPlayer",
-                "score": 100
-            }),
-            content_type='application/json'
+        response = client.post(
+            "/score",
+            data=json.dumps({"game": "invalid_game", "player": "TestPlayer", "score": 100}),
+            content_type="application/json",
         )
         assert response.status_code == 400
 
     def test_post_score_invalid_score(self, client):
-        response = client.post('/score',
-            data=json.dumps({
-                "game": "snake",
-                "player": "TestPlayer",
-                "score": "not a number"
-            }),
-            content_type='application/json'
+        response = client.post(
+            "/score",
+            data=json.dumps({"game": "snake", "player": "TestPlayer", "score": "not a number"}),
+            content_type="application/json",
         )
         assert response.status_code == 400
 
@@ -452,52 +446,46 @@ class TestV1Endpoints:
     """Tests for v1 API endpoints with validation."""
 
     def test_v1_scores(self, client):
-        response = client.get('/api/v1/scores')
+        response = client.get("/api/v1/scores")
         assert response.status_code == 200
         data = json.loads(response.data)
         assert data["api_version"] == "v1"
 
     def test_v1_leaderboard_valid_game(self, client):
-        response = client.get('/api/v1/leaderboard/snake')
+        response = client.get("/api/v1/leaderboard/snake")
         assert response.status_code == 200
 
     def test_v1_leaderboard_invalid_game(self, client):
-        response = client.get('/api/v1/leaderboard/invalid_game')
+        response = client.get("/api/v1/leaderboard/invalid_game")
         assert response.status_code == 400
         data = json.loads(response.data)
         assert "error" in data
 
     def test_v1_post_score_valid(self, client):
-        response = client.post('/api/v1/score',
-            data=json.dumps({
-                "game": "pong",
-                "player": "ValidPlayer",
-                "score": 500,
-                "difficulty": "hard"
-            }),
-            content_type='application/json'
+        response = client.post(
+            "/api/v1/score",
+            data=json.dumps(
+                {"game": "pong", "player": "ValidPlayer", "score": 500, "difficulty": "hard"}
+            ),
+            content_type="application/json",
         )
         assert response.status_code == 201
 
     def test_v1_post_score_invalid_game(self, client):
-        response = client.post('/api/v1/score',
-            data=json.dumps({
-                "game": "invalid_game",
-                "player": "ValidPlayer",
-                "score": 500
-            }),
-            content_type='application/json'
+        response = client.post(
+            "/api/v1/score",
+            data=json.dumps({"game": "invalid_game", "player": "ValidPlayer", "score": 500}),
+            content_type="application/json",
         )
         assert response.status_code == 400
 
     def test_v1_post_score_xss_sanitization(self, client):
-        response = client.post('/api/v1/score',
-            data=json.dumps({
-                "game": "snake",
-                "player": "<script>alert('xss')</script>",
-                "score": 100
-            }),
-            content_type='application/json'
+        response = client.post(
+            "/api/v1/score",
+            data=json.dumps(
+                {"game": "snake", "player": "<script>alert('xss')</script>", "score": 100}
+            ),
+            content_type="application/json",
         )
         # Should succeed but sanitize the name
         assert response.status_code == 201
@@ -509,9 +497,10 @@ class TestGameEndpoints:
     """Tests for game-specific API endpoints."""
 
     def test_snake_food(self, client):
-        response = client.post('/api/snake/food',
+        response = client.post(
+            "/api/snake/food",
             data=json.dumps({"grid": 16, "snake": [[5, 5], [5, 4]]}),
-            content_type='application/json'
+            content_type="application/json",
         )
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -519,33 +508,30 @@ class TestGameEndpoints:
         assert "y" in data
 
     def test_breakout_level(self, client):
-        response = client.post('/api/breakout/level',
+        response = client.post(
+            "/api/breakout/level",
             data=json.dumps({"level": 1, "width": 800, "difficulty": "medium"}),
-            content_type='application/json'
+            content_type="application/json",
         )
         assert response.status_code == 200
         data = json.loads(response.data)
         assert "bricks" in data
 
     def test_minesweeper_board(self, client):
-        response = client.post('/api/minesweeper/board',
-            data=json.dumps({
-                "rows": 9,
-                "cols": 9,
-                "mines": 10,
-                "safe_row": 4,
-                "safe_col": 4
-            }),
-            content_type='application/json'
+        response = client.post(
+            "/api/minesweeper/board",
+            data=json.dumps({"rows": 9, "cols": 9, "mines": 10, "safe_row": 4, "safe_col": 4}),
+            content_type="application/json",
         )
         assert response.status_code == 200
         data = json.loads(response.data)
         assert "board" in data
 
     def test_tetris_config(self, client):
-        response = client.post('/api/tetris/config',
+        response = client.post(
+            "/api/tetris/config",
             data=json.dumps({"difficulty": "hard"}),
-            content_type='application/json'
+            content_type="application/json",
         )
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -553,38 +539,35 @@ class TestGameEndpoints:
         assert "config" in data
 
     def test_geometry_pattern(self, client):
-        response = client.post('/api/geometry/pattern',
-            data=json.dumps({
-                "distance": 100,
-                "difficulty": "medium",
-                "ground_y": 540,
-                "width": 960
-            }),
-            content_type='application/json'
+        response = client.post(
+            "/api/geometry/pattern",
+            data=json.dumps(
+                {"distance": 100, "difficulty": "medium", "ground_y": 540, "width": 960}
+            ),
+            content_type="application/json",
         )
         assert response.status_code == 200
 
     def test_space_wave(self, client):
-        response = client.post('/api/space/wave',
-            data=json.dumps({
-                "wave": 1,
-                "difficulty": "medium",
-                "width": 900,
-                "height": 600
-            }),
-            content_type='application/json'
+        response = client.post(
+            "/api/space/wave",
+            data=json.dumps({"wave": 1, "difficulty": "medium", "width": 900, "height": 600}),
+            content_type="application/json",
         )
         assert response.status_code == 200
 
     def test_pong_ai_target(self, client):
-        response = client.post('/api/pong/ai-target',
-            data=json.dumps({
-                "difficulty": "medium",
-                "ball": {"x": 450, "y": 300, "dx": 5, "dy": 3},
-                "ai": {"height": 96},
-                "court": {"width": 900, "height": 600},
-            }),
-            content_type='application/json'
+        response = client.post(
+            "/api/pong/ai-target",
+            data=json.dumps(
+                {
+                    "difficulty": "medium",
+                    "ball": {"x": 450, "y": 300, "dx": 5, "dy": 3},
+                    "ai": {"height": 96},
+                    "court": {"width": 900, "height": 600},
+                }
+            ),
+            content_type="application/json",
         )
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -595,63 +578,60 @@ class TestGameEndpoints:
 # CORS TESTS
 # ============================================================================
 
+
 class TestCORS:
     """Tests for CORS headers."""
 
     def test_cors_headers_present(self, client):
-        response = client.get('/health')
-        assert response.headers.get('Access-Control-Allow-Origin') is not None
+        response = client.get("/health")
+        assert response.headers.get("Access-Control-Allow-Origin") is not None
 
     def test_options_request(self, client):
-        response = client.options('/score')
+        response = client.options("/score")
         assert response.status_code == 204
 
     def test_cors_methods_header(self, client):
-        response = client.get('/health')
-        assert "GET" in response.headers.get('Access-Control-Allow-Methods', '')
-        assert "POST" in response.headers.get('Access-Control-Allow-Methods', '')
+        response = client.get("/health")
+        assert "GET" in response.headers.get("Access-Control-Allow-Methods", "")
+        assert "POST" in response.headers.get("Access-Control-Allow-Methods", "")
 
 
 # ============================================================================
 # EDGE CASE TESTS
 # ============================================================================
 
+
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
 
     def test_empty_json_body(self, client):
-        response = client.post('/score',
-            data='{}',
-            content_type='application/json'
-        )
+        response = client.post("/score", data="{}", content_type="application/json")
         assert response.status_code == 400
 
     def test_malformed_json(self, client):
-        response = client.post('/score',
-            data='{invalid json}',
-            content_type='application/json'
-        )
+        response = client.post("/score", data="{invalid json}", content_type="application/json")
         assert response.status_code == 400
 
     def test_no_content_type(self, client):
-        response = client.post('/score',
-            data='{"game": "snake", "player": "test", "score": 100}'
-        )
+        response = client.post("/score", data='{"game": "snake", "player": "test", "score": 100}')
         # Should handle gracefully (get_json with silent=True)
         assert response.status_code == 400
 
     def test_alternative_field_names(self, client):
         """Test that alternative field names work (game_name, name)."""
-        response = client.post('/score',
-            data=json.dumps({
-                "game_name": "snake",  # Alternative to "game"
-                "name": "TestPlayer",   # Alternative to "player"
-                "score": 100
-            }),
-            content_type='application/json'
+        response = client.post(
+            "/score",
+            data=json.dumps(
+                {
+                    "game_name": "snake",  # Alternative to "game"
+                    "name": "TestPlayer",  # Alternative to "player"
+                    "score": 100,
+                }
+            ),
+            content_type="application/json",
         )
         assert response.status_code == 201
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

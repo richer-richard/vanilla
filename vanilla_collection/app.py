@@ -37,11 +37,15 @@ def run(
 ) -> None:
     server = GameServer(scores_path=scores_path)
     resolved_host = host or os.environ.get("HOST", "127.0.0.1")
-    resolved_port = int(port or os.environ.get("PORT", 5000))
-    resolved_debug = bool(debug if debug is not None else os.environ.get("DEBUG", "").lower() in {"1", "true", "yes"})
+    resolved_port = port if port is not None else int(os.environ.get("PORT", "5000"))
+    resolved_debug = bool(
+        debug if debug is not None else os.environ.get("DEBUG", "").lower() in {"1", "true", "yes"}
+    )
 
     resolved_auto_open = (
-        auto_open if auto_open is not None else os.environ.get("AUTO_OPEN", "1") not in {"0", "false", "no"}
+        auto_open
+        if auto_open is not None
+        else os.environ.get("AUTO_OPEN", "1") not in {"0", "false", "no"}
     )
     if resolved_auto_open:
         target_host = "127.0.0.1" if resolved_host == "0.0.0.0" else resolved_host
@@ -51,6 +55,7 @@ def run(
     print(f"Static root: {server.root_dir}")
     print(f"Scores file: {server.store.path}")
     server.run(host=resolved_host, port=resolved_port, debug=resolved_debug)
+
 
 if __name__ == "__main__":
     run()

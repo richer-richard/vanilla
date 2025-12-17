@@ -9,7 +9,7 @@ def generate_board(rows: int, cols: int, mines: int, safe: tuple[int, int]) -> d
     safe_zone = {(safe_r + dr, safe_c + dc) for dr in range(-1, 2) for dc in range(-1, 2)}
     positions = [(r, c) for r in range(rows) for c in range(cols) if (r, c) not in safe_zone]
     rng.shuffle(positions)
-    chosen = positions[:min(len(positions), mines)]
+    chosen = positions[: min(len(positions), mines)]
 
     counts = [[0 for _ in range(cols)] for _ in range(rows)]
     for r, c in chosen:
@@ -22,4 +22,3 @@ def generate_board(rows: int, cols: int, mines: int, safe: tuple[int, int]) -> d
                     counts[nr][nc] += 1
 
     return {"mines": chosen, "counts": counts}
-

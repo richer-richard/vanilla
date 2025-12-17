@@ -23,6 +23,7 @@ from vanilla_collection.backends import (
 # SNAKE BACKEND TESTS
 # ============================================================================
 
+
 class TestSnakeBackend:
     """Tests for the Snake game backend."""
 
@@ -61,6 +62,7 @@ class TestSnakeBackend:
 # PONG BACKEND TESTS
 # ============================================================================
 
+
 class TestPongBackend:
     """Tests for the Pong game backend."""
 
@@ -86,6 +88,7 @@ class TestPongBackend:
 # ============================================================================
 # BREAKOUT BACKEND TESTS
 # ============================================================================
+
 
 class TestBreakoutBackend:
     """Tests for the Breakout game backend."""
@@ -115,28 +118,19 @@ class TestBreakoutBackend:
 # GEOMETRY DASH BACKEND TESTS
 # ============================================================================
 
+
 class TestGeometryDashBackend:
     """Tests for the Geometry Dash game backend."""
 
     def test_pattern_returns_obstacles(self):
         """Pattern generation should return obstacles."""
-        result = geometry_dash.pattern(
-            distance=100,
-            difficulty="medium",
-            ground_y=540,
-            width=960
-        )
+        result = geometry_dash.pattern(distance=100, difficulty="medium", ground_y=540, width=960)
         assert isinstance(result, dict)
 
     def test_pattern_different_difficulties(self):
         """Different difficulties should work."""
         for diff in ["easy", "medium", "hard"]:
-            result = geometry_dash.pattern(
-                distance=100,
-                difficulty=diff,
-                ground_y=540,
-                width=960
-            )
+            result = geometry_dash.pattern(distance=100, difficulty=diff, ground_y=540, width=960)
             assert isinstance(result, dict)
 
     def test_get_difficulty_config(self):
@@ -150,49 +144,30 @@ class TestGeometryDashBackend:
 # MINESWEEPER BACKEND TESTS
 # ============================================================================
 
+
 class TestMinesweeperBackend:
     """Tests for the Minesweeper game backend."""
 
     def test_generate_board_dimensions(self):
         """Board should have correct dimensions."""
-        result = minesweeper.generate_board(
-            rows=9,
-            cols=9,
-            mines=10,
-            safe=(4, 4)
-        )
+        result = minesweeper.generate_board(rows=9, cols=9, mines=10, safe=(4, 4))
         assert isinstance(result, dict)
 
     def test_generate_board_safe_cell(self):
         """Safe cell and neighbors should not have mines."""
-        result = minesweeper.generate_board(
-            rows=9,
-            cols=9,
-            mines=10,
-            safe=(4, 4)
-        )
+        result = minesweeper.generate_board(rows=9, cols=9, mines=10, safe=(4, 4))
         # The result should indicate board generation was successful
         assert isinstance(result, dict)
 
     def test_generate_board_mine_count(self):
         """Board should have the requested number of mines."""
-        result = minesweeper.generate_board(
-            rows=9,
-            cols=9,
-            mines=10,
-            safe=(0, 0)
-        )
+        result = minesweeper.generate_board(rows=9, cols=9, mines=10, safe=(0, 0))
         assert isinstance(result, dict)
 
     def test_generate_board_edge_cases(self):
         """Test with edge cases like corner safe cells."""
         for safe in [(0, 0), (0, 8), (8, 0), (8, 8)]:
-            result = minesweeper.generate_board(
-                rows=9,
-                cols=9,
-                mines=10,
-                safe=safe
-            )
+            result = minesweeper.generate_board(rows=9, cols=9, mines=10, safe=safe)
             assert isinstance(result, dict)
 
 
@@ -200,45 +175,32 @@ class TestMinesweeperBackend:
 # SPACE SHOOTERS BACKEND TESTS
 # ============================================================================
 
+
 class TestSpaceShootersBackend:
     """Tests for the Space Shooters game backend."""
 
     def test_wave_plan_returns_enemies(self):
         """Wave plan should include enemy data."""
-        result = space_shooters.wave_plan(
-            wave=1,
-            difficulty="medium",
-            width=900,
-            height=600
-        )
+        result = space_shooters.wave_plan(wave=1, difficulty="medium", width=900, height=600)
         assert isinstance(result, dict)
 
     def test_wave_plan_different_waves(self):
         """Different waves should produce valid plans."""
         for wave in [1, 5, 10]:
-            result = space_shooters.wave_plan(
-                wave=wave,
-                difficulty="medium",
-                width=900,
-                height=600
-            )
+            result = space_shooters.wave_plan(wave=wave, difficulty="medium", width=900, height=600)
             assert isinstance(result, dict)
 
     def test_wave_plan_different_difficulties(self):
         """Different difficulties should work."""
         for diff in ["easy", "medium", "hard"]:
-            result = space_shooters.wave_plan(
-                wave=1,
-                difficulty=diff,
-                width=900,
-                height=600
-            )
+            result = space_shooters.wave_plan(wave=1, difficulty=diff, width=900, height=600)
             assert isinstance(result, dict)
 
 
 # ============================================================================
 # TETRIS BACKEND TESTS
 # ============================================================================
+
 
 class TestTetrisBackend:
     """Tests for the Tetris game backend."""
@@ -259,6 +221,7 @@ class TestTetrisBackend:
 # FLAPPY BACKEND TESTS
 # ============================================================================
 
+
 class TestFlappyBackend:
     """Tests for the Flappy game backend."""
 
@@ -276,26 +239,20 @@ class TestFlappyBackend:
     def test_generate_pipes(self):
         """Pipe generation should work."""
         result = flappy.generate_pipes(
-            count=5,
-            difficulty="medium",
-            canvas_height=600,
-            canvas_width=400
+            count=5, difficulty="medium", canvas_height=600, canvas_width=400
         )
         assert isinstance(result, list)
 
     def test_next_pipe(self):
         """Next pipe generation should return valid data."""
-        result = flappy.next_pipe(
-            current_distance=100,
-            difficulty="medium",
-            canvas_height=600
-        )
+        result = flappy.next_pipe(current_distance=100, difficulty="medium", canvas_height=600)
         assert isinstance(result, dict)
 
 
 # ============================================================================
 # PACMAN BACKEND TESTS
 # ============================================================================
+
 
 class TestPacmanBackend:
     """Tests for the Pac-Man game backend."""
@@ -339,7 +296,7 @@ class TestPacmanBackend:
             pacman_direction=(0, -1),
             blinky_x=10,
             blinky_y=10,
-            mode="chase"
+            mode="chase",
         )
         assert isinstance(result, dict)
         assert "x" in result
@@ -349,6 +306,7 @@ class TestPacmanBackend:
 # ============================================================================
 # ASTEROIDS BACKEND TESTS
 # ============================================================================
+
 
 class TestAsteroidsBackend:
     """Tests for the Asteroids game backend."""
@@ -360,11 +318,7 @@ class TestAsteroidsBackend:
 
     def test_generate_asteroid(self):
         """Asteroid generation should return valid data."""
-        result = asteroids.generate_asteroid(
-            canvas_width=900,
-            canvas_height=600,
-            size="large"
-        )
+        result = asteroids.generate_asteroid(canvas_width=900, canvas_height=600, size="large")
         assert isinstance(result, dict)
         assert "x" in result
         assert "y" in result
@@ -372,43 +326,26 @@ class TestAsteroidsBackend:
     def test_generate_wave(self):
         """Wave generation should return list of asteroids."""
         result = asteroids.generate_wave(
-            wave_number=1,
-            difficulty="medium",
-            canvas_width=900,
-            canvas_height=600
+            wave_number=1, difficulty="medium", canvas_width=900, canvas_height=600
         )
         assert isinstance(result, list)
 
     def test_split_asteroid(self):
         """Splitting asteroid should return smaller pieces."""
-        parent = {
-            "x": 450,
-            "y": 300,
-            "vx": 2,
-            "vy": 1,
-            "size": "large"
-        }
+        parent = {"x": 450, "y": 300, "vx": 2, "vy": 1, "size": "large"}
         result = asteroids.split_asteroid(parent)
         assert isinstance(result, list)
 
     def test_generate_ufo(self):
         """UFO generation should return valid data."""
-        result = asteroids.generate_ufo(
-            canvas_width=900,
-            canvas_height=600,
-            difficulty="medium"
-        )
+        result = asteroids.generate_ufo(canvas_width=900, canvas_height=600, difficulty="medium")
         assert isinstance(result, dict)
 
     def test_should_spawn_ufo(self):
         """UFO spawn check should return boolean."""
-        result = asteroids.should_spawn_ufo(
-            elapsed_time=60000,
-            score=1000,
-            difficulty="medium"
-        )
+        result = asteroids.should_spawn_ufo(elapsed_time=60000, score=1000, difficulty="medium")
         assert isinstance(result, bool)
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

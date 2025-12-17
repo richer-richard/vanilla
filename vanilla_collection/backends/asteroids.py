@@ -32,7 +32,7 @@ def config(difficulty: str = "medium") -> dict[str, Any]:
             "friction": 0.99,
             "invulnerability_time": 3000,
             "ufo_spawn_chance": 0.001,
-            "max_bullets": 6
+            "max_bullets": 6,
         },
         "medium": {
             "ship_speed": 0.12,
@@ -43,7 +43,7 @@ def config(difficulty: str = "medium") -> dict[str, Any]:
             "friction": 0.995,
             "invulnerability_time": 2000,
             "ufo_spawn_chance": 0.002,
-            "max_bullets": 5
+            "max_bullets": 5,
         },
         "hard": {
             "ship_speed": 0.1,
@@ -54,8 +54,8 @@ def config(difficulty: str = "medium") -> dict[str, Any]:
             "friction": 0.998,
             "invulnerability_time": 1500,
             "ufo_spawn_chance": 0.003,
-            "max_bullets": 4
-        }
+            "max_bullets": 4,
+        },
     }
 
     return configs.get(difficulty, configs["medium"])
@@ -66,9 +66,9 @@ def generate_asteroid(
     canvas_height: float = 600,
     size: str = "large",
     difficulty: str = "medium",
-    avoid_x: float = None,
-    avoid_y: float = None,
-    avoid_radius: float = 150
+    avoid_x: float | None = None,
+    avoid_y: float | None = None,
+    avoid_radius: float = 150,
 ) -> dict[str, Any]:
     """
     Generate a single asteroid with random properties.
@@ -118,10 +118,12 @@ def generate_asteroid(
     for i in range(num_vertices):
         vert_angle = (i / num_vertices) * math.pi * 2
         variation = 0.7 + random.random() * 0.4
-        vertices.append({
-            "x": math.cos(vert_angle) * radius * variation,
-            "y": math.sin(vert_angle) * radius * variation
-        })
+        vertices.append(
+            {
+                "x": math.cos(vert_angle) * radius * variation,
+                "y": math.sin(vert_angle) * radius * variation,
+            }
+        )
 
     return {
         "x": x,
@@ -133,7 +135,7 @@ def generate_asteroid(
         "points": points.get(size, 20),
         "rotation": random.random() * math.pi * 2,
         "rotation_speed": (random.random() - 0.5) * 0.05,
-        "vertices": vertices
+        "vertices": vertices,
     }
 
 
@@ -143,7 +145,7 @@ def generate_wave(
     canvas_width: float = 800,
     canvas_height: float = 600,
     ship_x: float = 400,
-    ship_y: float = 300
+    ship_y: float = 300,
 ) -> list[dict[str, Any]]:
     """
     Generate asteroids for a wave.
@@ -174,17 +176,14 @@ def generate_wave(
             difficulty=difficulty,
             avoid_x=ship_x,
             avoid_y=ship_y,
-            avoid_radius=150
+            avoid_radius=150,
         )
         asteroids.append(asteroid)
 
     return asteroids
 
 
-def split_asteroid(
-    asteroid: dict[str, Any],
-    difficulty: str = "medium"
-) -> list[dict[str, Any]]:
+def split_asteroid(asteroid: dict[str, Any], difficulty: str = "medium") -> list[dict[str, Any]]:
     """
     Split an asteroid into smaller pieces.
 
@@ -202,12 +201,12 @@ def split_asteroid(
     if size == "large":
         return [
             generate_asteroid(size="medium", difficulty=difficulty, avoid_x=None, avoid_y=None),
-            generate_asteroid(size="medium", difficulty=difficulty, avoid_x=None, avoid_y=None)
+            generate_asteroid(size="medium", difficulty=difficulty, avoid_x=None, avoid_y=None),
         ]
     elif size == "medium":
         return [
             generate_asteroid(size="small", difficulty=difficulty, avoid_x=None, avoid_y=None),
-            generate_asteroid(size="small", difficulty=difficulty, avoid_x=None, avoid_y=None)
+            generate_asteroid(size="small", difficulty=difficulty, avoid_x=None, avoid_y=None),
         ]
 
     # Small asteroids don't split
@@ -215,9 +214,7 @@ def split_asteroid(
 
 
 def generate_ufo(
-    canvas_width: float = 800,
-    canvas_height: float = 600,
-    difficulty: str = "medium"
+    canvas_width: float = 800, canvas_height: float = 600, difficulty: str = "medium"
 ) -> dict[str, Any]:
     """
     Generate a UFO enemy.
@@ -248,15 +245,11 @@ def generate_ufo(
         "vy": vy,
         "radius": 20,
         "points": 200,
-        "fire_rate": 2000 if difficulty == "easy" else 1500 if difficulty == "medium" else 1000
+        "fire_rate": 2000 if difficulty == "easy" else 1500 if difficulty == "medium" else 1000,
     }
 
 
-def should_spawn_ufo(
-    elapsed_time: float,
-    score: int,
-    difficulty: str = "medium"
-) -> bool:
+def should_spawn_ufo(elapsed_time: float, score: int, difficulty: str = "medium") -> bool:
     """
     Determine if a UFO should spawn.
 
@@ -276,6 +269,6 @@ def should_spawn_ufo(
 
     # Higher scores increase UFO frequency
     score_multiplier = 1 + (score / 5000)
-    spawn_chance = cfg["ufo_spawn_chance"] * score_multiplier
+    spawn_chance: float = float(cfg["ufo_spawn_chance"]) * score_multiplier
 
-    return random.random() < spawn_chance
+    return bool(random.random() < spawn_chance)

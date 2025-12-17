@@ -43,11 +43,19 @@ def _physics(difficulty: str, rng: random.Random) -> dict[str, float]:
 
     return {
         "maxBounceDeg": base.get("maxBounceDeg", 56.0) + rng.uniform(-1.2, 1.2) * 0.4,
-        "paddleInfluence": max(0.0, base.get("paddleInfluence", 0.12) + rng.uniform(-0.02, 0.02) * 0.4),
-        "spinFromPaddle": max(0.0, base.get("spinFromPaddle", 0.012) + rng.uniform(-0.003, 0.003) * 0.35),
+        "paddleInfluence": max(
+            0.0, base.get("paddleInfluence", 0.12) + rng.uniform(-0.02, 0.02) * 0.4
+        ),
+        "spinFromPaddle": max(
+            0.0, base.get("spinFromPaddle", 0.012) + rng.uniform(-0.003, 0.003) * 0.35
+        ),
         "spinFromEdge": max(0.0, base.get("spinFromEdge", 0.10) + rng.uniform(-0.03, 0.03) * 0.35),
-        "spinCurvature": max(0.0, base.get("spinCurvature", 0.05) + rng.uniform(-0.01, 0.01) * 0.35),
-        "spinDecay": min(0.999, max(0.95, base.get("spinDecay", 0.991) + rng.uniform(-0.002, 0.002))),
+        "spinCurvature": max(
+            0.0, base.get("spinCurvature", 0.05) + rng.uniform(-0.01, 0.01) * 0.35
+        ),
+        "spinDecay": min(
+            0.999, max(0.95, base.get("spinDecay", 0.991) + rng.uniform(-0.002, 0.002))
+        ),
         "maxSpin": max(0.0, base.get("maxSpin", 0.75) + rng.uniform(-0.08, 0.08) * 0.35),
         "speedUpHit": max(0.0, base.get("speedUpHit", 0.18) + rng.uniform(-0.04, 0.04) * 0.3),
         "maxSpeed": max(3.0, base.get("maxSpeed", 8.4) + rng.uniform(-0.4, 0.4) * 0.2),
@@ -55,10 +63,12 @@ def _physics(difficulty: str, rng: random.Random) -> dict[str, float]:
 
 
 def ai_target(payload: dict[str, object]) -> dict[str, object]:
+    from typing import Any, cast
+
     difficulty = str(payload.get("difficulty") or "medium").lower()
-    ball = payload.get("ball") or {}
-    court = payload.get("court") or {}
-    ai_state = payload.get("ai") or {}
+    ball = cast(dict[str, Any], payload.get("ball") or {})
+    court = cast(dict[str, Any], payload.get("court") or {})
+    ai_state = cast(dict[str, Any], payload.get("ai") or {})
 
     height = float(court.get("height") or 600)
     width = float(court.get("width") or 800)

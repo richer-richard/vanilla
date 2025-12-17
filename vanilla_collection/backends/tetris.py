@@ -12,4 +12,3 @@ def config(difficulty: str) -> dict[str, int]:
 
     preset = presets.get(diff) or presets["medium"]
     return dict(preset)
-
