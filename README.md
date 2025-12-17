@@ -82,7 +82,7 @@ Each game is a standalone HTML5 Canvas experience with its own intro page, diffi
   - Local bests saved with `localStorage` (per game + difficulty).
   - Optional global leaderboards via the Flask server (`/api/leaderboard/<game>`, `/api/score`).
   - Beautiful scoreboard UI component (`scoreboard.js`) with filtering by difficulty.
-- **Python Backend (Flask)**: Provides procedural generation helpers and lightweight JSON persistence (`scores.json`), but the frontend degrades gracefully when the server is offline.
+- **Python Backend (Flask)**: Provides procedural generation helpers and lightweight JSON persistence (defaults to `scores.json` in your user data dir; override with `VANILLA_SCORES_PATH` / `--scores`), but the frontend degrades gracefully when the server is offline.
 - **Smooth Gameplay (120 FPS Target)**:
   - Games run a fixed-step 120Hz simulation for consistent timing and input feel.
   - Rendering uses `requestAnimationFrame`, so the visible FPS is capped by your monitor (e.g., 60Hz monitors render at ~60fps, 120/144Hz monitors can render smoother).
@@ -92,48 +92,23 @@ Each game is a standalone HTML5 Canvas experience with its own intro page, diffi
 
 ```
 vanilla/
-├── app.py                       # Application bootstrapper (auto-opens browser)
-├── server.py                    # Flask backend server
-├── requirements.txt             # Python dependencies
-├── scores.json                  # Persistent score storage
-├── index.html                   # Homepage
-├── games.html                   # Game selection page
-├── about.html                   # About/introduction page
-├── styles.css                   # Global styles
-├── sounds.js                    # Sound engine (Web Audio API procedural sounds)
-├── scoreboard.js                # Scoreboard/leaderboard UI component
-├── favicon.svg                  # Browser tab icon (linked via <link rel="icon">)
-├── vanilla-banner.svg           # README banner image
-├── backends/                    # Python backend modules
-│   ├── __init__.py
-│   ├── snake.py                 # Snake food placement logic
-│   ├── pong.py                  # Pong AI targeting logic
-│   ├── breakout.py              # Breakout level generation
-│   ├── geometry_dash.py         # Geometry Dash pattern generation
-│   ├── minesweeper.py           # Minesweeper board generation
-│   ├── space_shooters.py        # Space Shooters wave planning
-│   └── tetris.py                # Tetris difficulty configuration
-├── snake/                       # Snake game files
-│   ├── intro.html               # Game introduction page
-│   └── game.html                # Main game page
-├── pong/                        # Pong game files
-│   ├── intro.html
-│   └── game.html
-├── breakout/                    # Breakout game files
-│   ├── intro.html
-│   └── game.html
-├── geometry_dash/               # Geometry Dash game files
-│   ├── intro.html
-│   └── game.html
-├── minesweeper/                 # Minesweeper game files
-│   ├── intro.html
-│   └── game.html
-├── space_shooters/              # Space Shooters game files
-│   ├── intro.html
-│   └── game.html
-└── tetris/                      # Tetris files
-    ├── intro.html
-    └── game.html
+├── app.py                       # Compatibility shim (runs `vanilla_collection.app`)
+├── server.py                    # Compatibility shim (re-exports `vanilla_collection.server`)
+├── pyproject.toml               # Packaging + tool configuration
+├── requirements.txt             # Python runtime dependencies
+├── requirements-dev.txt         # Python dev dependencies
+├── scores.example.json          # Example leaderboard file format (optional)
+├── tests/                       # Pytest suite
+└── vanilla_collection/          # Installable Python package
+    ├── app.py                   # Bootstrapper (optionally opens browser)
+    ├── cli.py                   # `vanilla-collection` CLI entrypoint
+    ├── server.py                # Flask backend + static hosting + score API
+    ├── backends/                # Game helper APIs (food, AI, procedural gen)
+    └── web/                     # Frontend HTML/CSS/JS assets
+        ├── index.html
+        ├── games.html
+        ├── about.html
+        └── <game>/intro.html + <game>/game.html
 ```
 
 ### What are `intro.html` and `game.html`?

@@ -582,14 +582,16 @@ class TestGameEndpoints:
     def test_pong_ai_target(self, client):
         response = client.post('/api/pong/ai-target',
             data=json.dumps({
-                "ball_x": 450,
-                "ball_y": 300,
-                "ball_vx": 5,
-                "ball_vy": 3
+                "difficulty": "medium",
+                "ball": {"x": 450, "y": 300, "dx": 5, "dy": 3},
+                "ai": {"height": 96},
+                "court": {"width": 900, "height": 600},
             }),
             content_type='application/json'
         )
         assert response.status_code == 200
+        data = json.loads(response.data)
+        assert "targetY" in data
 
 
 # ============================================================================

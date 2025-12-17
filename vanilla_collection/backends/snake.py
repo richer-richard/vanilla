@@ -16,7 +16,7 @@ from __future__ import annotations
 import random
 from collections import deque
 from collections.abc import Mapping
-from typing import Any, Dict, Iterable, List, Set, Tuple
+from typing import Any, Dict, Iterable, Set, Tuple
 
 
 def _segment_xy(seg: Any) -> Tuple[int, int]:
@@ -116,7 +116,7 @@ def next_food(grid: int, snake: Iterable[Any]) -> Dict[str, int]:
     
     # For longer snakes, use smart placement
     # Find reachable cells from snake head
-    reachable = _flood_fill(head_pos, taken, grid)
+    reachable = _flood_fill(head_pos, taken - {head_pos}, grid)
     
     # Filter to only reachable open spaces
     reachable_spaces = [(x, y) for x, y in open_spaces if (x, y) in reachable]
@@ -154,11 +154,12 @@ def get_game_stats(grid: int, snake: Iterable[Any]) -> Dict:
     
     head_pos = _segment_xy(snake_list[0]) if snake_list else (grid // 2, grid // 2)
     
-    # Calculate reachable space percentage
-    reachable = _flood_fill(head_pos, taken, grid)
+    # Calculate reachable space percentage. Start from the head, but the head itself is occupied.
+    reachable = _flood_fill(head_pos, taken - {head_pos}, grid)
+    reachable_open = reachable - taken
     total_cells = grid * grid
     open_cells = total_cells - len(taken)
-    reachable_percent = (len(reachable) / max(1, open_cells)) * 100
+    reachable_percent = (len(reachable_open) / max(1, open_cells)) * 100
     
     # Calculate how "trapped" the snake is
     danger_level = 100 - reachable_percent
@@ -166,7 +167,7 @@ def get_game_stats(grid: int, snake: Iterable[Any]) -> Dict:
     return {
         "snake_length": len(snake_list),
         "grid_coverage": (len(taken) / total_cells) * 100,
-        "reachable_cells": len(reachable),
+        "reachable_cells": len(reachable_open),
         "reachable_percent": round(reachable_percent, 1),
         "danger_level": round(danger_level, 1),
         "open_cells": open_cells,

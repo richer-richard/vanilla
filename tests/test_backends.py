@@ -50,8 +50,12 @@ class TestSnakeBackend:
 
     def test_get_game_stats(self):
         """Test game statistics calculation."""
-        result = snake.get_game_stats(grid=16, snake=[[5, 5], [5, 4]])
+        snake_body = [[5, 5], [5, 4], [5, 3], [5, 2], [5, 1]]
+        result = snake.get_game_stats(grid=16, snake=snake_body)
         assert isinstance(result, dict)
+        assert result["snake_length"] == len(snake_body)
+        assert result["reachable_cells"] > 0
+        assert 0 < result["reachable_percent"] <= 100
 
 
 # ============================================================================
@@ -64,19 +68,20 @@ class TestPongBackend:
     def test_ai_target_returns_dict(self):
         """AI target calculation should return a dictionary."""
         payload = {
-            "ball_x": 400,
-            "ball_y": 300,
-            "ball_vx": 5,
-            "ball_vy": 2,
-            "difficulty": "medium"
+            "difficulty": "medium",
+            "ball": {"x": 400, "y": 300, "dx": 5, "dy": 2},
+            "ai": {"height": 96},
+            "court": {"width": 800, "height": 600},
         }
         result = pong.ai_target(payload)
         assert isinstance(result, dict)
+        assert "targetY" in result
 
     def test_ai_target_with_empty_payload(self):
         """Should handle empty payload gracefully."""
         result = pong.ai_target({})
         assert isinstance(result, dict)
+        assert "targetY" in result
 
 
 # ============================================================================
