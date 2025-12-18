@@ -91,8 +91,8 @@ VALID_DIFFICULTIES: set[str] = {"easy", "medium", "hard", "unknown"}
 
 # Rate limiting configuration
 RATE_LIMIT_WINDOW = 60  # seconds
-RATE_LIMIT_MAX_REQUESTS = 30  # max requests per window for score submission
-RATE_LIMIT_MAX_REQUESTS_READ = 100  # max requests per window for read operations
+RATE_LIMIT_MAX_REQUESTS = 6000  # max requests per window for score submission
+RATE_LIMIT_MAX_REQUESTS_READ = 10000  # max requests per window for read operations
 
 DEFAULT_SCORES: dict[str, list[dict]] = {game: [] for game in VALID_GAMES}
 
@@ -103,11 +103,6 @@ ASCENDING_GAMES: set[str] = {"minesweeper"}
 # Use comma-separated list for multiple origins: "http://localhost:3000,https://example.com"
 # Use "*" for development only
 CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "*")
-
-
-# ============================================================================
-# RATE LIMITER
-# ============================================================================
 
 
 class RateLimiter:
