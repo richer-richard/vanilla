@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  vanilla:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+    volumes:
+      # Mount scores file for persistence (optional)
+      - ./scores.json:/app/scores.json:rw
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Development service with hot reload
+  vanilla-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=1
+    volumes:
+      - ./vanilla_collection:/app/vanilla_collection:ro
+      - ./scores.json:/app/scores.json:rw
+    profiles:
+      - dev
+    command: python -m vanilla_collection --debug

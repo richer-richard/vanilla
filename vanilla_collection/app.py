@@ -36,8 +36,8 @@ def run(
     auto_open: bool | None = None,
 ) -> None:
     server = GameServer(scores_path=scores_path)
-    resolved_host = host or os.environ.get("HOST", "127.0.0.1")
-    resolved_port = port if port is not None else int(os.environ.get("PORT", "5000"))
+    resolved_host: str = host or os.environ.get("HOST", "127.0.0.1") or "127.0.0.1"
+    resolved_port = port if port is not None else int(os.environ.get("PORT", "8000"))
     resolved_debug = bool(
         debug if debug is not None else os.environ.get("DEBUG", "").lower() in {"1", "true", "yes"}
     )
