@@ -9,9 +9,17 @@ from __future__ import annotations
 
 import contextlib
 import os
+import sys
 import threading
 import webbrowser
 from pathlib import Path
+
+# Allow running this file directly
+if __name__ == "__main__" and __package__ is None:
+    _parent = str(Path(__file__).resolve().parent.parent)
+    if _parent not in sys.path:
+        sys.path.insert(0, _parent)
+    __package__ = "vanilla_collection"
 
 from .server import GameServer
 
