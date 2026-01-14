@@ -17,18 +17,21 @@ Legacy endpoints (without version) are still supported for backwards compatibili
 
 from __future__ import annotations
 
+import fcntl
 import functools
 import html
 import json
 import logging
 import os
 import re
+import sys
 import threading
 import time
 from collections import defaultdict
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Generator
 
 from flask import Flask, Response, jsonify, request, send_from_directory
 
@@ -101,8 +104,31 @@ ASCENDING_GAMES: set[str] = {"minesweeper"}
 
 # CORS Configuration - can be overridden via environment variable
 # Use comma-separated list for multiple origins: "http://localhost:3000,https://example.com"
-# Use "*" for development only
+# SECURITY: In production, set CORS_ALLOWED_ORIGINS to your specific domains
+# Default "*" is only suitable for development
 CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "*")
+
+# Warn if using wildcard CORS in non-debug mode
+_CORS_WILDCARD_WARNING_SHOWN = False
+
+
+def _check_cors_security() -> None:
+    """Log a warning if CORS is configured insecurely for production."""
+    global _CORS_WILDCARD_WARNING_SHOWN
+    if _CORS_WILDCARD_WARNING_SHOWN:
+        return
+    
+    is_production = os.environ.get("FLASK_ENV") == "production" or \
+                    os.environ.get("ENVIRONMENT") == "production" or \
+                    not os.environ.get("DEBUG", "").lower() in {"1", "true", "yes"}
+    
+    if CORS_ALLOWED_ORIGINS == "*" and is_production:
+        logger.warning(
+            "SECURITY WARNING: CORS is configured to allow all origins ('*'). "
+            "In production, set CORS_ALLOWED_ORIGINS to your specific domains "
+            "(e.g., 'https://yourdomain.com,https://www.yourdomain.com')."
+        )
+        _CORS_WILDCARD_WARNING_SHOWN = True
 
 
 class RateLimiter:
@@ -275,29 +301,88 @@ def validate_score(score: Any) -> tuple[bool, str, int]:
 
 
 # ============================================================================
+# FILE LOCKING (Cross-process safety for multi-worker deployments)
+# ============================================================================
+
+
+def _supports_flock() -> bool:
+    """Check if the platform supports fcntl.flock (Unix/Linux/macOS)."""
+    return sys.platform != "win32" and hasattr(fcntl, "flock")
+
+
+@contextmanager
+def file_lock(lock_path: Path, exclusive: bool = True) -> Generator[None, None, None]:
+    """
+    Cross-process file lock using fcntl.flock.
+    
+    This provides process-level locking for multi-worker deployments (e.g., Gunicorn).
+    Falls back to no-op on Windows where fcntl is not available.
+    
+    Args:
+        lock_path: Path to the lock file
+        exclusive: True for write lock (LOCK_EX), False for read lock (LOCK_SH)
+    
+    Yields:
+        None (context manager)
+    """
+    if not _supports_flock():
+        # Windows fallback - no file locking, rely on threading.Lock only
+        yield
+        return
+    
+    lock_file = lock_path.with_suffix(".lock")
+    lock_type = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
+    
+    try:
+        # Create lock file if it doesn't exist
+        fd = os.open(str(lock_file), os.O_RDWR | os.O_CREAT, 0o666)
+        try:
+            fcntl.flock(fd, lock_type)
+            yield
+        finally:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+            os.close(fd)
+    except OSError as e:
+        logger.warning(f"File lock failed: {e}. Proceeding without cross-process lock.")
+        yield
+
+
+# ============================================================================
 # SCORE STORE
 # ============================================================================
 
 
 class ScoreStore:
-    """Handle reading and writing leaderboard data on disk."""
+    """
+    Handle reading and writing leaderboard data on disk.
+    
+    Thread-safety: Uses threading.Lock() for same-process thread safety.
+    Process-safety: Uses fcntl.flock() for cross-process safety in multi-worker
+                    deployments (e.g., Gunicorn with multiple workers).
+    """
 
     def __init__(self, scores_path: str | Path | None = None) -> None:
         default_path = default_scores_path()
         self.path = Path(scores_path or default_path).expanduser().resolve()
-        self._lock = threading.Lock()
+        self._thread_lock = threading.Lock()
         self.path.parent.mkdir(parents=True, exist_ok=True)
         if not self.path.exists():
-            self._write(DEFAULT_SCORES)
+            self._write_unsafe(DEFAULT_SCORES)
         logger.info(f"ScoreStore initialized with path: {self.path}")
+        if _supports_flock():
+            logger.info("Cross-process file locking enabled (fcntl.flock)")
+        else:
+            logger.warning("Cross-process file locking not available on this platform")
 
-    def _write(self, data: dict[str, list[dict]]) -> None:
+    def _write_unsafe(self, data: dict[str, list[dict]]) -> None:
+        """Write data without acquiring locks (caller must hold locks)."""
         temp_path = self.path.with_suffix(".tmp")
         with temp_path.open("w", encoding="utf-8") as handle:
             json.dump(data, handle, indent=2)
         temp_path.replace(self.path)
 
-    def _read(self) -> dict[str, list[dict]]:
+    def _read_unsafe(self) -> dict[str, list[dict]]:
+        """Read data without acquiring locks (caller must hold locks)."""
         try:
             with self.path.open("r", encoding="utf-8") as handle:
                 payload = json.load(handle)
@@ -306,14 +391,17 @@ class ScoreStore:
             return payload
         except Exception as e:
             logger.error(f"Error reading scores file: {e}. Resetting to default.")
-            self._write(DEFAULT_SCORES)
+            self._write_unsafe(DEFAULT_SCORES)
             return dict(DEFAULT_SCORES)
 
     def leaderboard(self, game: str) -> list[dict]:
-        with self._lock:
-            return list(self._read().get(game, []))
+        """Get the leaderboard for a specific game."""
+        with self._thread_lock:
+            with file_lock(self.path, exclusive=False):  # Shared/read lock
+                return list(self._read_unsafe().get(game, []))
 
     def add_score(self, game: str, player: str, score: int | float, difficulty: str) -> dict:
+        """Add a score entry for a game."""
         if not player or not str(player).strip():
             raise ValueError("Player name is required")
         if not isinstance(score, (int, float)):
@@ -326,22 +414,25 @@ class ScoreStore:
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
-        with self._lock:
-            data = self._read()
-            data.setdefault(game, [])
-            data[game].append(entry)
-            reverse = game not in ASCENDING_GAMES
-            data[game] = sorted(data[game], key=lambda item: item["score"], reverse=reverse)[
-                :MAX_ENTRIES
-            ]
-            self._write(data)
+        with self._thread_lock:
+            with file_lock(self.path, exclusive=True):  # Exclusive/write lock
+                data = self._read_unsafe()
+                data.setdefault(game, [])
+                data[game].append(entry)
+                reverse = game not in ASCENDING_GAMES
+                data[game] = sorted(data[game], key=lambda item: item["score"], reverse=reverse)[
+                    :MAX_ENTRIES
+                ]
+                self._write_unsafe(data)
 
         logger.info(f"Score added: {player} scored {score} in {game} ({difficulty})")
         return entry
 
     def games(self) -> dict[str, list[dict]]:
-        with self._lock:
-            return self._read()
+        """Get all games and their scores."""
+        with self._thread_lock:
+            with file_lock(self.path, exclusive=False):  # Shared/read lock
+                return self._read_unsafe()
 
 
 # ============================================================================
@@ -357,6 +448,7 @@ class GameServer:
         self.root_dir = web_root()
         self.app = Flask(__name__, static_folder=str(self.root_dir), static_url_path="")
         self._register_routes()
+        _check_cors_security()
 
     def _register_routes(self) -> None:
         app = self.app

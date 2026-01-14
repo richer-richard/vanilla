@@ -516,6 +516,434 @@ const CanvasUtils = {
 
 
 // ============================================================================
+// SPATIAL HASH (O(n) Collision Detection)
+// ============================================================================
+
+/**
+ * Creates a spatial hash for efficient collision detection
+ * Reduces O(n²) collision checks to O(n) average case
+ * @param {number} cellSize - Size of each grid cell (should be >= largest object)
+ * @returns {Object} Spatial hash instance
+ */
+function createSpatialHash(cellSize = 50) {
+    const grid = new Map();
+    
+    /**
+     * Get the cell key for a position
+     * @private
+     */
+    function getKey(x, y) {
+        const cx = Math.floor(x / cellSize);
+        const cy = Math.floor(y / cellSize);
+        return `${cx},${cy}`;
+    }
+    
+    /**
+     * Get all cell keys that an object overlaps
+     * @private
+     */
+    function getCellKeys(x, y, radius) {
+        const keys = [];
+        const minX = Math.floor((x - radius) / cellSize);
+        const maxX = Math.floor((x + radius) / cellSize);
+        const minY = Math.floor((y - radius) / cellSize);
+        const maxY = Math.floor((y + radius) / cellSize);
+        
+        for (let cx = minX; cx <= maxX; cx++) {
+            for (let cy = minY; cy <= maxY; cy++) {
+                keys.push(`${cx},${cy}`);
+            }
+        }
+        return keys;
+    }
+    
+    /**
+     * Clear all objects from the grid
+     */
+    function clear() {
+        grid.clear();
+    }
+    
+    /**
+     * Insert an object into the grid
+     * @param {Object} obj - Object with x, y, and radius (or r) properties
+     */
+    function insert(obj) {
+        const radius = obj.radius || obj.r || 0;
+        const keys = getCellKeys(obj.x, obj.y, radius);
+        for (const key of keys) {
+            if (!grid.has(key)) {
+                grid.set(key, []);
+            }
+            grid.get(key).push(obj);
+        }
+    }
+    
+    /**
+     * Insert multiple objects into the grid
+     * @param {Array} objects - Array of objects
+     */
+    function insertAll(objects) {
+        for (const obj of objects) {
+            insert(obj);
+        }
+    }
+    
+    /**
+     * Get potential collision candidates for an object
+     * @param {Object} obj - Object with x, y, and radius (or r) properties
+     * @returns {Set} Set of nearby objects (excludes self)
+     */
+    function getNearby(obj) {
+        const radius = obj.radius || obj.r || 0;
+        const keys = getCellKeys(obj.x, obj.y, radius);
+        const nearby = new Set();
+        
+        for (const key of keys) {
+            const cell = grid.get(key);
+            if (cell) {
+                for (const other of cell) {
+                    if (other !== obj) {
+                        nearby.add(other);
+                    }
+                }
+            }
+        }
+        return nearby;
+    }
+    
+    /**
+     * Find all colliding pairs efficiently
+     * @param {Array} groupA - First group of objects
+     * @param {Array} groupB - Second group of objects
+     * @param {Function} collisionTest - Function to test collision (a, b) => boolean
+     * @returns {Array} Array of [objA, objB] collision pairs
+     */
+    function findCollisions(groupA, groupB, collisionTest) {
+        const collisions = [];
+        
+        // Build grid from group B
+        clear();
+        insertAll(groupB);
+        
+        // Check each object in group A against nearby objects in group B
+        for (const a of groupA) {
+            const nearby = getNearby(a);
+            for (const b of nearby) {
+                if (collisionTest(a, b)) {
+                    collisions.push([a, b]);
+                }
+            }
+        }
+        
+        return collisions;
+    }
+    
+    return {
+        clear,
+        insert,
+        insertAll,
+        getNearby,
+        findCollisions,
+        get cellSize() { return cellSize; }
+    };
+}
+
+
+// ============================================================================
+// CLEANUP MANAGER (Memory Leak Prevention)
+// ============================================================================
+
+/**
+ * Creates a cleanup manager for tracking and removing event listeners
+ * Prevents memory leaks when game state resets or page unloads
+ * @returns {Object} Cleanup manager instance
+ */
+function createCleanupManager() {
+    const listeners = [];
+    const intervals = [];
+    const timeouts = [];
+    const customCleanups = [];
+    
+    /**
+     * Add an event listener that will be automatically cleaned up
+     * @param {EventTarget} target - Target element or document
+     * @param {string} event - Event type
+     * @param {Function} handler - Event handler
+     * @param {Object} [options] - addEventListener options
+     */
+    function addEventListener(target, event, handler, options) {
+        target.addEventListener(event, handler, options);
+        listeners.push({ target, event, handler, options });
+    }
+    
+    /**
+     * Add a setInterval that will be automatically cleaned up
+     * @param {Function} callback - Interval callback
+     * @param {number} delay - Interval delay in ms
+     * @returns {number} Interval ID
+     */
+    function setInterval(callback, delay) {
+        const id = window.setInterval(callback, delay);
+        intervals.push(id);
+        return id;
+    }
+    
+    /**
+     * Add a setTimeout that will be automatically cleaned up
+     * @param {Function} callback - Timeout callback
+     * @param {number} delay - Timeout delay in ms
+     * @returns {number} Timeout ID
+     */
+    function setTimeout(callback, delay) {
+        const id = window.setTimeout(callback, delay);
+        timeouts.push(id);
+        return id;
+    }
+    
+    /**
+     * Register a custom cleanup function
+     * @param {Function} cleanupFn - Function to call during cleanup
+     */
+    function onCleanup(cleanupFn) {
+        customCleanups.push(cleanupFn);
+    }
+    
+    /**
+     * Clean up all registered resources
+     */
+    function cleanup() {
+        // Remove all event listeners
+        for (const { target, event, handler, options } of listeners) {
+            target.removeEventListener(event, handler, options);
+        }
+        listeners.length = 0;
+        
+        // Clear all intervals
+        for (const id of intervals) {
+            window.clearInterval(id);
+        }
+        intervals.length = 0;
+        
+        // Clear all timeouts
+        for (const id of timeouts) {
+            window.clearTimeout(id);
+        }
+        timeouts.length = 0;
+        
+        // Run custom cleanups
+        for (const fn of customCleanups) {
+            try {
+                fn();
+            } catch (e) {
+                console.warn('Cleanup function error:', e);
+            }
+        }
+        customCleanups.length = 0;
+    }
+    
+    /**
+     * Get count of registered resources
+     * @returns {Object} Resource counts
+     */
+    function getStats() {
+        return {
+            listeners: listeners.length,
+            intervals: intervals.length,
+            timeouts: timeouts.length,
+            customCleanups: customCleanups.length
+        };
+    }
+    
+    return {
+        addEventListener,
+        setInterval,
+        setTimeout,
+        onCleanup,
+        cleanup,
+        getStats
+    };
+}
+
+
+// ============================================================================
+// OBJECT POOL (Memory Optimization)
+// ============================================================================
+
+/**
+ * Creates an object pool for reusing objects and reducing GC pressure
+ * Particularly useful for particles, bullets, and other frequently created objects
+ * @param {Function} factory - Function to create new objects
+ * @param {Function} [reset] - Function to reset an object for reuse
+ * @param {number} [initialSize=0] - Initial pool size
+ * @returns {Object} Object pool instance
+ */
+function createObjectPool(factory, reset = null, initialSize = 0) {
+    const available = [];
+    let totalCreated = 0;
+    
+    // Pre-populate pool
+    for (let i = 0; i < initialSize; i++) {
+        available.push(factory());
+        totalCreated++;
+    }
+    
+    /**
+     * Get an object from the pool (creates new if empty)
+     * @param {...*} args - Arguments to pass to factory or reset function
+     * @returns {Object} Pooled or new object
+     */
+    function acquire(...args) {
+        let obj;
+        if (available.length > 0) {
+            obj = available.pop();
+            if (reset) {
+                reset(obj, ...args);
+            }
+        } else {
+            obj = factory(...args);
+            totalCreated++;
+        }
+        return obj;
+    }
+    
+    /**
+     * Return an object to the pool
+     * @param {Object} obj - Object to return
+     */
+    function release(obj) {
+        available.push(obj);
+    }
+    
+    /**
+     * Return multiple objects to the pool
+     * @param {Array} objects - Objects to return
+     */
+    function releaseAll(objects) {
+        for (const obj of objects) {
+            available.push(obj);
+        }
+    }
+    
+    /**
+     * Clear the pool
+     */
+    function clear() {
+        available.length = 0;
+    }
+    
+    /**
+     * Get pool statistics
+     * @returns {Object} Pool stats
+     */
+    function getStats() {
+        return {
+            available: available.length,
+            totalCreated,
+            inUse: totalCreated - available.length
+        };
+    }
+    
+    return {
+        acquire,
+        release,
+        releaseAll,
+        clear,
+        getStats,
+        get size() { return available.length; }
+    };
+}
+
+
+// ============================================================================
+// PATHFINDING CACHE (BFS Optimization)
+// ============================================================================
+
+/**
+ * Creates a cached pathfinding system for grid-based games
+ * Caches distance maps with TTL to avoid recomputing per-frame
+ * @param {Object} options - Cache options
+ * @param {number} [options.ttl=200] - Cache TTL in milliseconds
+ * @param {number} [options.maxEntries=10] - Maximum cache entries
+ * @returns {Object} Pathfinding cache instance
+ */
+function createPathfindingCache(options = {}) {
+    const { ttl = 200, maxEntries = 10 } = options;
+    const cache = new Map();
+    
+    /**
+     * Get or compute a distance map
+     * @param {string} key - Cache key (e.g., target position)
+     * @param {Function} computeFn - Function to compute distance map if not cached
+     * @returns {*} Cached or computed result
+     */
+    function getOrCompute(key, computeFn) {
+        const now = performance.now();
+        const entry = cache.get(key);
+        
+        if (entry && (now - entry.timestamp) < ttl) {
+            return entry.value;
+        }
+        
+        // Compute new value
+        const value = computeFn();
+        
+        // Enforce max entries (LRU eviction)
+        if (cache.size >= maxEntries) {
+            let oldest = null;
+            let oldestTime = Infinity;
+            for (const [k, v] of cache) {
+                if (v.timestamp < oldestTime) {
+                    oldest = k;
+                    oldestTime = v.timestamp;
+                }
+            }
+            if (oldest) {
+                cache.delete(oldest);
+            }
+        }
+        
+        cache.set(key, { value, timestamp: now });
+        return value;
+    }
+    
+    /**
+     * Invalidate a specific cache entry
+     * @param {string} key - Cache key
+     */
+    function invalidate(key) {
+        cache.delete(key);
+    }
+    
+    /**
+     * Clear all cache entries
+     */
+    function clear() {
+        cache.clear();
+    }
+    
+    /**
+     * Get cache statistics
+     * @returns {Object} Cache stats
+     */
+    function getStats() {
+        return {
+            entries: cache.size,
+            maxEntries,
+            ttl
+        };
+    }
+    
+    return {
+        getOrCompute,
+        invalidate,
+        clear,
+        getStats
+    };
+}
+
+
+// ============================================================================
 // COLLISION DETECTION
 // ============================================================================
 
@@ -1098,6 +1526,10 @@ window.VanillaEngine = {
     createHudManager,
     createDifficultyManager,
     createTouchControls,
+    createSpatialHash,
+    createCleanupManager,
+    createObjectPool,
+    createPathfindingCache,
     CanvasUtils,
     Collision,
     MathUtils,
