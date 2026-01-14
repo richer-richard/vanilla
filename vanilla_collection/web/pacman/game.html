@@ -118,6 +118,7 @@
         </div>
     </div>
 
+    <script src="../engine.js"></script>
     <script src="../sounds.js"></script>
     <script src="../scoreboard.js"></script>
     <script src="../themes.js"></script>
@@ -127,6 +128,17 @@
         // ====================================================================
         // PAC-MAN GAME
         // ====================================================================
+        
+        // ================================================================
+        // ENGINE UTILITIES (Pathfinding cache for ghost AI)
+        // ================================================================
+        const { createPathfindingCache, createCleanupManager } = window.VanillaEngine;
+        
+        // Pathfinding cache for BFS distance maps (200ms TTL, avoids recomputing each frame)
+        const pathfindingCache = createPathfindingCache({ ttl: 200, maxEntries: 8 });
+        
+        // Cleanup manager for event listeners
+        const cleanup = createCleanupManager();
         
         const canvas = document.getElementById('board');
         const ctx = canvas.getContext('2d');
@@ -823,7 +835,15 @@
 	            }
 
 	            const targetTile = targetToTile(ghost.getTarget(), allowHouse);
-	            const dist = buildDistanceMap(targetTile.x, targetTile.y, allowHouse);
+	            
+	            // ================================================================
+	            // OPTIMIZED: Use cached BFS distance map (200ms TTL)
+	            // Avoids recomputing the same pathfinding per-frame for each ghost
+	            // ================================================================
+	            const cacheKey = `${targetTile.x},${targetTile.y},${allowHouse ? 1 : 0}`;
+	            const dist = pathfindingCache.getOrCompute(cacheKey, () => 
+	                buildDistanceMap(targetTile.x, targetTile.y, allowHouse)
+	            );
 
 	            let best = candidates[0];
 	            let bestDist = dist[best.n.y][best.n.x];

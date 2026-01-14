@@ -117,6 +117,7 @@
         </div>
     </div>
 
+    <script src="../engine.js"></script>
     <script src="../sounds.js"></script>
     <script src="../scoreboard.js"></script>
     <script src="../themes.js"></script>
@@ -189,6 +190,33 @@
         let animationId = null;
         let keys = {};
         let invulnerableTimer = 0;
+        
+        // ================================================================
+        // ENGINE UTILITIES (Optimized collision detection & memory)
+        // ================================================================
+        const { createSpatialHash, createObjectPool, createCleanupManager } = window.VanillaEngine;
+        
+        // Spatial hash for O(n) collision detection (cell size = largest asteroid)
+        const spatialHash = createSpatialHash(80);
+        
+        // Object pool for particles (reduces GC pressure)
+        const particlePool = createObjectPool(
+            () => ({ x: 0, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0 }),
+            (p, x, y) => {
+                p.x = x;
+                p.y = y;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 1 + Math.random() * 3;
+                p.vx = Math.cos(angle) * speed;
+                p.vy = Math.sin(angle) * speed;
+                p.life = 30 + Math.random() * 30;
+                p.maxLife = p.life;
+            },
+            50 // Pre-allocate 50 particles
+        );
+        
+        // Cleanup manager for event listeners
+        const cleanup = createCleanupManager();
         
         // DOM elements
         const difficultyLabel = document.getElementById('difficultyLabel');
@@ -467,10 +495,11 @@
             }
         }
         
-        // Create explosion particles
+        // Create explosion particles (using object pool)
         function createExplosion(x, y, count) {
             for (let i = 0; i < count; i++) {
-                particles.push(new Particle(x, y));
+                const p = particlePool.acquire(x, y);
+                particles.push(p);
             }
         }
         
@@ -544,37 +573,77 @@
                 }
             }
             
-            // Update particles
+            // Update particles (with pool recycling)
             for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update(delta);
-                if (particles[i].life <= 0) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vx *= 0.98;
+                p.vy *= 0.98;
+                p.life--;
+                if (p.life <= 0) {
+                    particlePool.release(p); // Return to pool instead of GC
                     particles.splice(i, 1);
                 }
             }
             
-            // Check bullet-asteroid collisions
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                for (let j = asteroids.length - 1; j >= 0; j--) {
-                    if (checkCollision(bullets[i], asteroids[j])) {
+            // ================================================================
+            // OPTIMIZED COLLISION DETECTION (O(n) using spatial hash)
+            // ================================================================
+            // Build spatial hash with asteroids for this frame
+            spatialHash.clear();
+            spatialHash.insertAll(asteroids);
+            
+            // Check bullet-asteroid collisions using spatial hash
+            const bulletsToRemove = new Set();
+            const asteroidsToRemove = new Set();
+            const newAsteroidsToAdd = [];
+            
+            for (let i = 0; i < bullets.length; i++) {
+                if (bulletsToRemove.has(i)) continue;
+                const bullet = bullets[i];
+                
+                // Only check nearby asteroids (O(1) average instead of O(n))
+                const nearby = spatialHash.getNearby(bullet);
+                for (const asteroid of nearby) {
+                    const asteroidIdx = asteroids.indexOf(asteroid);
+                    if (asteroidIdx === -1 || asteroidsToRemove.has(asteroidIdx)) continue;
+                    
+                    if (checkCollision(bullet, asteroid)) {
                         // Add score
-                        score += asteroids[j].points;
-                        updateHUD();
+                        score += asteroid.points;
                         
                         // Create explosion
-                        createExplosion(asteroids[j].x, asteroids[j].y, 15);
+                        createExplosion(asteroid.x, asteroid.y, 15);
                         
                         // Split asteroid
-                        const newAsteroids = asteroids[j].split();
-                        asteroids.push(...newAsteroids);
+                        newAsteroidsToAdd.push(...asteroid.split());
                         
-                        // Remove asteroid and bullet
-                        asteroids.splice(j, 1);
-                        bullets.splice(i, 1);
+                        // Mark for removal
+                        asteroidsToRemove.add(asteroidIdx);
+                        bulletsToRemove.add(i);
                         
                         if (window.soundEngine) soundEngine.play('coin');
                         break;
                     }
                 }
+            }
+            
+            // Apply removals (in reverse order to maintain indices)
+            const sortedAsteroidIndices = [...asteroidsToRemove].sort((a, b) => b - a);
+            for (const idx of sortedAsteroidIndices) {
+                asteroids.splice(idx, 1);
+            }
+            const sortedBulletIndices = [...bulletsToRemove].sort((a, b) => b - a);
+            for (const idx of sortedBulletIndices) {
+                bullets.splice(idx, 1);
+            }
+            
+            // Add new asteroids from splits
+            asteroids.push(...newAsteroidsToAdd);
+            
+            if (bulletsToRemove.size > 0) {
+                updateHUD();
             }
             
             // Check ship-asteroid collisions
@@ -622,9 +691,13 @@
                 ctx.fillRect(x, y, 1, 1);
             }
             
-            // Draw particles
-            for (const particle of particles) {
-                particle.draw();
+            // Draw particles (pooled objects - no draw method)
+            for (const p of particles) {
+                const alpha = p.life / p.maxLife;
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                ctx.fill();
             }
             
             // Draw asteroids
